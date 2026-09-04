@@ -1,0 +1,14 @@
+{
+  "name": "theroom",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "dev:vercel": "vercel dev",
+    "test": "node scripts/smoke.mjs",
+    "test:prod": "node scripts/smoke.mjs https://theroom-seven-theta.vercel.app"
+  }
+}
