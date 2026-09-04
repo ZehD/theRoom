@@ -1,0 +1,2062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luiz Cordeiro · theRoom</title>
+<meta name="ext-resource-dependency" content="audio/rain.mp3" data-resource-id="rainMp3" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500&family=Silkscreen&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #060A07; --soil: #0E1610; --moss: #1B2A1F; --phosphor: #3BE77B; --phosphor-dim: #1F8A4A; --phosphor-bloom: #C8FFD6; --paper: #B9C9BC; --ex-w: 760px; --ex-h: 460px; --ex-fade: 250ms; --ex-slide: 12px; --ex-dim: 0.55; }
+  html, body { margin: 0; height: 100%; background: var(--ink); overflow: hidden; }
+  #room { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; outline: none; }
+  #fade { position: fixed; inset: 0; background: var(--ink); opacity: 0; pointer-events: none; }
+  .hud { position: fixed; right: 16px; font: 12px/1.5 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor); background: var(--soil); border: 1px solid var(--moss); padding: 8px 10px; white-space: pre; pointer-events: none; margin: 0; }
+  #fps { top: calc(var(--top-h, 52px) + 16px); }
+  #hud { top: calc(var(--top-h, 52px) + 56px); }
+  #hud .dim { color: var(--phosphor-dim); }
+  /* accent picker: a row of small LED push-buttons. Each shows its own colour (--led); the active one lights up and glows. */
+  #accent { position: fixed; right: 16px; bottom: 16px; display: flex; gap: 6px; margin: 0; padding: 6px; list-style: none; background: var(--ink); border: 1px solid var(--moss); }
+  #accent button { appearance: none; width: 22px; height: 22px; padding: 0; cursor: pointer; border-radius: 0; background: var(--ink); border: 1px solid var(--moss); display: grid; place-items: center; }
+  #accent button::before { content: ""; width: 8px; height: 8px; background: color-mix(in srgb, var(--led) 40%, var(--ink)); transition: background 120ms linear, box-shadow 120ms linear; }
+  #accent button:hover { border-color: var(--led); }
+  #accent button:hover::before { background: color-mix(in srgb, var(--led) 75%, var(--ink)); }
+  #accent button[aria-pressed="true"] { border-color: var(--led); }
+  #accent button[aria-pressed="true"]::before { background: var(--led); box-shadow: 0 0 6px 1px var(--led), 0 0 14px 2px color-mix(in srgb, var(--led) 45%, transparent); }
+  #accent button:focus-visible { outline: 2px solid var(--led); outline-offset: 2px; }
+  #chip { position: fixed; left: 0; top: 0; font: 15px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.04em; color: var(--phosphor-bloom); text-shadow: 0 0 8px var(--phosphor-bloom); background: var(--soil); border: 1px solid var(--phosphor); padding: 9px 12px 8px; pointer-events: none; white-space: nowrap; opacity: 0; transition: opacity 150ms linear; will-change: transform; }
+  #chip.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { #chip { transition: none; } }
+  #room.hot { cursor: pointer; }
+  #room.drag { cursor: grabbing; }
+  #room.pan { cursor: move; }
+  #room.shell { cursor: text; }
+  #shell-in { position: fixed; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; }
+  /* explorer window: flat soil sheet, 1px moss border, no radius, no shadow */
+  #dim { position: fixed; inset: 0; background: var(--ink); opacity: 0; pointer-events: none; transition: opacity var(--ex-fade) linear; z-index: 5; }
+  #dim.on { opacity: var(--ex-dim); pointer-events: auto; }
+  #explorer { position: fixed; left: 50%; top: 50%; width: min(var(--ex-w), 92vw); height: min(var(--ex-h), calc(100vh - 140px)); transform: translate(-50%, calc(-50% + var(--ex-slide))); background: var(--soil); border: 1px solid var(--moss); color: var(--phosphor); display: grid; grid-template-rows: 40px minmax(0, 1fr) 28px; opacity: 0; pointer-events: none; transition: opacity var(--ex-fade) linear, transform var(--ex-fade) cubic-bezier(.25, 1, .5, 1); font: 13px/1.6 "IBM Plex Mono", ui-monospace, monospace; z-index: 6; }
+  #explorer.on { opacity: 1; transform: translate(-50%, -50%); pointer-events: auto; }
+  #explorer .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 8px 0 16px; border-bottom: 1px solid var(--moss); }
+  #explorer .path { font: 24px/1 VT323, ui-monospace, monospace; color: var(--phosphor); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #explorer .path b { color: var(--phosphor-dim); font-weight: 400; }
+  #explorer .close { appearance: none; background: none; border: 0; padding: 8px; font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-dim); cursor: pointer; white-space: nowrap; }
+  #explorer .close:hover { color: var(--phosphor); }
+  #explorer .body { display: grid; grid-template-columns: 400px minmax(0, 1fr); min-height: 0; }
+  #explorer .list { border-right: 1px solid var(--moss); padding: 8px 0; overflow: auto; display: flex; flex-direction: column; margin: 0; }
+  #explorer .row { appearance: none; background: none; border: 0; text-align: left; padding: 6px 16px; font: inherit; color: var(--phosphor); cursor: pointer; display: grid; grid-template-columns: 10ch minmax(0, 1fr); gap: 12px; white-space: nowrap; }
+  #explorer .row .perm { color: var(--phosphor-dim); }
+  #explorer .row .name { overflow: hidden; text-overflow: ellipsis; }
+  #explorer .row .ext { color: var(--phosphor-dim); }
+  #explorer .row:hover { color: var(--phosphor-bloom); }
+  #explorer .row[aria-selected="true"] { background: var(--moss); color: var(--phosphor-bloom); }
+  #explorer .preview { padding: 20px 24px; overflow: auto; display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+  #explorer .preview h2 { margin: 0; font: 22px/1.15 VT323, ui-monospace, monospace; font-weight: 400; color: var(--phosphor); text-wrap: pretty; }
+  #explorer .preview .meta { color: var(--phosphor-dim); font-size: 12px; }
+  #explorer .preview p { margin: 0; color: var(--paper); max-width: 68ch; text-wrap: pretty; }
+  #explorer .preview ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; color: var(--paper); max-width: 68ch; }
+  #explorer .preview li { display: grid; grid-template-columns: 1ch minmax(0, 1fr); gap: 10px; text-wrap: pretty; }
+  #explorer .preview li::before { content: "\00B7"; color: var(--phosphor-dim); }
+  #explorer .ctl { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  #explorer .tog { appearance: none; font: inherit; color: var(--phosphor); background: transparent; border: 1px solid var(--phosphor-dim); padding: 8px 12px; cursor: pointer; border-radius: 0; }
+  #explorer .tog[aria-pressed="true"] { background: var(--phosphor); color: var(--ink); border-color: var(--phosphor); }
+  #explorer .ctl label { display: flex; align-items: center; gap: 8px; color: var(--phosphor-dim); font-size: 12px; }
+  #explorer .ctl input { width: 120px; margin: 0; accent-color: var(--phosphor); }
+  /* studies card: the paper diagram. A full-bleed ink strip; base layers are always drawn, `.lit` copies, dots, cover and cursor
+     animate on cue (12 s period: an accepted call, then a rejected one). Static under reduced motion. */
+  #explorer .graph { margin: 0 -24px; padding: 8px; border: solid var(--moss); border-width: 1px 0; background: var(--ink); }
+  #explorer .graph svg { display: block; width: 100%; height: auto; font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  #explorer .graph text { fill: var(--phosphor); text-anchor: middle; }
+  #explorer .graph .t { font-size: 10px; font-weight: 500; }
+  #explorer .graph .s { font-size: 9px; fill: var(--paper); }
+  #explorer .graph .c { font-size: 8px; fill: var(--phosphor-dim); }
+  #explorer .graph .live { fill: var(--phosphor); }
+  #explorer .graph .l { text-anchor: start; }
+  #explorer .graph .r { text-anchor: end; }
+  #explorer .graph .bx { fill: var(--soil); stroke: var(--phosphor-dim); }
+  #explorer .graph .nd { fill: var(--moss); stroke: var(--phosphor); }
+  #explorer .graph .region { fill: none; stroke: var(--moss); stroke-dasharray: 4 3; }
+  #explorer .graph .e { fill: none; stroke: var(--phosphor-dim); }
+  #explorer .graph .qry { stroke-dasharray: 2 3; }
+  #explorer .graph .hi { fill: none; stroke: var(--phosphor-bloom); }
+  #explorer .graph .inv { fill: var(--phosphor); stroke: var(--phosphor-bloom); }
+  #explorer .graph .lit { opacity: 0; filter: drop-shadow(0 0 3px var(--phosphor)); }
+  #explorer .graph .lit text { fill: var(--phosphor-bloom); }
+  #explorer .graph .lit text.ink { fill: var(--ink); }
+  #explorer .graph .dot { fill: var(--phosphor-bloom); opacity: 0; }
+  #explorer .graph .cover { fill: var(--soil); opacity: 0; transform-box: fill-box; transform-origin: 100% 50%; }
+  #explorer .graph .cur { fill: var(--phosphor); opacity: 0; }
+  #explorer .graph .anim .cover { opacity: 1; }
+  #explorer .graph .anim .lit, #explorer .graph .anim .dot, #explorer .graph .anim .cover, #explorer .graph .anim .cur { animation: 12s linear infinite; }
+  #explorer .ph { width: 100%; aspect-ratio: 16 / 9; max-height: 220px; border: 1px solid var(--moss); background-color: var(--soil); background-image: var(--dither); background-size: 16px 16px; image-rendering: pixelated; display: grid; place-items: center; }
+  #explorer .ph span { font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-dim); background: var(--soil); padding: 5px 8px; border: 1px solid var(--moss); }
+  #explorer .status { display: flex; align-items: center; gap: 8px; padding: 0 16px; border-top: 1px solid var(--moss); color: var(--phosphor-dim); font-size: 12px; white-space: nowrap; }
+  #explorer :focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: -2px; }
+  @media (prefers-reduced-motion: reduce) { #dim, #explorer { transition: none; } }
+  @media (max-width: 767px) {
+    #explorer { left: 0; top: auto; bottom: 0; width: 100%; height: 70vh; transform: translateY(var(--ex-slide)); border-width: 1px 0 0; }
+    #explorer.on { transform: none; }
+    #explorer .body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+    #explorer .list { border-right: 0; border-bottom: 1px solid var(--moss); max-height: 38%; }
+  }
+  [hidden] { display: none !important; }
+  /* site chrome: a bar along the top with the name and one link per object in the room. Flat soil, 1px moss rule. */
+  #top { position: fixed; left: 0; right: 0; top: 0; min-height: 52px; display: flex; align-items: center; gap: 20px; padding: 0 16px; background: var(--soil); border-bottom: 1px solid var(--moss); font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-dim); opacity: 0; transition: opacity 400ms linear; z-index: 1; }
+  #top.on { opacity: 1; }
+  #top .who { display: flex; flex-direction: column; gap: 3px; white-space: nowrap; flex: 0 0 auto; padding: 8px 0; }
+  #top .who b { font: 26px/1 VT323, ui-monospace, monospace; color: var(--phosphor); font-weight: 400; }
+  #top .who span { color: var(--phosphor); font-size: 12px; letter-spacing: 0.02em; }
+  /* menu words: Silkscreen, a 5×5 bitmap face in the terminal/mainframe family; all caps, tracked out. One row: scrolls sideways before it wraps. */
+  #top nav { display: flex; gap: 2px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+  #top nav a { font: 15px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.04em; color: var(--phosphor); opacity: 0.85; text-decoration: none; padding: 17px 12px 15px; border-bottom: 2px solid transparent; white-space: nowrap; flex: 0 0 auto; }
+  @media (max-width: 1500px) { #top nav a { font-size: 13px; padding: 14px 9px 12px; } }
+  @media (max-width: 1200px) { #top nav a { font-size: 12px; padding: 12px 8px 10px; } }
+  #top nav a:hover { opacity: 1; text-shadow: 0 0 8px var(--phosphor-bloom); }
+  #top nav a[aria-current="true"] { opacity: 1; color: var(--phosphor-bloom); border-bottom-color: var(--phosphor-bloom); text-shadow: 0 0 8px var(--phosphor-bloom); }
+  #top :focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: -2px; }
+  /* reset view: floats over the room at the bottom edge, solid phosphor so it can't be missed */
+  #reset { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); appearance: none; font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); padding: 10px 16px; cursor: pointer; border-radius: 0; white-space: nowrap; z-index: 2; }
+  #reset:hover { background: var(--phosphor-bloom); border-color: var(--phosphor-bloom); }
+  #reset:focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: 2px; }
+  #intro { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; gap: 12px; justify-items: center; text-align: center; pointer-events: none; opacity: 0; transition: opacity 600ms linear; }
+  #intro.on { opacity: 1; }
+  #intro b { font: 72px/1 VT323, ui-monospace, monospace; color: var(--phosphor); font-weight: 400; letter-spacing: 0.02em; text-shadow: none; }
+  #intro span { font: 14px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--paper); }
+  #intro small { font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-dim); margin-top: 16px; }
+  @media (max-width: 1400px) { #top .who span { font-size: 11px; } }
+  @media (prefers-reduced-motion: reduce) { #top, #intro { transition: none; } }
+  @media (max-width: 767px) {
+    #top { gap: 4px 12px; padding: 6px 12px; }
+    #top nav { margin-left: 0; justify-content: flex-start; }
+    #top nav a { padding: 10px 8px 8px; font-size: 11px; }
+    #accent { display: none; }
+    #intro b { font-size: 48px; }
+  }
+</style>
+<template id="__bundler_thumbnail" data-bg-color="#060A07">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#3BE77B" stroke-width="6">
+    <rect x="300" y="200" width="600" height="400"/>
+    <path d="M300 200 L180 110 M900 200 L1020 110 M300 600 L180 690 M900 600 L1020 690"/>
+    <rect x="180" y="110" width="840" height="580" stroke="#1F8A4A"/>
+    <path d="M300 340 H900 M300 470 H900" stroke="#1F8A4A" stroke-dasharray="14 10"/>
+    <text x="600" y="420" font-family="monospace" font-size="72" fill="#C8FFD6" stroke="none" text-anchor="middle" dominant-baseline="middle">theRoom</text>
+  </svg>
+</template>
+</head>
+<body>
+<div id="root">
+<canvas id="room" tabindex="-1"></canvas>
+<div id="fade"></div>
+<pre id="fps" class="hud" hidden></pre>
+<pre id="hud" class="hud" hidden></pre>
+<div id="chip" role="status" aria-live="polite"></div>
+<div id="dim"></div>
+<input id="shell-in" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" tabindex="-1" aria-label="Terminal input">
+<div id="intro" aria-hidden="true">
+  <b>Luiz Cordeiro</b>
+  <span>Artificial Intelligence Engineer &middot; Curitiba</span>
+  <small>click anything that glows</small>
+</div>
+<div id="top">
+  <div class="who"><b>Luiz Cordeiro</b><span>Artificial Intelligence Engineer</span></div>
+  <nav aria-label="Objects in the room"></nav>
+</div>
+<section id="explorer" role="dialog" aria-modal="true" aria-labelledby="explorer-path" hidden>
+  <header class="bar">
+    <div class="path" id="explorer-path"></div>
+    <button type="button" class="close" data-close>close [esc]</button>
+  </header>
+  <div class="body">
+    <div class="list" role="listbox" aria-label="Files"></div>
+    <div class="preview"></div>
+  </div>
+  <footer class="status"></footer>
+</section>
+<button type="button" id="reset" hidden>reset view</button>
+<ul id="accent" aria-label="Accent colour" hidden></ul>
+</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.185.1/+esm';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/controls/OrbitControls.js/+esm';
+import { EffectComposer } from 'https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/postprocessing/EffectComposer.js/+esm';
+import { RenderPass } from 'https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/postprocessing/RenderPass.js/+esm';
+import { ShaderPass } from 'https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/postprocessing/ShaderPass.js/+esm';
+import * as BufferGeometryUtils from 'https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/utils/BufferGeometryUtils.js/+esm';
+
+// ───────────────────────────── CONFIG ─────────────────────────────
+// Every tunable lives here. Positions in metres, origin at floor centre,
+// +x right, +y up, +z toward the camera (open side). Angles in degrees.
+const CONFIG = {
+  palette: {
+    ink: '#060A07', soil: '#0E1610', moss: '#1B2A1F', phosphorDim: '#1F8A4A',
+    phosphor: '#3BE77B', phosphorBloom: '#C8FFD6', paper: '#B9C9BC', ember: '#FF5A4A'
+  },
+  // Surface base tones: all between ink and moss, plus two dimmed papers for pale things.
+  tones: {
+    floor: '#0A110C', ceiling: '#080D09', wall: '#0E1610',
+    wood: '#18261C', metal: '#121C15', dark: '#0B120D', panel: '#0D1510', door: '#15221A',
+    bookA: '#14231A', bookB: '#1E2F23', bookC: '#243A2A', ledOff: '#101A13', rugA: '#0C140F', rugB: '#16221A',
+    fur: '#3A4A40', furDark: '#1A261E', furLight: '#4E5C53',
+    pale: '#3E4841', paleDim: '#2A352E', marker: '#166B3A', night: '#0A120C', white: '#FFFFFF'
+  },
+  room: { width: 8, depth: 6, height: 3 },
+  render: { scale: 0.6, ditherLevels: 16, scanline: 0.08, vignette: 0.35, phosphor: false, exposure: 2 },
+  fog: { near: 6, far: 18 },
+  camera: {
+    fov: 35, near: 0.1, far: 40,
+    presets: {
+      // Appendix A had home at z 8.5; pulled back so the exit door is in frame at 16:9. Replace with a HUD capture.
+      home:     { position: [0.0, 2.7, 9.4],   target: [0.0, 0.9, -0.6],    route: '/',         label: 'home' },
+      work:     { position: [-1.2, 1.5, 0.6],  target: [-1.2, 1.1, -2.4],   route: '/work',     label: 'work' },
+      projects: { position: [1.6, 1.4, 0.4],   target: [3.2, 1.0, -2.3],    route: '/projects', label: 'projects' },
+      about:    { position: [-1.0, 1.4, -0.5], target: [-3.7, 1.3, -0.5],   route: '/about',    label: 'about' },
+      writing:  { position: [0.35, 1.5, 0.4],  target: [0.35, 1.6, -2.95],  route: '/writing',  label: 'writing' },
+      contact:  { position: [0.8, 1.4, 1.6],   target: [3.95, 1.3, 1.6],    route: '/contact',  label: 'contact' }
+    }
+  },
+  // Camera glide (ms), explorer opens at this fraction of the glide, and how much of the frame height an inspected object fills.
+  tween: { duration: 1000, panelEnterAt: 0.65, inspectFill: 0.55 },
+  // Portrait: keep this much horizontal field of view; widen the vertical fov up to maxFov, pull the camera back for the rest.
+  portrait: { hfov: 58, maxFov: 62 },
+  // Routing: 'hash' (#/work) while the file is served from a path; 'path' (/work) on the real domain.
+  routing: { mode: 'hash' },
+  // Entry: after the wireframe cut, the name fades in, stays `hold` ms or until the first interaction.
+  intro: { delay: 400, hold: 5000 },
+  // Free look. Wheel dollies toward the point under the cursor (minDist m from it, at most maxOut × the preset distance);
+  // left- or right-drag orbits the look target, limited to ±yaw rad from the preset and a pitch band (polar angle, rad). ease = per-second rate.
+  // middle-drag trucks camera + target across the view plane, 1:1 with the cursor at the look distance, at most limit m from the preset.
+  wheel: { minDist: 0.35, maxOut: 1.4, sensitivity: 0.0012, ease: 8 },
+  drag: { speed: 0.004, yaw: 0.9, pitch: [0.55, 1.6] },
+  pan: { limit: 1.5 },
+  shading: {
+    key: { dir: [0.25, 0.85, 0.45], min: 0.78 },                 // soft top-front key, baked per vertex
+    ao: { radius: 0.6, floor: 0.35, wall: 0.27, ceiling: 0.18, min: 0.4 },
+    occluders: [ { center: [-1.2, 0.36, -2.4], size: [3.6, 0.72, 0.8], strength: 0.35, feather: 0.3 } ], // under the desk
+    bake: { color: 'phosphor', leak: 0.15 }                       // baked light from emitters; leak = light behind a screen
+  },
+  // Emitters bake light into nearby vertex colours. dir = facing normal (omitted = omnidirectional).
+  emitters: [
+    { id: 'monitor-left',  at: [-1.95, 1.06, -2.56], dir: [0, 0.1, 1],  radius: 1.7, intensity: 0.40 },
+    { id: 'monitor-right', at: [-1.33, 1.06, -2.56], dir: [0, 0.1, 1],  radius: 1.7, intensity: 0.40 },
+    { id: 'phone',         at: [-1.9, 0.78, -2.0],   dir: [0, 1, 0],    radius: 0.5, intensity: 0.22 },
+    { id: 'led-strip',     at: [-2.3, 0.7, -2.0],    dir: [0, -0.6, 0.8], radius: 1.1, intensity: 0.16 },
+    { id: 'led-strip',     at: [-1.2, 0.7, -2.0],    dir: [0, -0.6, 0.8], radius: 1.1, intensity: 0.16 },
+    { id: 'led-strip',     at: [-0.1, 0.7, -2.0],    dir: [0, -0.6, 0.8], radius: 1.1, intensity: 0.16 },
+    { id: 'rack',          at: [2.85, 0.95, -2.3],   dir: [-1, 0, 0],   radius: 1.7, intensity: 0.32 },
+    { id: 'exit-sign',     at: [3.86, 2.38, 1.6],    dir: [-1, 0, 0],   radius: 1.8, intensity: 0.30 },
+    { id: 'lamp',          at: [-3.6, 2.2, -0.05],                      radius: 1.6, intensity: 0.34 },
+    { id: 'crt-switch',    at: [-3.3, 0.8, 1.65],    dir: [1, 0, 0],    radius: 1.1, intensity: 0.22 }
+  ],
+  motion: {
+    breathe: { amp: 0.015, period: 4 },
+    // shelf lamp: a rare burst of 2–4 short dips, `every` seconds apart (random in range), each dip `dipMs` long down to `dip` brightness
+    lampFlicker: { every: [9, 24], dips: [2, 4], dip: 0.45, dipMs: 70 },
+    flicker: { amount: 0.03, interval: 80 },
+    log: { interval: 800 },
+    cursor: { interval: 500 },
+    steam: { count: 3, rise: 0.28, period: 2.6 },
+    rain: { speed: 0.9 },
+    platter: { rpm: 33 },
+    led: { period: [0.6, 2.4], duty: [0.3, 0.8] }
+  },
+  // Loading: the wireframe builds up floor to ceiling over `rise` ms (a bright edge leading it), holds `hold` ms, then a cut to ink that fades out over `fade` ms.
+  loading: { rise: 1600, hold: 450, fade: 200 },
+  // Accent: the whole palette (and surface tones) is re-derived from the green spec palette by rotating
+  // hue in OKLCH, keeping lightness and chroma (chroma reduced only where sRGB can't reach it).
+  // dL nudges lightness of the phosphor family for hues that are too pale at green's lightness.
+  // Swap with ?accent=blue or window.__theroom.setAccent('orange' | 210); in the room the LED strip (and key A) only unlock as root: `sudo su`, then `phosphor`.
+  // Order here = order of the LED buttons; blue is the default.
+  accent: { name: 'blue', presets: {
+    blue:   { hue: 250, dL: -0.08 }, cyan: { hue: 205, dL: -0.04 }, green: { hue: null, dL: 0 }, amber: { hue: 75, dL: -0.06 },
+    orange: { hue: 55,  dL: -0.1 },  red:  { hue: 25,  dL: -0.12 }, pink: { hue: 350, dL: -0.1 }, purple: { hue: 300, dL: -0.1 }
+  } },
+  // Object layout. id = THREE.Group name. rotation = yaw in radians about y.
+  objects: [
+    { id: 'desk',          position: [-1.2, 0, -2.4],     size: [3.6, 0.75, 0.8] },
+    { id: 'monitor-left',  position: [-1.95, 0.75, -2.6], rotation: 0.14,  screen: [0.5, 0.3], tilt: -6, beaconOf: 'work' },
+    { id: 'monitor-right', position: [-1.33, 0.75, -2.6], rotation: -0.14, screen: [0.5, 0.3], tilt: -6, beaconOf: 'work' },
+    { id: 'phone',         position: [-1.9, 0.75, -2.0],  rotation: 0.3,   size: [0.075, 0.008, 0.15] },
+    { id: 'mug',           position: [-0.4, 0.75, -2.1],  radius: 0.045, height: 0.1 },
+    { id: 'microscope',    position: [0.3, 0.75, -2.45],  rotation: -0.25 },
+    { id: 'cert-frame',    position: [-2.75, 1.75, -2.97], size: [0.3, 0.38] },
+    { id: 'whiteboard',    position: [0.35, 1.6, -2.97],   size: [1.2, 0.8], beaconOf: 'writing' },
+    { id: 'pixel-frames',  position: [2.7, 2.15, -2.97],  frame: 0.3, gap: 0.42 },
+    { id: 'rack',          position: [3.2, 0, -2.3],      size: [0.6, 1.8, 0.8], beaconOf: 'projects' },
+    { id: 'bench-arduino', position: [3.75, 0.95, -1.3],  size: [0.45, 0.03, 0.5] },
+    { id: 'shelf',         position: [-3.7, 0, -0.5],     size: [0.3, 2.0, 1.6], shelves: 4, beaconOf: 'about' },
+    { id: 'telescope',     position: [-3.5, 0, -2.45],    apex: 1.0, spread: 0.32, aim: [-0.1, 0.65, 0.75] },
+    { id: 'turntable',     position: [-3.6, 0, 1.8],      cabinet: [0.5, 0.6, 1.0], deck: [0.44, 0.36], deckZ: -0.17, sleeves: 5 },
+    { id: 'board-games',   position: [-3.6, 0.6, 2.15] },
+    { id: 'exit-door',     position: [3.97, 0, 1.6],      size: [0.06, 2.1, 0.9], beaconOf: 'contact' },
+    { id: 'exit-sign',     position: [3.92, 2.38, 1.6],   size: [0.36, 0.13] },
+    { id: 'wall-switch',   position: [3.99, 1.2, 0.8] },
+    { id: 'window',        position: [-3.96, 1.75, 1.0],  size: [1.0, 0.6], casing: 0.07, mullion: 0.025, sill: 0.14 },
+    { id: 'led-strip',     position: [-1.2, 0.715, -2.005], length: 3.4 },
+    { id: 'rug',           position: [0.5, 0.01, 1.0],    size: [2.4, 1.6] },
+    { id: 'chair',         position: [-1.6, 0, -1.55],    rotation: 0.35 },
+    { id: 'frenchie',      position: [1.72, 0.012, 1.72],  rotation: -0.85, breathe: { amp: 0.11, period: 3.8 } }
+  ],
+  // Bookshelf contents, rows bottom-up. Titles print on the spines (uppercase, top to bottom); the tones and sizes per row
+  // live in BUILD.shelf. Board games stack flat on the top shelf, bottom of the stack first, title on the side facing the
+  // room; size = [along the shelf, deep, tall] m. tone = a CONFIG.tones / palette key. Edit freely.
+  library: {
+    craft: ['Refactoring', 'The Pragmatic Programmer', 'Clean Architecture', 'Fluent Python', 'Code Complete', 'Domain-Driven Design',
+      'Effective Python', 'Grokking Algorithms', 'The Mythical Man-Month', 'A Philosophy of Software Design', 'Release It!',
+      'Site Reliability Engineering', 'The Phoenix Project', 'Accelerate', 'Automate the Boring Stuff with Python', 'Test-Driven Development',
+      'Head First Design Patterns', 'Programming Pearls', 'The Clean Coder', 'Software Engineering at Google', 'Continuous Delivery',
+      'Microservices Patterns', 'SQL Antipatterns', 'Kubernetes: Up and Running', 'Eloquent JavaScript', 'Docker Deep Dive'],
+    academic: ['AI Engineering', 'Clean Code', 'Deep Learning', 'Speech and Language Processing', 'Artificial Intelligence: A Modern Approach',
+      'Pattern Recognition and Machine Learning', 'Hands-On Machine Learning', 'Designing Machine Learning Systems',
+      'Designing Data-Intensive Applications', 'Introduction to Algorithms', 'The Elements of Statistical Learning',
+      'Reinforcement Learning: An Introduction', 'Mathematics for Machine Learning', 'Database System Concepts', 'Natural Language Processing with Transformers'],
+    fiction: ['Perdido Street Station', 'The Scar', 'Iron Council', 'The City & the City', 'Embassytown', 'The Three-Body Problem', 'The Dark Forest',
+      "Death's End", 'Ball Lightning', 'The Hobbit', 'The Fellowship of the Ring', 'The Two Towers', 'The Return of the King', 'The Silmarillion',
+      'Dune', 'Neuromancer', 'Hyperion', 'The Fall of Hyperion', 'Foundation', 'Blindsight', 'Snow Crash', 'Roadside Picnic', 'Solaris',
+      'The Left Hand of Darkness', 'Children of Time', 'Anathem', 'A Canticle for Leibowitz', 'The Forever War', 'Ubik'],
+    top: ['Gödel, Escher, Bach', 'The Art of Computer Programming', 'Operating Systems: Three Easy Pieces', 'Computer Networking', 'Compilers',
+      'Computer Architecture', 'Discrete Mathematics', 'Linear Algebra Done Right'],
+    games: [
+      { title: 'Twilight Struggle', tone: 'dark', size: [0.30, 0.23, 0.075] },
+      { title: 'Terraforming Mars', tone: 'bookC', size: [0.30, 0.27, 0.075] },
+      { title: 'Puerto Rico', tone: 'pale', size: [0.30, 0.27, 0.07] },
+      { title: 'Brass: Birmingham', tone: 'paleDim', size: [0.30, 0.27, 0.075] },
+      { title: 'Agricola', tone: 'bookB', size: [0.30, 0.27, 0.075] }
+    ]
+  },
+  // Phase 3 fills these.
+  // Hover: the object's own light (ink, screen, print) brightens to phosphor over `fade` ms plus a soft glow;
+  // chip sits `offset` px from the object's projected top-right corner. Raycast every other frame.
+  hover: { fade: 150, offset: [10, -6], everyNthFrame: 2, screenBoost: 0.6 },
+  // Explorer window (click on an inspectable). fade ms, slide px, room dim 0..1, window size px, drag tolerance px.
+  explorer: { fade: 250, slide: 12, dim: 0.55, width: 760, height: 460, dragTolerance: 6 },
+  // Terminal: the right monitor is a shell. A click glides the camera to where the screen fills `fill` of the frame; then the keyboard
+  // types into it. scale multiplies the 256×160 screen texture; cols/rows = its text grid; maxInput = typed chars on the prompt line.
+  terminal: { fill: 0.78, prompt: 'luiz@theroom:~$ ', rootPrompt: 'root@theroom:~# ', sudoPrompt: '[sudo] password for luiz: ', password: 'Tito', scale: 1.5, cols: 42, rows: 9, maxInput: 24 },
+  // Inspectables: id = object group name, label = hover chip and menu word, cmd = the shell's name for it (defaults to the label).
+  // Each builder defines how its object lights up (b.hover); objects without one fall back to a hairline outline.
+  hotspots: [],
+  inspectables: [
+    { id: 'monitor-left',  label: 'professional experience', cmd: 'experience', title: 'Professional experience', line: 'an agent log, live from production', phase: 1,
+      explorer: { path: '~/experience', files: [
+        { name: 'low-code-agency.log', title: 'AI/ML Engineer', meta: 'Low Code Agency (USA) · June 2025 – present', bullets: [
+          'Create and integrate AI agents to perform dynamic, context-aware tasks across workflows.',
+          'Craft and refine prompts to enhance the reliability and contextual understanding of AI agents.',
+          'Automate database queries and updates, including dynamic SQL generation via LLMs.',
+          'Contribute to technical documentation and assist in the integration of new digital services involving artificial intelligence.',
+          'Develop end-to-end pipelines for processing user inputs, transforming data, and triggering intelligent actions.',
+          'Optimize workflows for performance, scalability, and maintainability.',
+          'Collaborate with teams to identify automation opportunities and translate business needs into technical solutions.',
+          'Integrate AI agents with large-scale software platforms via secure API connections, enabling real-time data exchange and automated decision-making.',
+          'Implement the MCP (Model Context Protocol) to establish structured, multi-agent communication and enhance interoperability across systems.'
+        ] },
+        { name: 'alignerr.log', title: 'AI Model Evaluator / Data Annotation', meta: 'Alignerr (USA) · January 2026 – present', bullets: [
+          'Evaluated LLM outputs for quality, accuracy and alignment with human expectations.',
+          'Applied annotation guidelines to rank and compare responses, supporting high-quality training and evaluation datasets.',
+          'Performed prompt evaluation and identified issues like hallucinations and low relevance.'
+        ] },
+        { name: 'celepar-pia.log', title: 'AI Technical Support — Paraná Artificial Intelligence (PIÁ)', meta: 'Celepar · January 2022 – June 2025', bullets: [
+          "Provided technical support for PIÁ, Paraná's state-wide digital government platform serving over 5 million citizens annually, with core infrastructure spanning NLP, conversational flows, and multi-channel citizen service delivery.",
+          "Supported the NLP pipeline responsible for intent classification, sentiment analysis, and service catalog matching, the engine behind the platform's citizen-facing chatbot deployed across major state government portals.",
+          'Assisted in maintaining PiaFlow, a Node-RED-based custom orchestration layer that manages multi-step conversational flows including input validation (CPF, dates, addresses) and integration with external government webservices.',
+          'Contributed to incident resolution and monitoring of the CORE orchestration service, which routes citizen messages across NLP, flow, and fallback search systems in real time.',
+          'Supported integrations with WhatsApp as a citizen service channel, operating on a proprietary messaging infrastructure developed in-house to ensure data sovereignty and compliance with government data policies.'
+        ] },
+        { name: 'summary.txt', title: 'Personal summary', meta: 'Luiz Aurio Cordeiro Junior · Curitiba, Paraná, Brazil', text: 'I am an AI Engineer with 11 years of experience in IT, including 4 years focused on software development and AI systems. My background includes testing and supporting an AI-powered chatbot for the Government of Paraná that serves over 5 million users annually, and over the past 2 years I have shipped dozens of AI products to production, from conversational chatbots, multi-agent systems, and automation pipelines to large-scale data extraction workflows.', text2: 'My expertise includes Retrieval-Augmented Generation (RAG), agentic architectures with MCP, prompt and context engineering, and real-time speech-to-text systems. I also have hands-on experience running and optimizing local models for privacy-sensitive and low-latency environments. I work with Python, JavaScript, LangChain, n8n, and Supabase to design intelligent automations and context-aware systems that integrate seamlessly into production environments.' }
+      ] } },
+    { id: 'monitor-right', label: 'terminal', title: 'Terminal', line: 'a shell into the room: cd, ls, help', phase: 1, terminal: true },
+    { id: 'rack',          label: 'stack', title: 'Stack', line: 'Python, TypeScript, n8n and what runs on them', phase: 1, view: { dir: [-1, 0, 0] },
+      explorer: { path: '~/stack', files: [
+        { name: 'languages.conf', title: 'Languages', meta: 'what the code is written in', bullets: ['Python', 'Java', 'SQL', 'JavaScript', 'TypeScript', 'C/C++'] },
+        { name: 'frameworks.conf', title: 'Frameworks and tools', meta: 'the working set', bullets: ['FastAPI', 'LangChain', 'LangGraph', 'n8n', 'CrewAI', 'PySpark', 'Git', 'Docker', 'Pandas', 'NumPy', 'Matplotlib'] },
+        { name: 'ai-data.conf', title: 'AI and data', meta: 'models, retrieval, agents', bullets: ['Machine Learning', 'Neural Networks', 'NLP', 'Tokenization', 'Vector Databases (Pinecone, Supabase pgvector)', 'RAG pipelines', 'Embedding generation', 'Prompt engineering', 'Claude Agent SDK'] },
+        { name: 'cloud-db.conf', title: 'Cloud and databases', meta: 'where it runs and what it stores', bullets: ['PostgreSQL', 'MySQL', 'Supabase', 'SQLAlchemy', 'Google Cloud Platform (GCP)', 'Amazon Web Services (AWS)'] },
+        { name: 'process.conf', title: 'Project and collaboration', meta: 'how the work gets shipped', bullets: ['Agile methodologies', 'Scrum', 'Kanban', 'JIRA', 'CI/CD workflows'] }
+      ] } },
+    { id: 'cert-frame',    label: 'certifications', title: 'CCA-F', line: 'Claude Certified Architect (Foundations), IBM certs', phase: 1,
+      explorer: { path: '~/certifications', files: [
+        { name: 'claude-certified-architect-foundations.pdf', title: 'Claude Certified Architect (Foundations)', meta: 'Anthropic', image: 'CCA-F badge image', text: 'Claude Certified Architect, Foundations level.' },
+        { name: 'ibm-generative-ai-architecture.pdf', title: 'Generative AI architecture', meta: 'IBM', image: 'certificate image', text: 'IBM certification in generative AI architecture.' },
+        { name: 'ibm-llm-data-preparation.pdf', title: 'LLM data preparation', meta: 'IBM', image: 'certificate image', text: 'IBM certification in LLM data preparation.' },
+        { name: 'ibm-nlp-foundations.pdf', title: 'NLP foundations', meta: 'IBM', image: 'certificate image', text: 'IBM certification in NLP foundations.' }
+      ] } },
+    { id: 'whiteboard',    label: 'studies', title: 'Pre-Execution Ontology-Based Validation of LLM Tool Calls', line: 'academic paper: a knowledge graph checks every tool call before it runs', phase: 1,
+      explorer: { path: '~/studies/paper', files: [
+        { name: 'validation.graph', title: 'Ontology-Based Validation of LLM Tool Calls', meta: 'paper, in progress · accept, then reject', control: 'graph' },
+        { name: 'abstract.md', title: 'Abstract', meta: 'A Knowledge Graph Approach to Hallucination Reduction', text: 'LLM agents invoke external tools from statistical knowledge frozen in their parameters, while the execution environment evolves — producing plausible but invalid calls: nonexistent tools, fabricated parameters, and violated preconditions. This work models the tool universe as a formal ontology materialized in a knowledge graph and uses it as a deterministic validation layer that checks every generated tool call against the semantic contract before execution. Experimental evaluation against an unvalidated baseline on established function-calling benchmarks measures hallucination reduction by error type, testing the hypothesis that symbolic validation excels precisely where neural reviewers are weakest: structural errors, with near-zero harmfulness.' },
+        { name: 'error-types.txt', title: 'What the layer catches', meta: 'plausible but invalid calls, by type', bullets: ['Nonexistent tools — does the tool exist in the ontology?', 'Fabricated parameters — are the arguments part of its contract?', 'Violated preconditions — do its requirements hold right now?'] },
+        { name: 'evaluation.txt', title: 'Evaluation', meta: 'validated agent vs. unvalidated baseline', text: 'Established function-calling benchmarks; hallucination reduction measured by error type.', text2: 'Hypothesis: symbolic validation excels precisely where neural reviewers are weakest — structural errors — with near-zero harmfulness.' },
+        { name: 'bibliography.bib', title: 'Bibliography', meta: 'in progress', bullets: ['Chip Huyen — AI Engineering: Building Applications with Foundation Models (O\'Reilly, 2025)', 'Dean Allemang, James Hendler, Fabien Gandon — Semantic Web for the Working Ontologist, 3rd ed. (ACM Books, 2020)', 'Mayank Kejriwal, Craig A. Knoblock, Pedro Szekely — Knowledge Graphs: Fundamentals, Techniques, and Applications (MIT Press, 2021)', 'Stuart Russell, Peter Norvig — Artificial Intelligence: A Modern Approach, 4th ed. (Pearson, 2020)'] }
+      ] } },
+    { id: 'shelf',         label: 'about me', cmd: 'about', title: 'The shelf', line: 'what I read, play and tinker with', phase: 1,
+      explorer: { path: '~/shelf', files: [
+        { name: 'whoami', title: 'Luiz Aurio Cordeiro Junior', meta: 'AI engineer · Curitiba, Paraná, Brazil', text: '11 years in IT, the last 4 building software and AI systems. Days go to agents, RAG pipelines and automations that have to survive production; nights go to this shelf.', text2: 'theRoom is a real place in Curitiba, where it rains most afternoons. The dog is real too.' },
+        { name: 'now-reading.txt', title: 'Now reading', meta: 'bookmark at page 212', bullets: ['AI Engineering — Chip Huyen. Third pass, this time with a notebook.', 'The Dark Forest — Cixin Liu. Rereading the trilogy, slower.', 'Perdido Street Station — China Miéville. The one I lend to people and never get back.'] },
+        { name: 'favourites.txt', title: 'Read more than once', meta: 'the fiction row, eye level', bullets: ['The Lord of the Rings, every few years since school.', 'The Three-Body Problem and the two that follow.', 'Perdido Street Station, The Scar, The City & the City.', 'Dune, Neuromancer, Hyperion, Blindsight.'] },
+        { name: 'table.txt', title: 'On the table', meta: 'top shelf, heaviest boxes first', bullets: ['Twilight Struggle — the one game I would keep if I could keep one.', 'Puerto Rico — twenty years old and still the tightest euro on the shelf.', 'Terraforming Mars, Brass: Birmingham, Agricola — for the long Sunday sessions.'] },
+        { name: 'stack.log', title: 'The reference row', meta: 'academic, pale spines', text: 'Clean Code and The Pragmatic Programmer for how to write it, Designing Data-Intensive Applications for where it runs, Speech and Language Processing and Deep Learning for why the models do what they do. AI Engineering ties the row together.' },
+        { name: 'off-shelf.txt', title: 'Off the shelf', meta: 'the rest of the room', bullets: ['Vinyl on the turntable, mostly jazz and Brazilian records from the 60s and 70s.', 'A telescope by the window for the rare clear night.', 'A French bulldog asleep on the rug, breathing slowly.'] }
+      ] } },
+    { id: 'mug',           label: "let's talk", title: 'Curitiba coffee', line: '—', phase: 1 },
+    { id: 'turntable',     label: 'sound', title: 'Turntable', line: 'rain on the window, records on the deck', phase: 1, view: { distance: 1.7, lift: 0.5 },
+      explorer: { path: '~/sound', files: [
+        { name: 'rain', title: 'Rain', meta: 'ambient · loops with a soft crossfade', text: 'Curitiba rain against the window.', control: 'rain' },
+        { name: 'on-the-deck.txt', title: 'On the deck', meta: 'side B, 33⅓', bullets: ['Getz/Gilberto — Stan Getz, João Gilberto (1964)', 'Clube da Esquina — Milton Nascimento, Lô Borges (1972)', 'Kind of Blue — Miles Davis (1959)', 'Elis & Tom — Elis Regina, Tom Jobim (1974)', 'A Love Supreme — John Coltrane (1965)'] },
+        { name: 'receiver.txt', title: 'The receiver', meta: '1970s silver face', text: 'Belt-drive deck on a walnut plinth, a second-hand receiver with the one warm display in the room. The records are on the shelf below, the ones that get played on top.' }
+      ] } },
+    { id: 'frenchie',      label: "this is Tito, he's the key", hint: true, phase: 1 },   // hover only: no menu word, no shell place; the chip is the clue to the sudo password
+  ],
+  content: {}
+};
+
+// ───────────────────────────── helpers ─────────────────────────────
+const D2R = Math.PI / 180;
+const UP = new THREE.Vector3(0, 1, 0), ONE = new THREE.Vector3(1, 1, 1);
+const smoothstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const lerp = (a, b, t) => a + (b - a) * t;
+const hex2rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
+// Colour tables as sRGB float triples. Filled in place so references (e.g. BAKE) survive an accent swap.
+const P = {}, T = {};
+function refreshColorTables() {
+  const fill = (tab, src) => { for (const [k, v] of Object.entries(src)) { const c = hex2rgb(v); if (tab[k]) tab[k].splice(0, 3, ...c); else tab[k] = c; } };
+  fill(P, CONFIG.palette); fill(T, CONFIG.tones);
+}
+refreshColorTables();
+const SPEC = { palette: { ...CONFIG.palette }, tones: { ...CONFIG.tones } };  // the green palette from the brief
+const O = id => CONFIG.objects.find(o => o.id === id);
+function seeded(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const bayer4 = (x, y) => BAYER[(x & 3) + (y & 3) * 4] / 16;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MOTION = !REDUCED;
+const merge = gs => (BufferGeometryUtils.mergeGeometries || BufferGeometryUtils.mergeBufferGeometries)(gs, false);
+const fmtTime = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+const stamp = () => fmtTime.format(new Date());
+
+// ───────────────────────────── accent (OKLCH hue rotation) ─────────────────────────────
+const s2l = c => c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+const l2s = c => c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+function rgbToOklab(r, g, b) {
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b), m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b), s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s, 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s];
+}
+function oklabToRgb(L, a, b) {
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3, m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3, s = (L - 0.0894841775 * a - 1.2914855480 * b) ** 3;
+  return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s];
+}
+function hexToOklch(hex) { const [L, a, b] = rgbToOklab(...hex2rgb(hex).map(s2l)); return [L, Math.hypot(a, b), Math.atan2(b, a) * 180 / Math.PI]; }
+function oklchToHex(L, C, h) {
+  const rad = h * D2R, inGamut = rgb => rgb.every(v => v >= -0.0005 && v <= 1.0005);
+  const at = c => oklabToRgb(L, c * Math.cos(rad), c * Math.sin(rad));
+  let rgb = at(C);
+  if (!inGamut(rgb)) { let lo = 0, hi = C; for (let i = 0; i < 18; i++) { const mid = (lo + hi) / 2; if (inGamut(at(mid))) lo = mid; else hi = mid; } rgb = at(lo); }
+  return '#' + rgb.map(v => Math.round(l2s(Math.min(1, Math.max(0, v))) * 255).toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+const REF_HUE = hexToOklch(SPEC.palette.phosphor)[2];
+function shiftHex(hex, hue, dL) {
+  const [L, C, h] = hexToOklch(hex);
+  if (C < 0.004) return hex;                                   // neutral: leave alone
+  return oklchToHex(C > 0.05 ? Math.min(1, Math.max(0, L + dL)) : L, C, h + (hue - REF_HUE));
+}
+function paletteFor(accent) {
+  const preset = typeof accent === 'number' ? { hue: accent, dL: 0 } : CONFIG.accent.presets[accent];
+  const out = { palette: { ...SPEC.palette }, tones: { ...SPEC.tones } };
+  if (!preset || preset.hue == null) return out;
+  for (const k of Object.keys(SPEC.palette)) if (k !== 'ember') out.palette[k] = shiftHex(SPEC.palette[k], preset.hue, preset.dL);
+  for (const k of Object.keys(SPEC.tones)) if (k !== 'white') out.tones[k] = shiftHex(SPEC.tones[k], preset.hue, preset.dL);
+  return out;
+}
+
+// ───────────────────────────── vertex shading ─────────────────────────────
+const RW = CONFIG.room.width / 2, RD = CONFIG.room.depth / 2, RH = CONFIG.room.height, AO = CONFIG.shading.ao;
+const PLANES = [
+  { n: [0, 1, 0],  w: AO.floor,   d: p => p.y },
+  { n: [0, -1, 0], w: AO.ceiling, d: p => RH - p.y },
+  { n: [0, 0, 1],  w: AO.wall,    d: p => p.z + RD },
+  { n: [1, 0, 0],  w: AO.wall,    d: p => p.x + RW },
+  { n: [-1, 0, 0], w: AO.wall,    d: p => RW - p.x }
+];
+const KEY = new THREE.Vector3().fromArray(CONFIG.shading.key.dir).normalize();
+const BAKE = P[CONFIG.shading.bake.color];
+const LEAK = CONFIG.shading.bake.leak;
+
+function insideBox(p, o) {
+  let t = 1;
+  for (let i = 0; i < 3; i++) {
+    const h = o.size[i] / 2, dist = Math.abs([p.x, p.y, p.z][i] - o.center[i]);
+    t *= 1 - smoothstep(h - o.feather, h + o.feather, dist);
+  }
+  return t;
+}
+function occlusion(p, n) {
+  let occ = 0;
+  for (const pl of PLANES) {
+    const facing = Math.min(1, 1 - (n.x * pl.n[0] + n.y * pl.n[1] + n.z * pl.n[2]));
+    if (facing <= 0) continue;
+    occ += pl.w * facing * (1 - smoothstep(0, AO.radius, Math.max(0, pl.d(p))));
+  }
+  for (const o of CONFIG.shading.occluders) occ += o.strength * insideBox(p, o);
+  return Math.max(AO.min, 1 - occ);
+}
+function bake(p, n, out) {
+  for (const e of CONFIG.emitters) {
+    const dx = e.at[0] - p.x, dy = e.at[1] - p.y, dz = e.at[2] - p.z;
+    const d = Math.hypot(dx, dy, dz);
+    if (d >= e.radius || d < 1e-4) continue;
+    const inv = 1 / d;
+    const ndl = Math.max(0, (n.x * dx + n.y * dy + n.z * dz) * inv);
+    if (ndl <= 0) continue;
+    let spread = 1;
+    if (e.dir) spread = LEAK + (1 - LEAK) * Math.max(0, -(e.dir[0] * dx + e.dir[1] * dy + e.dir[2] * dz) * inv);
+    const k = e.intensity * (1 - smoothstep(0, e.radius, d)) * ndl * spread;
+    out[0] += BAKE[0] * k; out[1] += BAKE[1] * k; out[2] += BAKE[2] * k;
+  }
+}
+const _p = new THREE.Vector3(), _n = new THREE.Vector3(), _c = new THREE.Color(), _nm = new THREE.Matrix3(), _b = [0, 0, 0];
+// Writes a linear vertex colour = base tone (sRGB) × key shade × fake AO + baked emitter light.
+function paint(geo, world, color, emissive) {
+  const pos = geo.attributes.position, nor = geo.attributes.normal;
+  _nm.getNormalMatrix(world);
+  const out = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    let r = color[0], g = color[1], b = color[2];
+    if (!emissive) {
+      _p.fromBufferAttribute(pos, i).applyMatrix4(world);
+      _n.fromBufferAttribute(nor, i).applyMatrix3(_nm).normalize();
+      const key = CONFIG.shading.key.min + (1 - CONFIG.shading.key.min) * Math.max(0, _n.dot(KEY));
+      const s = key * occlusion(_p, _n);
+      r *= s; g *= s; b *= s;
+      _b[0] = _b[1] = _b[2] = 0; bake(_p, _n, _b);
+      r += _b[0]; g += _b[1]; b += _b[2];
+    }
+    _c.setRGB(Math.min(1, r), Math.min(1, g), Math.min(1, b), THREE.SRGBColorSpace);
+    out[i * 3] = _c.r; out[i * 3 + 1] = _c.g; out[i * 3 + 2] = _c.b;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(out, 3));
+}
+
+// ───────────────────────────── materials & textures ─────────────────────────────
+const MAT = {
+  lit:  new THREE.MeshBasicMaterial({ vertexColors: true }),
+  glow: new THREE.MeshBasicMaterial({ vertexColors: true, fog: false }),
+  led:  new THREE.MeshBasicMaterial({ vertexColors: true, fog: false }),
+  // loading wireframe: everything above uH is discarded, so a rising uH builds the room up from the floor; uEdge tints the leading 35 cm
+  wire: new THREE.ShaderMaterial({ wireframe: true, uniforms: { uColor: { value: new THREE.Color(CONFIG.palette.phosphorDim) }, uEdge: { value: new THREE.Color(CONFIG.palette.phosphorBloom) }, uH: { value: 0 } },
+    vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
+    fragmentShader: 'uniform vec3 uColor, uEdge; uniform float uH; varying vec3 vW; void main(){ if (vW.y > uH) discard; float e = 1.0 - smoothstep(0.0, 0.35, uH - vW.y); gl_FragColor = vec4(mix(uColor, uEdge, e), 1.0); }' })
+};
+function cnv(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
+function canvasTex(c, repeat) {
+  const t = new THREE.CanvasTexture(c);
+  t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.colorSpace = THREE.SRGBColorSpace;
+  if (repeat) t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+const texMat = (map, emissive, color = '#ffffff') => new THREE.MeshBasicMaterial({ map, color, vertexColors: !emissive, fog: !emissive });
+const SPRITES = [];   // every sprite (hidden during wireframe)
+const pal = CONFIG.palette;
+
+function glowTexture() {
+  const [c, x] = cnv(128, 128), img = x.createImageData(128, 128);
+  for (let y = 0; y < 128; y++) for (let i = 0; i < 128; i++) {
+    const d = Math.hypot(i - 63.5, y - 63.5) / 64, a = Math.pow(Math.max(0, 1 - d), 2.2);
+    const k = (y * 128 + i) * 4; img.data[k] = img.data[k + 1] = img.data[k + 2] = 255; img.data[k + 3] = a * 255;
+  }
+  x.putImageData(img, 0, 0); return canvasTex(c);
+}
+const TEX = { glow: glowTexture() };
+function makeSprite(color, opacity, additive = true) {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color, transparent: true, opacity, depthWrite: false, fog: false, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending }));
+  SPRITES.push(s); return s;
+}
+
+// Fake agent-log terminal on a CanvasTexture. Two flavours: agent trace, metrics.
+const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const bar = n => '#'.repeat(n) + '.'.repeat(10 - n);
+const LOG = {
+  agent: [
+    () => `tool_call get_weather(city="Curitiba") ... ok ${ri(90, 240)} ms`,
+    () => `retrieval ${ri(2, 6)} docs ... ${ri(120, 320)} ms`,
+    () => `guardrail pii_scan ... pass`,
+    () => `tool_call query_sql(orders_7d) ... ok ${ri(40, 120)} ms`,
+    () => `llm claude ... ${ri(600, 1800)} tok ${ri(400, 900)} ms`,
+    () => `memory write session#${ri(0x100, 0xfff).toString(16)} ... ok`,
+    () => `tool_call send_whatsapp(+55 41) ... ok ${ri(200, 400)} ms`,
+    () => `eval faithfulness ${(0.88 + Math.random() * 0.11).toFixed(2)}`,
+    () => `handoff human_review ... queued`,
+    () => `retry 1/3 timeout ... ok ${ri(300, 700)} ms`
+  ],
+  metrics: [
+    () => `p95 latency ${ri(400, 900)} ms ${bar(ri(3, 8))}`,
+    () => `tool calls/min ${ri(30, 90)} ${bar(ri(3, 10))}`,
+    () => `tokens/min ${ri(9, 42)}k ${bar(ri(2, 10))}`,
+    () => `queue depth ${ri(0, 7)} ${bar(ri(0, 3))}`,
+    () => `cloud run instances ${ri(1, 4)}`,
+    () => `errors 0 ${bar(0)}`,
+    () => `cache hit ${ri(60, 96)}% ${bar(ri(6, 10))}`,
+    () => `n8n runs today ${ri(120, 460)}`
+  ],
+  // stack: a package-check log of what the work is built with (kept for the rack panel later)
+  stack: (() => {
+    const pk = [['python', '3.12'], ['typescript', '5.6'], ['anthropic sdk', '0.40'], ['n8n', '1.7'], ['fastapi', '0.115'], ['postgresql', '16'], ['dialogflow cx', 'v3'], ['cloud run', 'gen2'], ['supabase', '2.x'], ['node-red', '4.0'], ['openrouter', 'api'], ['praw', '7.8']];
+    const pad = (s, n) => s + ' '.repeat(Math.max(1, n - s.length));
+    const row = ok => () => { const [n, v] = pk[Math.floor(Math.random() * pk.length)]; return `${pad(n, 14)}${pad(v, 6)}${ok()}`; };
+    return [row(() => 'ok'), row(() => 'ok'), row(() => 'ok'), row(() => 'up to date'), row(() => `${ri(40, 900)} ms`)];
+  })()
+};
+function screenColor(m) { m.color.setScalar((1 + (m.userData.flick || 0)) * (1 + CONFIG.hover.screenBoost * (m.userData.boost || 0))); }
+// Screen textures. Two kinds: a log feed (gen = line generators; animate() pushes one every log.interval) and a shell
+// (shell = SHELL: the transcript plus the line being typed, drawn under a prompt with a block cursor). scale multiplies the
+// 256×160 base grid; a scaled texture gets mipmaps so it reads calmly from across the room and crisp up close.
+class Terminal {
+  constructor(gen, opts = {}) {
+    const S = this.S = opts.scale || 1;
+    [this.c, this.x] = cnv(256 * S, 160 * S); this.tex = canvasTex(this.c); this.gen = gen; this.cursor = true; this.stamp = opts.stamp !== false;
+    this.shell = opts.shell || null; this.lines = this.shell ? this.shell.lines : [];
+    if (S > 1) { this.tex.generateMipmaps = true; this.tex.minFilter = THREE.LinearMipmapLinearFilter; }
+    if (this.gen) for (let i = 0; i < 10; i++) this.push();
+    this.draw();
+  }
+  push() { if (!this.gen) return; const g = this.gen[Math.floor(Math.random() * this.gen.length)]; this.lines.push(this.stamp ? stamp() + ' ' + g() : g()); if (this.lines.length > 10) this.lines.shift(); }
+  draw() {
+    const x = this.x, S = this.S, lh = 14 * S, n = this.lines.length, T = CONFIG.terminal, sh = this.shell, pw = sh?.mode === 'password';
+    x.fillStyle = pal.ink; x.fillRect(0, 0, 256 * S, 160 * S);
+    x.font = (14 * S) + 'px VT323, monospace'; x.textBaseline = 'top';
+    this.lines.forEach((l, i) => { const dim = sh ? [T.prompt, T.rootPrompt, T.sudoPrompt].some(p => l.startsWith(p)) : i < n - 4; x.fillStyle = dim ? pal.phosphorDim : pal.phosphor; x.fillText(l, 5 * S, 4 * S + i * lh); });
+    let cx = 5 * S; const cy = 4 * S + n * lh;
+    if (sh) {   // the live line: dim prompt (ember for root), bright input (hidden while sudo asks for a password), then the cursor
+      const P = pw ? T.sudoPrompt : sh.root ? T.rootPrompt : T.prompt;
+      x.fillStyle = sh.root && !pw ? pal.ember : pal.phosphorDim; x.fillText(P, cx, cy); cx += x.measureText(P).width;
+      if (!pw) { x.fillStyle = pal.phosphor; x.fillText(sh.input, cx, cy); cx += x.measureText(sh.input).width; }
+    }
+    if (this.cursor || (this.shell && performance.now() < this.shell.solidUntil)) { x.fillStyle = pal.phosphorBloom; x.fillRect(cx, cy, 7 * S, 12 * S); }
+    this.tex.needsUpdate = true;
+  }
+}
+
+function buildTextures() {
+  TEX.termL = new Terminal(LOG.agent);
+  TEX.termR = new Terminal(null, { scale: CONFIG.terminal.scale, shell: SHELL });   // the shell; its transcript lives in SHELL and survives a rebuild
+  // phone: chat screen
+  { const [c, x] = cnv(24, 48); x.fillStyle = pal.soil; x.fillRect(0, 0, 24, 48); x.fillStyle = pal.phosphorDim; x.fillRect(0, 0, 24, 6);
+    const rows = [[2, 10, 13, 5], [9, 17, 13, 6], [2, 25, 10, 4], [7, 31, 15, 6], [2, 39, 12, 5]];
+    rows.forEach(([rx, ry, rw, rh], i) => { x.fillStyle = i % 2 ? pal.phosphorDim : pal.moss; x.fillRect(rx, ry, rw, rh); });
+    TEX.phone = canvasTex(c); }
+  // exit sign
+  { const [c, x] = cnv(96, 36); x.fillStyle = pal.phosphor; x.fillRect(0, 0, 96, 36); x.fillStyle = pal.ink; x.fillRect(3, 3, 90, 30); x.fillStyle = pal.phosphor; x.fillRect(5, 5, 86, 26);
+    x.font = 'bold 30px VT323, monospace'; x.fillStyle = pal.ink; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('EXIT', 48, 19);
+    TEX.exit = canvasTex(c); }
+  // whiteboard: paper sketch, ontology graph. Drawn twice: board + ink, and ink alone (the hover glow layer).
+  { const drawInk = (x, marker, nodeFill) => {
+      x.strokeStyle = marker; x.fillStyle = marker; x.lineWidth = 2;
+      x.font = '13px VT323, monospace'; x.textBaseline = 'top'; x.fillText("Tool calls that don't lie", 8, 6);
+      const nodes = [[30, 46], [64, 32], [92, 58], [56, 78], [118, 36], [140, 76], [88, 92]];
+      [[0, 1], [1, 2], [2, 3], [0, 3], [1, 4], [4, 5], [2, 5], [3, 6], [6, 5]].forEach(([a, b]) => { x.beginPath(); x.moveTo(...nodes[a]); x.lineTo(...nodes[b]); x.stroke(); });
+      nodes.forEach(([nx, ny]) => { x.beginPath(); x.arc(nx, ny, 5, 0, Math.PI * 2); x.fillStyle = nodeFill; x.fill(); x.stroke(); });
+      x.fillStyle = marker; [[8, 92, 34], [8, 98, 22], [8, 104, 28]].forEach(([lx, ly, lw]) => x.fillRect(lx, ly, lw, 1));
+    };
+    const [c, x] = cnv(160, 108); x.fillStyle = CONFIG.tones.pale; x.fillRect(0, 0, 160, 108);
+    drawInk(x, CONFIG.tones.marker, CONFIG.tones.pale);
+    TEX.whiteboard = canvasTex(c);
+    const [c2, x2] = cnv(160, 108); drawInk(x2, '#ffffff', 'rgba(0,0,0,0)');
+    TEX.whiteboardInk = canvasTex(c2); }
+  // cert frame: badge + lines
+  { const [c, x] = cnv(40, 52); x.fillStyle = CONFIG.tones.pale; x.fillRect(0, 0, 40, 52);
+    x.fillStyle = pal.phosphorDim; x.beginPath(); x.arc(20, 16, 9, 0, Math.PI * 2); x.fill();
+    x.fillStyle = CONFIG.tones.pale; x.beginPath(); x.arc(20, 16, 5, 0, Math.PI * 2); x.fill();
+    x.fillStyle = CONFIG.tones.paleDim; [[7, 31, 26], [10, 37, 20], [8, 43, 24]].forEach(([lx, ly, lw]) => x.fillRect(lx, ly, lw, 2));
+    TEX.cert = canvasTex(c);
+    // ink layer: badge ring + lines, white on transparent (hover glow)
+    const [c2, x2] = cnv(40, 52); x2.strokeStyle = '#ffffff'; x2.fillStyle = '#ffffff'; x2.lineWidth = 3;
+    x2.beginPath(); x2.arc(20, 16, 7, 0, Math.PI * 2); x2.stroke();
+    [[7, 31, 26], [10, 37, 20], [8, 43, 24]].forEach(([lx, ly, lw]) => x2.fillRect(lx, ly, lw, 2));
+    TEX.certInk = canvasTex(c2); }
+  // mug print: a prompt glyph, white on transparent, wrapped around the mug
+  { const [c, x] = cnv(96, 32); x.fillStyle = '#ffffff'; x.font = '26px VT323, monospace'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('>_', 48, 17);
+    TEX.mugInk = canvasTex(c); }
+  // pixel art placeholders: seeded symmetric sprites (to be replaced with real pieces)
+  TEX.pixels = [11, 23, 37].map(seed => {
+    const [c, x] = cnv(16, 16), rnd = seeded(seed), tones = [pal.moss, pal.phosphorDim, CONFIG.tones.pale, pal.soil];
+    x.fillStyle = pal.ink; x.fillRect(0, 0, 16, 16);
+    for (let y = 1; y < 15; y++) for (let i = 1; i < 8; i++) { if (rnd() < 0.5) continue; x.fillStyle = tones[Math.floor(rnd() * tones.length)]; x.fillRect(i, y, 1, 1); x.fillRect(15 - i, y, 1, 1); }
+    return canvasTex(c);
+  });
+  // crt: console home screen
+  { const [c, x] = cnv(48, 36); x.fillStyle = pal.soil; x.fillRect(0, 0, 48, 36); x.fillStyle = pal.moss; x.fillRect(0, 2, 48, 1); x.fillRect(0, 31, 48, 1);
+    for (let i = 0; i < 6; i++) { x.fillStyle = i === 2 ? pal.phosphorDim : pal.moss; x.fillRect(3 + i * 7, 14, 5, 5); }
+    x.fillStyle = pal.phosphorDim; x.fillRect(3 + 2 * 7 - 1, 13, 7, 7); x.fillStyle = pal.moss; x.fillRect(3 + 2 * 7, 14, 5, 5);
+    TEX.crt = canvasTex(c); }
+  // rain: scrolling streaks
+  { const [c, x] = cnv(48, 96), rnd = seeded(5); x.fillStyle = CONFIG.tones.night; x.fillRect(0, 0, 48, 96);
+    for (let i = 0; i < 26; i++) { const sx = Math.floor(rnd() * 48), sy = Math.floor(rnd() * 96), len = 8 + Math.floor(rnd() * 18); x.fillStyle = rnd() < 0.35 ? pal.phosphorDim : pal.moss; x.fillRect(sx, sy, 1, len); if (sy + len > 96) x.fillRect(sx, 0, 1, sy + len - 96); }
+    TEX.rain = canvasTex(c, true); }
+  // rug: two-tone Bayer dither
+  { const [c, x] = cnv(96, 64);
+    for (let y = 0; y < 64; y++) for (let i = 0; i < 96; i++) {
+      const v = 0.5 + 0.28 * Math.sin(i * 0.33) * Math.sin(y * 0.5) + 0.15 * Math.sin((i + y) * 0.9);
+      let on = v > bayer4(i, y);
+      const border = i < 3 || y < 3 || i >= 93 || y >= 61, ring = (i === 5 || i === 90 || y === 5 || y === 58) && i >= 5 && i <= 90 && y >= 5 && y <= 58;
+      if (border || ring) on = true;
+      x.fillStyle = on ? CONFIG.tones.rugB : CONFIG.tones.rugA; x.fillRect(i, y, 1, 1);
+    }
+    TEX.rug = canvasTex(c); }
+}
+
+// ───────────────────────────── geometry builder ─────────────────────────────
+// Accumulates primitives for one object, paints vertex colours in world space,
+// and merges them into one lit mesh + one emissive mesh (textured parts stay separate).
+class Builder {
+  constructor(def) {
+    this.def = def; this.group = new THREE.Group(); this.group.name = def.id;
+    this.group.position.fromArray(def.position); this.group.rotation.y = def.rotation || 0;
+    this.group.updateMatrixWorld(true); this.world = this.group.matrixWorld.clone();
+    this.lit = []; this.glow = [];
+  }
+  part(geo, o = {}) {
+    if (o.scale) geo.scale(o.scale[0], o.scale[1], o.scale[2]);
+    if (o.offset) geo.translate(o.offset[0], o.offset[1], o.offset[2]);
+    const q = o.dir
+      ? new THREE.Quaternion().setFromUnitVectors(UP, new THREE.Vector3().fromArray(o.dir).normalize())
+      : new THREE.Quaternion().setFromEuler(new THREE.Euler((o.rot?.[0] || 0) * D2R, (o.rot?.[1] || 0) * D2R, (o.rot?.[2] || 0) * D2R));
+    geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3().fromArray(o.at || [0, 0, 0]), q, ONE));
+    paint(geo, this.world, o.color || T.metal, !!o.emissive);
+    if (o.material) { const m = new THREE.Mesh(geo, o.material); if (o.name) m.name = o.name; this.group.add(m); return m; }
+    (o.emissive ? this.glow : this.lit).push(geo); return null;
+  }
+  box(w, h, d, o) { return this.part(new THREE.BoxGeometry(w, h, d), o); }
+  cyl(rt, rb, h, seg, o) { return this.part(new THREE.CylinderGeometry(rt, rb, h, seg), o); }
+  plane(w, h, o = {}) { return this.part(new THREE.PlaneGeometry(w, h, o.segs?.[0] || 1, o.segs?.[1] || 1), o); }
+  sprite(at, scale, color, opacity, additive = true) { const s = makeSprite(color, opacity, additive); s.position.fromArray(at); s.scale.set(scale[0], scale[1], 1); this.group.add(s); return s; }
+  // ink layer: an additive, unlit overlay (opacity 0) that the hover system fades in. Not raycast.
+  inkMaterial(map) { return new THREE.MeshBasicMaterial({ map, color: CONFIG.palette.phosphor, transparent: true, opacity: 0, depthWrite: false, fog: false, blending: THREE.AdditiveBlending }); }
+  hover(fn) { this.group.userData.hover = fn; }
+  finish() {
+    if (this.lit.length) this.group.add(new THREE.Mesh(merge(this.lit), MAT.lit));
+    if (this.glow.length) this.group.add(new THREE.Mesh(merge(this.glow), MAT.glow));
+    return this.group;
+  }
+}
+
+// ───────────────────────────── buildRoom ─────────────────────────────
+// Floor, three walls, ceiling; merged into one mesh. Segmented so the AO gradient is smooth.
+function buildRoom() {
+  const { width: W, depth: D, height: H } = CONFIG.room;
+  const b = new Builder({ id: 'room', position: [0, 0, 0] });
+  b.plane(W, D, { rot: [-90, 0, 0], at: [0, 0, 0], color: T.floor, segs: [32, 24] });
+  b.plane(W, D, { rot: [90, 0, 0], at: [0, H, 0], color: T.ceiling, segs: [32, 24] });
+  b.plane(W, H, { at: [0, H / 2, -D / 2], color: T.wall, segs: [32, 12] });
+  b.plane(D, H, { rot: [0, 90, 0], at: [-W / 2, H / 2, 0], color: T.wall, segs: [24, 12] });
+  b.plane(D, H, { rot: [0, -90, 0], at: [W / 2, H / 2, 0], color: T.wall, segs: [24, 12] });
+  return b.finish();
+}
+
+// ───────────────────────────── buildObjects ─────────────────────────────
+const ANIM = { screens: [], leds: [], ledMesh: null, rackGlow: null, steam: [], rain: null };
+
+const BUILD = {
+  // desk: top, side panels, modesty panel, keyboard, mouse
+  desk(def) {
+    const b = new Builder(def), [w, h, d] = def.size;
+    b.box(w, 0.05, d, { at: [0, h - 0.025, 0], color: T.wood });
+    b.box(0.05, h - 0.03, d - 0.04, { at: [-w / 2 + 0.05, (h - 0.03) / 2, 0], color: T.wood });
+    b.box(0.05, h - 0.03, d - 0.04, { at: [w / 2 - 0.05, (h - 0.03) / 2, 0], color: T.wood });
+    b.box(w - 0.1, 0.45, 0.03, { at: [0, 0.5, -d / 2 + 0.04], color: T.dark });
+    b.box(0.42, 0.02, 0.14, { at: [-0.44, h + 0.01, 0.18], color: T.metal });
+    b.box(0.06, 0.03, 0.1, { at: [-0.1, h + 0.015, 0.2], color: T.metal });
+    return b.finish();
+  },
+  // monitor-left / monitor-right: stand, bezel tilted back, emissive screen (the agent log / the shell), glow
+  monitor(def, term) {
+    const b = new Builder(def), [sw, sh] = def.screen, bz = 0.03, tilt = def.tilt;
+    b.box(0.24, 0.015, 0.16, { at: [0, 0.0075, 0.02], color: T.metal });
+    b.box(0.05, 0.14, 0.03, { at: [0, 0.085, -0.02], color: T.metal });
+    b.box(sw + 2 * bz, sh + 2 * bz, 0.03, { at: [0, 0.13, -0.02], offset: [0, (sh + 2 * bz) / 2, 0], rot: [tilt, 0, 0], color: T.dark });
+    const mat = texMat(term.tex, true);
+    b.plane(sw, sh, { at: [0, 0.13, -0.02], offset: [0, (sh + 2 * bz) / 2, 0.016], rot: [tilt, 0, 0], material: mat, emissive: true, color: T.white, name: 'screen' });
+    const glow = b.sprite([0, 0.13 + (sh + 2 * bz) / 2, 0.12], [sw * 1.9, sh * 2.1], pal.phosphor, 0.28);
+    ANIM.screens.push(mat);
+    const phosC = new THREE.Color(pal.phosphor), bloomC = new THREE.Color(pal.phosphorBloom);
+    // hover: the screen brightens and its spill grows. n = the shell is open on this screen: a gentler lift, and the spill fades so it can't haze the text up close
+    b.hover((t, n = 0) => { mat.userData.boost = t * (1 - 0.75 * n); screenColor(mat); glow.material.opacity = lerp(0.28 + 0.16 * t, 0.28 * (1 - t), n); glow.material.color.lerpColors(phosC, bloomC, 0.5 * t); });
+    return b.finish();
+  },
+  // phone: flat slab, emissive chat screen facing up
+  phone(def) {
+    const b = new Builder(def), [w, h, d] = def.size;
+    b.box(w, h, d, { at: [0, h / 2, 0], color: T.dark });
+    b.plane(w - 0.009, d - 0.015, { rot: [-90, 0, 0], at: [0, h + 0.0005, 0], material: texMat(TEX.phone, true, '#9fbfa8'), emissive: true, color: T.white });
+    b.sprite([0, 0.05, 0], [0.25, 0.25], pal.phosphorDim, 0.22);
+    return b.finish();
+  },
+  // mug: cylinder, coffee, handle; steam sprites
+  mug(def) {
+    const b = new Builder(def), r = def.radius, h = def.height;
+    b.cyl(r, r * 0.9, h, 12, { at: [0, h / 2, 0], color: T.pale });
+    b.cyl(r * 0.88, r * 0.88, 0.004, 12, { at: [0, h - 0.002, 0], color: T.dark });
+    b.box(0.014, 0.05, 0.012, { at: [r + 0.016, h / 2, 0], color: T.pale });
+    b.box(0.02, 0.012, 0.012, { at: [r + 0.006, h / 2 - 0.02, 0], color: T.pale });
+    b.box(0.02, 0.012, 0.012, { at: [r + 0.006, h / 2 + 0.02, 0], color: T.pale });
+    for (let i = 0; i < CONFIG.motion.steam.count; i++) { const s = b.sprite([0, h + 0.04, 0], [0.06, 0.06], pal.paper, 0.14, false); s.userData.phase = i / CONFIG.motion.steam.count; ANIM.steam.push(s); }
+    // print: prompt glyph on the side facing the room (+z); lights up on hover, steam tints phosphor
+    const inkMat = b.inkMaterial(TEX.mugInk);
+    const shell = new THREE.CylinderGeometry(r * 0.98 + 0.002, r * 0.92 + 0.002, 0.06, 16, 1, true, Math.PI, Math.PI * 2);
+    const ink = b.part(shell, { at: [0, h / 2, 0], material: inkMat, emissive: true, color: T.white, name: 'ink' }); ink.renderOrder = 5;
+    const glow = b.sprite([0, h / 2 + 0.01, 0.06], [0.22, 0.22], pal.phosphor, 0);
+    const steam = ANIM.steam.slice(-CONFIG.motion.steam.count), paperC = new THREE.Color(pal.paper), phosC = new THREE.Color(pal.phosphor);
+    b.hover(t => { inkMat.opacity = t; glow.material.opacity = 0.16 * t; for (const s of steam) s.material.color.lerpColors(paperC, phosC, t); });
+    return b.finish();
+  },
+  // microscope: base, arm, stage, tube, eyepiece, knob
+  microscope(def) {
+    const b = new Builder(def);
+    b.box(0.16, 0.03, 0.22, { at: [0, 0.015, 0], color: T.metal });
+    b.box(0.03, 0.22, 0.03, { at: [0, 0.14, -0.07], rot: [15, 0, 0], color: T.metal });
+    b.box(0.1, 0.01, 0.1, { at: [0, 0.11, 0], color: T.metal });
+    b.cyl(0.022, 0.026, 0.16, 10, { at: [0, 0.2, -0.005], rot: [-25, 0, 0], color: T.metal });
+    b.cyl(0.012, 0.012, 0.04, 8, { at: [0, 0.29, 0.045], rot: [-25, 0, 0], color: T.dark });
+    b.cyl(0.012, 0.012, 0.02, 8, { at: [0.03, 0.1, -0.07], rot: [0, 0, 90], color: T.dark });
+    return b.finish();
+  },
+  // cert-frame: framed certificate on the wall by the desk
+  'cert-frame'(def) {
+    const b = new Builder(def), [w, h] = def.size;
+    b.box(w, h, 0.02, { color: T.moss || P.moss });
+    b.plane(w - 0.04, h - 0.04, { at: [0, 0, 0.011], material: texMat(TEX.cert, false), color: T.white });
+    const inkMat = b.inkMaterial(TEX.certInk);
+    const ink = b.plane(w - 0.04, h - 0.04, { at: [0, 0, 0.013], material: inkMat, emissive: true, color: T.white, name: 'ink' }); ink.renderOrder = 5;
+    const glow = b.sprite([0, 0, 0.08], [w * 1.6, h * 1.5], pal.phosphor, 0);
+    b.hover(t => { inkMat.opacity = t; glow.material.opacity = 0.14 * t; });
+    return b.finish();
+  },
+  // whiteboard: body, textured surface, marker tray
+  whiteboard(def) {
+    const b = new Builder(def), [w, h] = def.size;
+    b.box(w, h, 0.02, { color: P.moss });
+    b.plane(w - 0.04, h - 0.04, { at: [0, 0, 0.011], material: texMat(TEX.whiteboard, false), color: T.white, name: 'surface' });
+    // ink glow layer: transparent, additive, unlit; opacity driven by hover
+    const inkMat = b.inkMaterial(TEX.whiteboardInk);
+    const ink = b.plane(w - 0.04, h - 0.04, { at: [0, 0, 0.013], material: inkMat, emissive: true, color: T.white, name: 'ink' });
+    ink.renderOrder = 5;
+    const glow = b.sprite([0, 0, 0.1], [w * 1.2, h * 1.5], pal.phosphor, 0);
+    b.hover(t => { inkMat.opacity = t; glow.material.opacity = 0.18 * t; });
+    b.box(0.5, 0.02, 0.05, { at: [0, -h / 2 - 0.02, 0.03], color: T.metal });
+    return b.finish();
+  },
+  // pixel-frames: three small frames with placeholder pixel art
+  'pixel-frames'(def) {
+    const b = new Builder(def), f = def.frame;
+    for (let i = -1; i <= 1; i++) {
+      b.box(f + 0.02, f + 0.02, 0.03, { at: [i * def.gap, 0, 0], color: P.moss });
+      b.plane(f - 0.04, f - 0.04, { at: [i * def.gap, 0, 0.016], material: texMat(TEX.pixels[i + 1], false), color: T.white });
+    }
+    return b.finish();
+  },
+  // rack: open frame with front rails. Bottom-up: UPS, 2×4 hot-swap drive cage, 2U server, switch, patch panel, switch,
+  // open shelf (floppy stack, diskettes in a caddy, bare hard drives, external drive), 2U with 2.5" bays,
+  // open shelf (diskette box, tape cartridges, drives), 4U server, blanks, 2U server, router on top.
+  // Switch ports and drive-tray LEDs are one animated mesh (per-vertex colour); the rest are static emissives.
+  rack(def) {
+    const b = new Builder(def), [w, h, d] = def.size, rnd = seeded(99), face = -w / 2, bw = 0.64;
+    b.box(0.02, h, d, { at: [w / 2 - 0.01, h / 2, 0], color: T.panel });
+    for (const s of [-1, 1]) b.box(w, h - 0.06, 0.02, { at: [0, 0.03 + (h - 0.06) / 2, s * (d / 2 - 0.01)], color: T.panel });
+    b.box(w, 0.06, d, { at: [0, 0.03, 0], color: T.dark });
+    b.box(w, 0.03, d, { at: [0, h - 0.015, 0], color: T.metal });
+    for (const s of [-1, 1]) b.box(0.04, h - 0.09, 0.05, { at: [face + 0.02, 0.06 + (h - 0.09) / 2, s * (d / 2 - 0.045)], color: T.metal });
+    const bezel = (y0, uh, color) => { b.box(0.06, uh, bw, { at: [face + 0.03, y0 + uh / 2, 0], color }); return y0 + uh / 2; };
+    const handles = y => { for (const s of [-1, 1]) b.box(0.03, 0.045, 0.02, { at: [face - 0.015, y, s * 0.29], color: T.metal }); };
+    const vents = (y, n, z0, dz, vh) => { for (let i = 0; i < n; i++) b.box(0.004, vh, 0.008, { at: [face - 0.002, y, z0 + i * dz], color: T.night }); };
+    const dot = (y, z, color = P.phosphor, x = face - 0.005) => b.box(0.01, 0.012, 0.012, { at: [x, y, z], color, emissive: true });
+    const shelf = y => b.box(0.5, 0.012, bw, { at: [face + 0.28, y + 0.006, 0], color: T.metal });
+    const ledGeos = [], [p0, p1] = CONFIG.motion.led.period, [d0, d1] = CONFIG.motion.led.duty;
+    const led = (y, z) => { const g = new THREE.BoxGeometry(0.012, 0.012, 0.012); g.translate(face - 0.006, y, z); ledGeos.push(g); ANIM.leds.push({ period: lerp(p0, p1, rnd()), phase: rnd(), duty: lerp(d0, d1, rnd()) }); };
+    const disk = [T.dark, T.bookB, T.paleDim, T.metal, T.bookA];
+    const hdd = (x, y, z) => { b.box(0.147, 0.026, 0.102, { at: [x, y, z], color: T.metal }); b.box(0.06, 0.001, 0.07, { at: [x - 0.01, y + 0.0135, z], color: T.pale }); b.box(0.149, 0.004, 0.104, { at: [x, y - 0.011, z], color: P.moss }); };
+    // UPS: display, status LED, vents
+    let y = bezel(0.07, 0.13, T.dark);
+    b.box(0.008, 0.035, 0.09, { at: [face - 0.004, y + 0.02, -0.2], color: P.moss, emissive: true });
+    dot(y - 0.03, -0.24); vents(y, 6, 0.1, 0.03, 0.07);
+    // drive cage: 2 × 4 trays, handle strip + activity LED each
+    bezel(0.21, 0.22, T.metal);
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++) {
+      const ty = 0.265 + r * 0.11, tz = -0.24 + c * 0.16;
+      b.box(0.02, 0.095, 0.15, { at: [face - 0.01, ty, tz], color: T.panel });
+      b.box(0.006, 0.012, 0.12, { at: [face - 0.023, ty - 0.03, tz], color: T.paleDim });
+      led(ty + 0.03, tz + 0.055);
+    }
+    y = bezel(0.44, 0.09, T.panel); handles(y); vents(y, 8, -0.16, 0.04, 0.05); dot(y + 0.015, 0.2); dot(y - 0.015, 0.2, P.moss);
+    // switches: 2 × 12 port LEDs, two SFP cages; patch panel between them
+    for (const y0 of [0.54, 0.65]) {
+      y = bezel(y0, 0.045, T.dark);
+      for (let r = 0; r < 2; r++) for (let c = 0; c < 12; c++) led(y - 0.011 + r * 0.022, -0.27 + c * 0.022);
+      for (const z of [0.12, 0.16]) b.box(0.008, 0.018, 0.03, { at: [face - 0.004, y, z], color: T.metal });
+    }
+    y = bezel(0.595, 0.045, T.metal);
+    for (let c = 0; c < 24; c++) b.box(0.008, 0.02, 0.016, { at: [face - 0.004, y, -0.27 + c * 0.0235], color: T.night });
+    // shelf 1: floppy stack (label + shutter on top), diskettes leaning in a caddy, three bare drives, external drive behind
+    shelf(0.71); const s1 = 0.722;
+    for (let i = 0; i < 9; i++) b.box(0.094, 0.0035, 0.09, { at: [face + 0.1 + (rnd() - 0.5) * 0.008, s1 + 0.00175 + i * 0.0035, -0.22 + (rnd() - 0.5) * 0.008], rot: [0, (rnd() - 0.5) * 10, 0], color: disk[i % 5] });
+    b.box(0.03, 0.001, 0.05, { at: [face + 0.128, s1 + 0.032, -0.22], color: T.pale });
+    b.box(0.03, 0.001, 0.028, { at: [face + 0.072, s1 + 0.032, -0.22], color: T.pale });
+    b.box(0.1, 0.02, 0.1, { at: [face + 0.1, s1 + 0.01, 0.02], color: T.panel });
+    for (let i = 0; i < 7; i++) b.box(0.09, 0.094, 0.0035, { at: [face + 0.1, s1 + 0.066, -0.02 + i * 0.011], rot: [12, 0, 0], color: disk[(i + 2) % 5] });
+    for (let i = 0; i < 3; i++) hdd(face + 0.1, s1 + 0.013 + i * 0.028, 0.22 + (rnd() - 0.5) * 0.01);
+    b.box(0.14, 0.17, 0.05, { at: [face + 0.36, s1 + 0.085, -0.22], color: T.dark }); dot(s1 + 0.14, -0.22, P.phosphor, face + 0.288);
+    // 2U with eight 2.5" bays
+    y = bezel(0.91, 0.09, T.panel); handles(y);
+    for (let c = 0; c < 8; c++) { const z = -0.24 + c * 0.066; b.box(0.014, 0.06, 0.058, { at: [face - 0.007, y, z], color: T.metal }); b.box(0.004, 0.008, 0.045, { at: [face - 0.016, y - 0.02, z], color: T.paleDim }); }
+    dot(y + 0.02, 0.29);
+    // shelf 2: diskette box with lid and label window, four tape cartridges, two more drives
+    shelf(1.01); const s2 = 1.022;
+    b.box(0.11, 0.1, 0.16, { at: [face + 0.1, s2 + 0.05, -0.2], color: T.paleDim });
+    b.box(0.114, 0.014, 0.164, { at: [face + 0.1, s2 + 0.107, -0.2], color: T.pale });
+    b.box(0.001, 0.03, 0.06, { at: [face + 0.0435, s2 + 0.06, -0.2], color: T.night });
+    for (let i = 0; i < 4; i++) { const ty = s2 + 0.011 + i * 0.0225, tz = (rnd() - 0.5) * 0.008; b.box(0.105, 0.0215, 0.102, { at: [face + 0.1, ty, tz], color: i % 2 ? T.bookA : T.dark }); b.box(0.001, 0.012, 0.06, { at: [face + 0.046, ty, tz], color: T.pale }); }
+    for (let i = 0; i < 2; i++) hdd(face + 0.1, s2 + 0.013 + i * 0.028, 0.22);
+    // 4U server: mesh grille, power button, status LEDs
+    y = bezel(1.17, 0.18, T.metal); handles(y);
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 8; c++) b.box(0.004, 0.036, 0.046, { at: [face - 0.002, y - 0.05 + r * 0.05, -0.24 + c * 0.06], color: T.night });
+    b.cyl(0.012, 0.012, 0.006, 10, { at: [face - 0.003, y + 0.05, 0.25], rot: [0, 0, 90], color: T.dark });
+    dot(y, 0.25); dot(y - 0.03, 0.25, P.moss);
+    for (const y0 of [1.36, 1.415]) vents(bezel(y0, 0.045, T.panel), 10, -0.2, 0.045, 0.03);
+    y = bezel(1.47, 0.09, T.panel); handles(y); vents(y, 8, -0.16, 0.04, 0.05); for (let i = 0; i < 4; i++) dot(y + 0.02, 0.15 + i * 0.03, i ? P.phosphor : P.moss);
+    // top shelf: router with two antennas
+    shelf(1.57); const s3 = 1.582;
+    b.box(0.2, 0.03, 0.15, { at: [face + 0.15, s3 + 0.015, 0.1], color: T.dark });
+    for (const z of [0.05, 0.15]) b.cyl(0.005, 0.005, 0.12, 6, { at: [face + 0.24, s3 + 0.09, z], color: T.metal });
+    for (let i = 0; i < 3; i++) b.box(0.01, 0.006, 0.006, { at: [face + 0.049, s3 + 0.02, 0.06 + i * 0.02], color: P.phosphor, emissive: true });
+    const lg = merge(ledGeos); lg.setAttribute('color', new THREE.BufferAttribute(new Float32Array(lg.attributes.position.count * 3), 3));
+    ANIM.ledMesh = new THREE.Mesh(lg, MAT.led); ANIM.ledMesh.name = 'leds'; b.group.add(ANIM.ledMesh);
+    ANIM.rackGlow = b.sprite([face - 0.16, 0.5, -0.05], [0.6, 1.1], pal.phosphor, 0.3);
+    ANIM.rackBoost = 0;
+    b.hover(t => { ANIM.rackBoost = t; });   // updateLeds() reads it: all LEDs on, glow to bloom
+    return b.finish();
+  },
+  // bench-arduino: wall shelf with breadboard, board, status LED, fan, sensor
+  'bench-arduino'(def) {
+    const b = new Builder(def), [w, h, d] = def.size;
+    b.box(w, h, d, { color: T.wood });
+    b.box(0.03, 0.25, 0.04, { at: [0.2, -0.14, 0.18], color: T.metal });
+    b.box(0.03, 0.25, 0.04, { at: [0.2, -0.14, -0.18], color: T.metal });
+    b.box(0.165, 0.012, 0.055, { at: [-0.05, 0.021, 0.12], color: T.pale });
+    b.box(0.07, 0.012, 0.053, { at: [-0.08, 0.021, -0.02], color: P.moss });
+    b.box(0.008, 0.006, 0.008, { at: [-0.1, 0.03, -0.03], color: P.phosphor, emissive: true });
+    b.box(0.03, 0.13, 0.13, { at: [-0.12, 0.095, -0.15], color: T.dark });
+    b.cyl(0.055, 0.055, 0.034, 16, { at: [-0.12, 0.095, -0.15], rot: [0, 0, 90], color: T.metal });
+    b.cyl(0.018, 0.018, 0.04, 8, { at: [-0.12, 0.095, -0.15], rot: [0, 0, 90], color: T.dark });
+    b.box(0.012, 0.015, 0.016, { at: [-0.03, 0.03, 0.13], color: T.pale });
+    return b.finish();
+  },
+  // shelf: bookcase. Rows bottom-up: software craft (dark spines), academic tomes (pale), fiction paperbacks (mixed, flat pile
+  // at the end), top: a stack of board games then a few references. Titles come from CONFIG.library; every spine and box side
+  // is a plane with UVs into one canvas atlas, merged into a single textured mesh. Lit lamp on top.
+  shelf(def) {
+    const b = new Builder(def), [w, h, d] = def.size, rnd = seeded(7), n = def.shelves, L = CONFIG.library;
+    b.box(w, h, 0.03, { at: [0, h / 2, d / 2 - 0.015], color: T.wood });
+    b.box(w, h, 0.03, { at: [0, h / 2, -d / 2 + 0.015], color: T.wood });
+    b.box(0.02, h, d, { at: [-w / 2 + 0.01, h / 2, 0], color: T.dark });
+    const step = (h - 0.06) / n, boards = [];
+    for (let i = 0; i <= n; i++) { const y = 0.05 + i * step; boards.push(y); b.box(w, 0.03, d - 0.06, { at: [0, Math.min(y, h - 0.015), 0], color: T.wood }); }
+    const S = 1000, labels = [];   // atlas px per metre
+    const rgb = k => T[k] || P[k], hex = k => CONFIG.tones[k] || CONFIG.palette[k], light = k => k === 'pale' || k === 'paleDim';
+    // a label plane facing the room (+x), 1.5 mm in front of `at`; UVs are assigned once the atlas is packed
+    const label = (title, tn, box, at, pw, ph) => { const g = new THREE.PlaneGeometry(pw / S, ph / S); g.translate(0, 0, 0.0015); g.rotateY(Math.PI / 2); g.translate(at[0], at[1], at[2]); labels.push({ title, tn, box, geo: g, pw: Math.ceil(pw), ph: Math.ceil(ph) }); };
+    const rows = [
+      { titles: L.craft,    tones: ['bookA', 'bookB', 'moss', 'bookC'],    w: [0.03, 0.045],  h: [0.23, 0.27] },
+      { titles: L.academic, tones: ['pale', 'paleDim', 'pale'],            w: [0.05, 0.07],   h: [0.26, 0.29] },
+      { titles: L.fiction,  tones: ['bookB', 'bookC', 'bookA', 'paleDim'], w: [0.028, 0.038], h: [0.175, 0.2] },
+      { titles: L.top,      tones: ['bookA', 'moss', 'bookC'],             w: [0.035, 0.055], h: [0.24, 0.29] }
+    ];
+    const z0 = -d / 2 + 0.05;
+    rows.forEach((row, i) => {
+      const yBase = boards[i] + 0.015; let z = z0;
+      if (i === 3) {   // board games: flat stack at the right end, fronts flush with the shelf edge
+        let y = yBase;
+        for (const g of L.games) {
+          const [gw, gd, gh] = g.size, gx = w / 2 - 0.01 - gd / 2, gz = z0 + 0.15 + (rnd() - 0.5) * 0.02;
+          b.box(gd, gh, gw, { at: [gx, y + gh / 2, gz], color: rgb(g.tone) });
+          label(g.title, g.tone, true, [w / 2 - 0.01, y + gh / 2, gz], gw * S, gh * S); y += gh;
+        }
+        z = z0 + 0.3 + 0.06;
+      }
+      for (const title of row.titles) {
+        const bw = lerp(row.w[0], row.w[1], rnd()), bh = lerp(row.h[0], row.h[1], rnd()), bx = 0.02 + (rnd() - 0.5) * 0.012, tn = row.tones[Math.floor(rnd() * row.tones.length)];
+        b.box(0.22, bh, bw, { at: [bx, yBase + bh / 2, z + bw / 2], color: rgb(tn) });
+        label(title, tn, false, [bx + 0.11, yBase + bh / 2, z + bw / 2], bw * S, bh * S);
+        z += bw + 0.003;
+      }
+      if (i === 2) { b.box(0.16, 0.03, 0.11, { at: [0.02, yBase + 0.015, z + 0.1], color: T.bookC }); b.box(0.15, 0.03, 0.1, { at: [0.02, yBase + 0.045, z + 0.1], color: T.bookA }); }
+    });
+    // atlas: shelf-pack the labels into one canvas; spines read top to bottom with a band at the foot, box sides left to right
+    const W = 1024; let cx = 0, cy = 0, rh = 0;
+    for (const l of labels) { if (cx + l.pw > W) { cx = 0; cy += rh; rh = 0; } l.x = cx; l.y = cy; cx += l.pw + 1; rh = Math.max(rh, l.ph + 1); }
+    const H = cy + rh, [c, x] = cnv(W, H);
+    const draw = () => {
+      const font = s => `${s}px VT323, monospace`, fit = (t, max, s) => { x.font = font(s); while (s > 9 && x.measureText(t).width > max) x.font = font(--s); };
+      for (const l of labels) {
+        const t = l.title.toUpperCase(), lt = light(l.tn);
+        x.globalAlpha = 1; x.fillStyle = hex(l.tn); x.fillRect(l.x, l.y, l.pw, l.ph);
+        x.fillStyle = lt ? CONFIG.tones.night : CONFIG.palette.paper; x.globalAlpha = lt ? 0.9 : 0.8; x.textBaseline = 'middle';
+        if (l.box) {
+          fit(t, l.pw - 64, Math.min(Math.floor(l.ph * 0.6), 44)); x.textAlign = 'left'; x.fillText(t, l.x + 16, l.y + l.ph / 2 + 1);
+          x.fillRect(l.x + l.pw - 30, l.y + l.ph / 2 - 7, 14, 14);
+          x.globalAlpha *= 0.35; x.fillRect(l.x + 6, l.y + 6, l.pw - 12, 1); x.fillRect(l.x + 6, l.y + l.ph - 7, l.pw - 12, 1);
+        } else {
+          fit(t, l.ph - 44, Math.min(Math.floor(l.pw * 0.72), 34)); x.textAlign = 'center';
+          x.save(); x.translate(l.x + l.pw / 2, l.y + (l.ph - 24) / 2); x.rotate(Math.PI / 2); x.fillText(t, 0, 0); x.restore();
+          x.fillRect(l.x + Math.round(l.pw * 0.25), l.y + l.ph - 14, Math.round(l.pw * 0.5), 3);
+        }
+      }
+      x.globalAlpha = 1;
+    };
+    draw();
+    const tex = canvasTex(c);
+    if (!document.fonts.check('20px VT323')) document.fonts.load('20px VT323').then(() => { draw(); tex.needsUpdate = true; });
+    for (const l of labels) {
+      const uv = l.geo.attributes.uv, u0 = l.x / W, u1 = (l.x + l.pw) / W, v0 = 1 - l.y / H, v1 = 1 - (l.y + l.ph) / H;
+      uv.setXY(0, u0, v0); uv.setXY(1, u1, v0); uv.setXY(2, u0, v1); uv.setXY(3, u1, v1);
+      paint(l.geo, b.world, T.white, false);
+    }
+    const spines = new THREE.Mesh(merge(labels.map(l => l.geo)), texMat(tex, false)); spines.name = 'labels'; b.group.add(spines);
+    // lamp on top of the case
+    const lz = 0.45, ly = h;
+    b.cyl(0.05, 0.06, 0.015, 12, { at: [0.02, ly + 0.0075, lz], color: T.metal });
+    b.cyl(0.008, 0.008, 0.22, 6, { at: [0.02, ly + 0.125, lz], color: T.metal });
+    b.cyl(0.05, 0.09, 0.1, 12, { at: [0.02, ly + 0.27, lz], color: T.metal });
+    const bulbMat = MAT.glow.clone();
+    b.cyl(0.02, 0.02, 0.04, 8, { at: [0.02, ly + 0.215, lz], material: bulbMat, color: P.phosphor, emissive: true });
+    const lampGlow = b.sprite([0.12, ly + 0.2, lz], [0.5, 0.5], pal.phosphor, 0.3);
+    ANIM.lamp = { mat: bulbMat, glow: lampGlow, next: 0, dips: [], boost: 0 };
+    // hover: the lamp brightens to bloom and a wash of light spills down the front of the spines
+    const wash = b.sprite([0.3, h * 0.55, 0], [1.2, 2.2], pal.phosphor, 0), phosC = new THREE.Color(pal.phosphor), bloomC = new THREE.Color(pal.phosphorBloom);
+    b.hover(t => { ANIM.lamp.boost = t; wash.material.opacity = 0.14 * t; lampGlow.material.color.lerpColors(phosC, bloomC, 0.6 * t); });
+    return b.finish();
+  },
+  // telescope: tripod, mount, tube aimed at the window, eyepiece
+  telescope(def) {
+    const b = new Builder(def), apex = new THREE.Vector3(0, def.apex, 0);
+    for (const a of [90, 210, 330]) {
+      const foot = new THREE.Vector3(Math.cos(a * D2R) * def.spread, 0, Math.sin(a * D2R) * def.spread);
+      const dir = apex.clone().sub(foot), len = dir.length(), mid = foot.clone().add(apex).multiplyScalar(0.5);
+      b.cyl(0.012, 0.012, len, 6, { at: mid.toArray(), dir: dir.toArray(), color: T.metal });
+    }
+    b.box(0.06, 0.06, 0.06, { at: [0, def.apex + 0.02, 0], color: T.dark });
+    const aim = new THREE.Vector3().fromArray(def.aim).normalize(), center = apex.clone().add(new THREE.Vector3(0, 0.12, 0)).add(aim.clone().multiplyScalar(0.05));
+    b.cyl(0.045, 0.05, 0.7, 12, { at: center.toArray(), dir: aim.toArray(), color: T.metal });
+    b.cyl(0.012, 0.012, 0.15, 6, { at: center.clone().add(new THREE.Vector3(0.06, 0.03, 0)).toArray(), dir: aim.toArray(), color: T.dark });
+    b.cyl(0.015, 0.015, 0.06, 6, { at: center.clone().sub(aim.clone().multiplyScalar(0.38)).toArray(), dir: aim.toArray(), color: T.dark });
+    return b.finish();
+  },
+  // turntable: low cabinet, receiver (display strip + knobs), plinth, platter, spinning record, tonearm, sleeve stack
+  turntable(def) {
+    const b = new Builder(def), [cw, ch, cd] = def.cabinet, [pw, pd] = def.deck, z = def.deckZ;
+    b.box(cw, ch, cd, { at: [0, ch / 2, 0], color: T.wood });
+    b.box(0.01, ch - 0.1, cd / 2 - 0.03, { at: [cw / 2, ch / 2, cd / 4], color: T.panel });
+    b.box(0.01, ch - 0.1, cd / 2 - 0.03, { at: [cw / 2, ch / 2, -cd / 4], color: T.panel });
+    // receiver: front face toward the room (+x)
+    const rh = 0.08;
+    b.box(pw, rh, pd - 0.02, { at: [0, ch + rh / 2, z], color: T.dark });
+    b.plane(0.12, 0.016, { rot: [0, 90, 0], at: [pw / 2 + 0.001, ch + rh * 0.55, z + 0.05], color: P.phosphorDim, emissive: true });
+    b.cyl(0.02, 0.02, 0.012, 10, { rot: [0, 0, 90], at: [pw / 2 + 0.006, ch + rh / 2, z - 0.1], color: T.metal });
+    b.cyl(0.011, 0.011, 0.012, 8, { rot: [0, 0, 90], at: [pw / 2 + 0.006, ch + rh / 2, z - 0.15], color: T.metal });
+    // plinth + platter
+    const py = ch + rh, ph = 0.05, top = py + ph, r = 0.15, cx = -0.03, cz = z + 0.03;
+    b.box(pw, ph, pd, { at: [0, py + ph / 2, z], color: T.pale });
+    b.cyl(r, r, 0.012, 20, { at: [cx, top + 0.006, cz], color: T.metal });
+    // record + label + one marker line: its own mesh so it can spin
+    const disc = new THREE.CylinderGeometry(r - 0.006, r - 0.006, 0.006, 24), label = new THREE.CylinderGeometry(0.045, 0.045, 0.008, 12), mark = new THREE.BoxGeometry(0.05, 0.004, 0.006);
+    mark.translate(0.06, 0.004, 0);
+    paint(disc, b.world, T.dark, false); paint(label, b.world, T.paleDim, false); paint(mark, b.world, T.pale, false);
+    const rec = new THREE.Mesh(merge([disc, label, mark]), MAT.lit); rec.position.set(cx, top + 0.015, cz); b.group.add(rec);
+    b.cyl(0.006, 0.006, 0.02, 6, { at: [cx, top + 0.02, cz], color: T.metal });
+    ANIM.platter = rec;
+    // tonearm: pivot at the near-front corner, arm reaching over the record
+    b.cyl(0.02, 0.022, 0.02, 10, { at: [pw / 2 - 0.05, top + 0.01, cz - 0.13], color: T.metal });
+    b.box(0.22, 0.008, 0.008, { at: [pw / 2 - 0.05, top + 0.03, cz - 0.13], offset: [-0.11, 0, 0], rot: [0, -32, 0], color: T.pale });
+    b.box(0.02, 0.012, 0.016, { at: [cx + 0.08, top + 0.024, cz - 0.02], rot: [0, -32, 0], color: T.dark });
+    // sleeves: a flat stack with yaw jitter at the far end of the cabinet
+    const rnd = seeded(31), tones = [T.bookB, T.paleDim, T.bookC, T.dark, T.bookA];
+    for (let i = 0; i < def.sleeves; i++) b.box(0.31, 0.012, 0.31, { at: [0.02 + (rnd() - 0.5) * 0.03, ch + 0.006 + i * 0.012, -0.42 + (rnd() - 0.5) * 0.02], rot: [0, (rnd() - 0.5) * 22, 0], color: tones[i % tones.length] });
+    const glow = b.sprite([pw / 2 + 0.08, ch + rh * 0.55, z + 0.05], [0.28, 0.14], pal.phosphorDim, 0.16);
+    // hover: the receiver display and its spill brighten to phosphor
+    const dimC = new THREE.Color(pal.phosphorDim), phosC = new THREE.Color(pal.phosphor);
+    b.hover(t => { glow.material.opacity = 0.16 + 0.3 * t; glow.material.color.lerpColors(dimC, phosC, t); });
+    return b.finish();
+  },
+  // board-games: three boxes and a deck of cards on the cabinet
+  'board-games'(def) {
+    const b = new Builder(def);
+    b.box(0.3, 0.06, 0.3, { at: [0, 0.03, 0], color: T.bookB });
+    b.box(0.28, 0.05, 0.28, { at: [0.01, 0.085, -0.01], rot: [0, 8, 0], color: T.paleDim });
+    b.box(0.3, 0.07, 0.22, { at: [0, 0.145, 0], rot: [0, -5, 0], color: T.bookC });
+    b.box(0.065, 0.02, 0.09, { at: [0.18, 0.01, -0.2], color: T.pale });
+    return b.finish();
+  },
+  // exit-door: slab, frame, knob (sign is its own object)
+  'exit-door'(def) {
+    const b = new Builder(def), [t, h, w] = def.size;
+    b.box(t, h, w, { at: [0, h / 2, 0], color: T.door });
+    b.box(0.08, h + 0.06, 0.06, { at: [-0.01, (h + 0.06) / 2, w / 2 + 0.03], color: P.moss });
+    b.box(0.08, h + 0.06, 0.06, { at: [-0.01, (h + 0.06) / 2, -w / 2 - 0.03], color: P.moss });
+    b.box(0.08, 0.06, w + 0.12, { at: [-0.01, h + 0.03, 0], color: P.moss });
+    b.cyl(0.02, 0.02, 0.06, 8, { at: [-0.06, 1.0, -w / 2 + 0.12], rot: [0, 0, 90], color: T.paleDim });
+    return b.finish();
+  },
+  // exit-sign: housing + emissive EXIT face toward the room, glow
+  'exit-sign'(def) {
+    const b = new Builder(def), [w, h] = def.size;
+    b.box(0.05, h + 0.03, w + 0.04, { color: T.dark });
+    b.plane(w, h, { rot: [0, -90, 0], at: [-0.026, 0, 0], material: texMat(TEX.exit, true), emissive: true, color: T.white, name: 'face' });
+    b.sprite([-0.15, 0, 0], [0.7, 0.4], pal.phosphor, 0.3);
+    return b.finish();
+  },
+  // wall-switch: plate + toggle (phosphor mode later)
+  'wall-switch'(def) {
+    const b = new Builder(def);
+    b.box(0.012, 0.11, 0.075, { color: T.paleDim });
+    b.box(0.02, 0.03, 0.014, { at: [-0.012, 0.01, 0], color: T.pale });
+    return b.finish();
+  },
+  // window: pale casing, cross mullions (four panes), deep sill, rolled blind, rain glass, dim spill onto the wall
+  window(def) {
+    const b = new Builder(def), [w, h] = def.size, c = def.casing, m = def.mullion, s = def.sill;
+    b.box(0.06, c, w + 2 * c, { at: [0, h / 2 + c / 2, 0], color: T.paleDim });
+    b.box(0.06, c, w + 2 * c, { at: [0, -h / 2 - c / 2, 0], color: T.paleDim });
+    b.box(0.06, h, c, { at: [0, 0, w / 2 + c / 2], color: T.paleDim });
+    b.box(0.06, h, c, { at: [0, 0, -w / 2 - c / 2], color: T.paleDim });
+    b.box(0.035, h, m, { at: [0.01, 0, 0], color: T.pale });
+    b.box(0.035, m, w, { at: [0.01, h * 0.12, 0], color: T.pale });
+    b.box(s, 0.035, w + 2 * c + 0.06, { at: [s / 2 - 0.03, -h / 2 - c - 0.0175, 0], color: T.pale });
+    b.box(0.07, 0.07, w + 2 * c, { at: [0.035, h / 2 + c + 0.035, 0], color: T.paleDim });
+    const mat = texMat(TEX.rain, true); mat.fog = true;
+    b.plane(w, h, { rot: [0, 90, 0], at: [0.005, 0, 0], material: mat, emissive: true, color: T.white });
+    b.sprite([0.12, -0.05, 0], [1.3, 0.9], pal.phosphorDim, 0.1);
+    ANIM.rain = TEX.rain;
+    return b.finish();
+  },
+  // led-strip: emissive strip under the desk front edge, two soft glows
+  'led-strip'(def) {
+    const b = new Builder(def);
+    b.box(def.length, 0.03, 0.02, { color: P.phosphor, emissive: true });
+    b.sprite([-0.9, -0.1, 0.05], [1.9, 0.4], pal.phosphor, 0.16);
+    b.sprite([0.9, -0.1, 0.05], [1.9, 0.4], pal.phosphor, 0.16);
+    return b.finish();
+  },
+  // rug: dithered two-tone plane
+  rug(def) {
+    const b = new Builder(def), [w, d] = def.size;
+    b.plane(w, d, { rot: [-90, 0, 0], material: texMat(TEX.rug, false), color: T.white });
+    return b.finish();
+  },
+  // chair: base, column, seat, backrest
+  chair(def) {
+    const b = new Builder(def);
+    b.cyl(0.28, 0.3, 0.03, 10, { at: [0, 0.015, 0], color: T.dark });
+    b.cyl(0.025, 0.025, 0.42, 8, { at: [0, 0.24, 0], color: T.metal });
+    b.box(0.46, 0.06, 0.46, { at: [0, 0.47, 0], color: T.panel });
+    b.box(0.44, 0.48, 0.05, { at: [0, 0.8, 0.22], rot: [8, 0, 0], color: T.panel });
+    return b.finish();
+  },
+  // frenchie: a cream pied French bulldog asleep on its belly, head on its front paws, hind legs splooted
+  // behind. Lies along +x (nose at +x). Round skull on a square jaw, black mask, bat ears, barrel chest
+  // tapering to the rear, cream chest and socks. The group breathes in tick().
+  frenchie(def) {
+    const b = new Builder(def), X = [1, 0, 0], bb = new Builder(def);   // bb: the parts that breathe (torso and what sits on it)
+    // body: barrel, wide at the chest, flattened against the floor
+    bb.cyl(0.11, 0.09, 0.26, 10, { at: [0, 0.098, 0], dir: X, scale: [0.9, 1, 1], color: T.fur });
+    bb.cyl(0.085, 0.085, 0.05, 8, { at: [0.13, 0.09, 0], dir: X, scale: [0.9, 1, 1], color: T.furLight });   // chest blaze
+    bb.cyl(0.105, 0.105, 0.03, 10, { at: [0.15, 0.1, 0], dir: X, scale: [0.9, 1, 1], color: P.moss });       // collar
+    // head: round skull over a square jaw, resting on the paws
+    b.cyl(0.08, 0.08, 0.16, 8, { at: [0.235, 0.13, 0], dir: [0, 0, 1], color: T.fur });
+    b.box(0.15, 0.09, 0.17, { at: [0.235, 0.09, 0], color: T.fur });
+    b.box(0.02, 0.05, 0.15, { at: [0.312, 0.14, 0], color: T.furDark });    // mask across the eyes
+    b.box(0.045, 0.06, 0.1, { at: [0.33, 0.1, 0], color: T.furDark });      // flat muzzle
+    b.box(0.05, 0.035, 0.13, { at: [0.32, 0.065, 0], color: T.furDark });   // jowls
+    b.box(0.02, 0.025, 0.04, { at: [0.35, 0.115, 0], color: T.dark });      // nose
+    b.box(0.012, 0.006, 0.026, { at: [0.324, 0.148, 0.052], color: T.dark });  // closed eyes
+    b.box(0.012, 0.006, 0.026, { at: [0.324, 0.148, -0.052], color: T.dark });
+    b.box(0.02, 0.01, 0.12, { at: [0.3, 0.175, 0], color: T.furDark });     // brow wrinkles
+    b.box(0.02, 0.01, 0.1, { at: [0.286, 0.19, 0], color: T.furDark });
+    // bat ears: broad base, rounded tip, flared outward
+    b.cyl(0.03, 0.045, 0.09, 6, { at: [0.225, 0.235, 0.075], rot: [-20, 0, -10], scale: [0.6, 1, 1], color: T.furDark });
+    b.cyl(0.03, 0.045, 0.09, 6, { at: [0.225, 0.235, -0.075], rot: [20, 0, -10], scale: [0.6, 1, 1], color: T.furDark });
+    // front legs stretched forward, cream socks; head rests on them
+    b.box(0.14, 0.05, 0.055, { at: [0.24, 0.025, 0.07], color: T.fur });
+    b.box(0.14, 0.05, 0.055, { at: [0.24, 0.025, -0.07], color: T.fur });
+    b.box(0.055, 0.045, 0.06, { at: [0.33, 0.0225, 0.07], color: T.furLight });
+    b.box(0.055, 0.045, 0.06, { at: [0.33, 0.0225, -0.07], color: T.furLight });
+    // haunches + splooted hind legs
+    b.box(0.1, 0.09, 0.065, { at: [-0.07, 0.055, 0.105], color: T.fur });
+    b.box(0.1, 0.09, 0.065, { at: [-0.07, 0.055, -0.105], color: T.fur });
+    b.box(0.12, 0.045, 0.055, { at: [-0.16, 0.0225, 0.12], rot: [0, -12, 0], color: T.fur });
+    b.box(0.12, 0.045, 0.055, { at: [-0.16, 0.0225, -0.12], rot: [0, 12, 0], color: T.fur });
+    b.box(0.055, 0.045, 0.06, { at: [-0.235, 0.0225, 0.14], color: T.furLight });
+    b.box(0.055, 0.045, 0.06, { at: [-0.235, 0.0225, -0.14], color: T.furLight });
+    bb.box(0.035, 0.03, 0.035, { at: [-0.135, 0.155, 0], rot: [0, 0, 25], color: T.furDark });  // tail nub
+    // pied patches: thin dark slabs sitting on the body, one over the eye, one on a haunch
+    bb.box(0.09, 0.02, 0.07, { at: [0.02, 0.19, 0.03], rot: [0, 15, 0], scale: [1, 1, 1], color: T.furDark });     // saddle, top
+    bb.box(0.06, 0.055, 0.02, { at: [-0.06, 0.13, 0.093], rot: [0, 0, 20], color: T.furDark });                    // right flank
+    bb.box(0.045, 0.045, 0.02, { at: [0.06, 0.11, -0.092], rot: [0, 0, -15], color: T.furDark });                  // left flank
+    bb.box(0.035, 0.035, 0.02, { at: [0.08, 0.165, -0.06], rot: [40, 0, 0], color: T.furDark });                   // shoulder
+    b.box(0.02, 0.05, 0.05, { at: [-0.06, 0.055, 0.14], color: T.furDark });                                       // right haunch
+    b.box(0.045, 0.03, 0.02, { at: [0.26, 0.19, 0.06], rot: [0, 0, 0], color: T.furDark });                        // eye patch, right side of the skull
+    const body = new THREE.Mesh(merge(bb.lit), MAT.lit); body.name = 'body'; b.group.add(body);
+    const g = b.finish(); ANIM.dog = { group: g, body, cfg: def.breathe };
+    return g;
+  }
+};
+
+function buildObjects(scene) {
+  for (const def of CONFIG.objects) {
+    let g;
+    if (def.id === 'monitor-left') g = BUILD.monitor(def, TEX.termL);
+    else if (def.id === 'monitor-right') g = BUILD.monitor(def, TEX.termR);
+    else g = BUILD[def.id](def);
+    scene.add(g); BUILT.push(g);
+  }
+}
+const BUILT = [];   // room + object groups currently in the scene
+
+// ───────────────────────────── buildPost ─────────────────────────────
+// One pass: linear→sRGB, optional phosphor ramp, 4×4 Bayer dither to N levels, scanlines, vignette.
+const POST_SHADER = {
+  uniforms: {
+    tDiffuse: { value: null },
+    uResolution: { value: new THREE.Vector2(1, 1) },
+    uLevels: { value: CONFIG.render.ditherLevels },
+    uExposure: { value: CONFIG.render.exposure },
+    uScanline: { value: CONFIG.render.scanline },
+    uVignette: { value: CONFIG.render.vignette },
+    uPhosphor: { value: CONFIG.render.phosphor ? 1 : 0 },
+    uInk: { value: new THREE.Color(pal.ink) },
+    uPhos: { value: new THREE.Color(pal.phosphor) },
+    uBloom: { value: new THREE.Color(pal.phosphorBloom) }
+  },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  fragmentShader: `
+    uniform sampler2D tDiffuse; uniform vec2 uResolution; uniform float uLevels, uScanline, uVignette, uPhosphor, uExposure;
+    uniform vec3 uInk, uPhos, uBloom; varying vec2 vUv;
+    vec3 toSRGB(vec3 c){ return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), c)); }
+    float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
+    float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
+    void main(){
+      vec3 c = toSRGB(clamp(texture2D(tDiffuse, vUv).rgb * uExposure, 0.0, 1.0));
+      // uInk/uPhos/uBloom arrive linear; convert so the ramp is built in display space
+      vec3 ink = toSRGB(uInk), phos = toSRGB(uPhos), bloom = toSRGB(uBloom);
+      if (uPhosphor > 0.5) {
+        float l = clamp(dot(c, vec3(0.299, 0.587, 0.114)), 0.0, 1.0);
+        c = l < 0.5 ? mix(ink, phos, l * 2.0) : mix(phos, bloom, (l - 0.5) * 2.0);
+      }
+      vec2 px = floor(gl_FragCoord.xy);
+      float L = max(1.0, uLevels - 1.0);
+      c = floor(c * L + bayer4(px)) / L;
+      if (mod(px.y, 2.0) < 1.0) c *= 1.0 - uScanline;
+      c *= 1.0 - uVignette * smoothstep(0.5, 1.45, length((vUv - 0.5) * 2.0));
+      gl_FragColor = vec4(c, 1.0);
+    }`
+};
+function buildPost(renderer, scene, camera) {
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  const pass = new ShaderPass(POST_SHADER);
+  composer.addPass(pass);
+  return { composer, pass };
+}
+
+// ───────────────────────────── scene setup ─────────────────────────────
+const canvas = document.getElementById('room');
+const fade = document.getElementById('fade');
+const fpsEl = document.getElementById('fps');
+const hudEl = document.getElementById('hud');
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(1);
+renderer.toneMapping = THREE.NoToneMapping;
+renderer.shadowMap.enabled = false;
+renderer.info.autoReset = false;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(pal.ink);
+scene.fog = new THREE.Fog(pal.ink, CONFIG.fog.near, CONFIG.fog.far);
+
+const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, 1, CONFIG.camera.near, CONFIG.camera.far);
+const home = CONFIG.camera.presets.home;
+const camState = { position: new THREE.Vector3().fromArray(home.position), target: new THREE.Vector3().fromArray(home.target) };
+
+let composer, post, controls = null;
+const debug = { on: false, fps: false };
+let internal = { w: 1, h: 1 }, portraitPull = 1;
+// where wheel and drag want the camera; camState eases toward it whenever no glide is running
+const freeGoal = { position: camState.position.clone(), target: camState.target.clone(), theta0: 0, dist0: 1, pan: new THREE.Vector3(), out: 0 };
+function setFreeHome(pos, tgt) {
+  freeGoal.position.copy(pos); freeGoal.target.copy(tgt); freeGoal.pan.set(0, 0, 0); freeGoal.out = 0;
+  const off = _v.copy(pos).sub(tgt); freeGoal.theta0 = Math.atan2(off.x, off.z); freeGoal.dist0 = off.length();
+}
+
+function onResize() {
+  const w = innerWidth, h = innerHeight, s = CONFIG.render.scale;
+  internal = { w: Math.max(1, Math.floor(w * s)), h: Math.max(1, Math.floor(h * s)) };
+  renderer.setSize(internal.w, internal.h, false);
+  composer.setSize(internal.w, internal.h);
+  post.uniforms.uResolution.value.set(internal.w, internal.h);
+  camera.aspect = w / h;
+  // portrait: widen vertical fov to hold hfov, pull back (portraitPull) for what the fov cap can't cover
+  const P = CONFIG.portrait, want = Math.tan(P.hfov * D2R / 2) / camera.aspect;
+  const fov = Math.min(P.maxFov, Math.max(CONFIG.camera.fov, 2 * Math.atan(want) / D2R));
+  camera.fov = fov; portraitPull = Math.max(1, want / Math.tan(fov * D2R / 2));
+  camera.updateProjectionMatrix();
+}
+
+// debug 1 m floor grid
+function buildGrid() {
+  const pts = [], { width: W, depth: D } = CONFIG.room;
+  for (let x = -W / 2; x <= W / 2; x++) pts.push(x, 0.004, -D / 2, x, 0.004, D / 2);
+  for (let z = -D / 2; z <= D / 2; z++) pts.push(-W / 2, 0.004, z, W / 2, 0.004, z);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  const l = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: pal.phosphorDim, fog: false })); l.visible = false; l.name = 'debug-grid'; return l;
+}
+let grid;
+
+// ───────────────────────────── tick ─────────────────────────────
+const clock = { last: performance.now(), elapsedTime: 0, getDelta() { const now = performance.now(), dt = (now - this.last) / 1000; this.last = now; this.elapsedTime += dt; return dt; } };
+const onC = new THREE.Color(pal.phosphor), offC = new THREE.Color(CONFIG.tones.ledOff), bloomC = new THREE.Color(pal.phosphorBloom);
+let flickerAt = 0, logAt = 0, cursorAt = 0, fpsFrames = 0, fpsAt = 0, fps = 0, loaded = false, loadT0 = 0, frameNo = 0;
+
+function updateLeds(t) {
+  const col = ANIM.ledMesh.geometry.attributes.color, arr = col.array; let lit = 0;
+  const boost = ANIM.rackBoost || 0, hotC = _c.lerpColors(onC, bloomC, boost);
+  ANIM.leds.forEach((l, i) => {
+    const on = boost >= 1 || ((t / l.period + l.phase) % 1) < l.duty || Math.random() < boost; if (on) lit++;
+    const c = on ? hotC : offC;
+    for (let v = i * 24; v < (i + 1) * 24; v++) { arr[v * 3] = c.r; arr[v * 3 + 1] = c.g; arr[v * 3 + 2] = c.b; }
+  });
+  col.needsUpdate = true;
+  ANIM.rackGlow.material.opacity = 0.12 + 0.25 * (lit / ANIM.leds.length) + 0.15 * boost;
+  ANIM.rackGlow.material.color.lerpColors(onC, bloomC, 0.5 * boost);
+}
+function animate(t, dt) {
+  const M = CONFIG.motion;
+  updateLeds(t);
+  if (t - flickerAt > M.flicker.interval / 1000) { flickerAt = t; for (const m of ANIM.screens) { m.userData.flick = (Math.random() * 2 - 1) * M.flicker.amount; screenColor(m); } }
+  if (t - logAt > M.log.interval / 1000) { logAt = t; TEX.termL.push(); TEX.termL.draw(); }
+  if (t - cursorAt > M.cursor.interval / 1000) { cursorAt = t; for (const term of [TEX.termL, TEX.termR]) { term.cursor = !term.cursor; term.draw(); } }
+  ANIM.steam.forEach(s => {
+    const f = (t / M.steam.period + s.userData.phase) % 1;
+    s.position.set(0.02 * Math.sin(f * 6 + s.userData.phase * 9), O('mug').height + 0.04 + M.steam.rise * f, 0.01 * Math.cos(f * 5));
+    const sc = 0.05 + 0.1 * f; s.scale.set(sc, sc, 1); s.material.opacity = 0.18 * (1 - f) * Math.min(1, f * 5);
+  });
+  ANIM.rain.offset.y += M.rain.speed * dt;
+  if (ANIM.platter) ANIM.platter.rotation.y -= M.platter.rpm / 60 * 2 * Math.PI * dt;
+  if (ANIM.dog) { const d = ANIM.dog, f = 0.5 - 0.5 * Math.cos(2 * Math.PI * t / d.cfg.period); d.body.scale.set(1, 1 + d.cfg.amp * f, 1 + d.cfg.amp * 0.3 * f); }
+  if (ANIM.lamp) {
+    const L = ANIM.lamp, F = M.lampFlicker;
+    if (!L.next) L.next = t + lerp(F.every[0], F.every[1], Math.random());
+    if (t >= L.next && !L.dips.length) {
+      const n = F.dips[0] + Math.floor(Math.random() * (F.dips[1] - F.dips[0] + 1));
+      for (let i = 0; i < n; i++) L.dips.push(t + i * F.dipMs * 2 / 1000);
+      L.next = t + lerp(F.every[0], F.every[1], Math.random());
+    }
+    const inDip = L.dips.some(d0 => t >= d0 && t < d0 + F.dipMs / 1000); if (L.dips.length && t > L.dips[L.dips.length - 1] + F.dipMs / 1000) L.dips.length = 0;
+    const v = (inDip ? F.dip : 1) * (1 + 0.5 * (L.boost || 0)); L.mat.color.setScalar(v); L.glow.material.opacity = (0.3 + 0.2 * (L.boost || 0)) * (inDip ? F.dip : 1);
+  }
+}
+function tick() {
+  requestAnimationFrame(tick);
+  const dt = Math.min(0.1, clock.getDelta()), t = clock.elapsedTime;
+  if (!loaded) {   // wireframe build-up: the reveal height sweeps floor to ceiling, eased in and out
+    const p = MOTION ? Math.min(1, (performance.now() - loadT0) / CONFIG.loading.rise) : 1, e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+    MAT.wire.uniforms.uH.value = 0.01 + (CONFIG.room.height + 0.3) * e;
+  }
+  if (MOTION) animate(t, dt);
+  stepTween();
+  if ((++frameNo & 15) === 0) updateReset();
+  if (debug.on && controls) controls.update();
+  else {
+    if (!camTween.active) {
+      const k = MOTION ? Math.min(1, CONFIG.wheel.ease * dt) : 1;
+      camState.position.lerp(freeGoal.position, k); camState.target.lerp(freeGoal.target, k);
+    }
+    camera.position.copy(camState.position);
+    if (portraitPull > 1) camera.position.sub(camState.target).multiplyScalar(portraitPull).add(camState.target);
+    if (MOTION) camera.position.y += CONFIG.motion.breathe.amp * Math.sin(2 * Math.PI * t / CONFIG.motion.breathe.period);
+    camera.lookAt(camState.target);
+  }
+  renderer.info.reset();
+  composer.render();
+  hoverTick(t);
+  fpsFrames++;
+  if (t - fpsAt >= 0.5) { fps = Math.round(fpsFrames / (t - fpsAt)); fpsFrames = 0; fpsAt = t; }
+  if (debug.fps) fpsEl.textContent = `${fps} fps | ${renderer.info.render.calls} calls | ${renderer.info.render.triangles} tris | ${internal.w}×${internal.h}`;
+  if (debug.on) updateHud();
+}
+
+// ───────────────────────────── hover ─────────────────────────────
+// Inspectables get an edge outline (LineSegments) that fades in, plus a 2D chip with the label.
+const chipEl = document.getElementById('chip');
+const hover = { targets: [], current: null, frame: 0, pointer: new THREE.Vector2(2, 2), moved: false, outlineC: { dim: new THREE.Color(), hot: new THREE.Color() } };
+const raycaster = new THREE.Raycaster();
+const _box = new THREE.Box3(), _v = new THREE.Vector3();
+function hoverOutlineColors() { hover.outlineC.dim.set(CONFIG.palette.phosphorDim); hover.outlineC.hot.set(CONFIG.palette.phosphor); }
+function buildHoverTargets() {
+  hover.targets = []; hover.current = null; chipEl.classList.remove('on'); canvas.classList.remove('hot');
+  for (const insp of CONFIG.inspectables) {
+    const group = scene.getObjectByName(insp.id); if (!group) continue;
+    const meshes = []; group.traverse(o => { if (o.isMesh && o.name !== 'ink') meshes.push(o); });
+    const tg = { insp, group, meshes, t: 0, n: 0, lines: [] };
+    if (group.userData.hover) { tg.apply = group.userData.hover; tg.apply(0, 0); }
+    // detail outline: the phosphor edges of every part fade in (spines, bezels, knobs, the tonearm), parented to each
+    // mesh so animated parts carry theirs. Depth-tested, so hidden edges stay hidden (no x-ray); a tiny clip-space bias
+    // keeps the lines from z-fighting the faces they sit on. The flat framed objects light their own drawing (ink) instead.
+    if (insp.id !== 'cert-frame' && insp.id !== 'whiteboard') {
+      tg.mat = new THREE.LineBasicMaterial({ color: CONFIG.palette.phosphorDim, fog: false, transparent: true, opacity: 0 });
+      tg.mat.onBeforeCompile = s => { s.vertexShader = s.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\ngl_Position.z -= 0.0003 * gl_Position.w;'); };
+      for (const m of meshes) {
+        if (m.name === 'leds') continue;
+        const l = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 20), tg.mat);
+        l.name = 'outline'; l.visible = false; l.renderOrder = 10; m.add(l); tg.lines.push(l);
+      }
+    }
+    hover.targets.push(tg);
+  }
+}
+function setHover(target) {
+  if (hover.current === target) return;
+  hover.current = target;
+  canvas.classList.toggle('hot', !!target);
+  if (target) { chipEl.textContent = target.insp.label; chipEl.classList.add('on'); } else chipEl.classList.remove('on');
+}
+function placeChip(target) {
+  _box.makeEmpty();
+  for (const m of target.meshes) _box.expandByObject(m);       // meshes only; glow sprites would inflate the bounds
+  _v.set(_box.max.x, _box.max.y, (_box.min.z + _box.max.z) / 2).project(camera);   // top-right of the bounds
+  const x = Math.round((_v.x + 1) / 2 * innerWidth) + CONFIG.hover.offset[0], y = Math.round((1 - _v.y) / 2 * innerHeight) + CONFIG.hover.offset[1];
+  const cx = Math.max(8, Math.min(innerWidth - chipEl.offsetWidth - 8, x)), cy = Math.max(chipEl.offsetHeight + 8, Math.min(innerHeight - 8, y));
+  chipEl.style.transform = `translate(${cx}px, ${cy - chipEl.offsetHeight}px)`;
+}
+function hoverTick(t) {
+  if (!hover.targets.length || debug.on) return;
+  hover.frame++;
+  const locked = explorer.open || TERM.open;   // a window or the shell has the pointer: no picking, no chip
+  if (!locked && hover.moved && hover.frame % CONFIG.hover.everyNthFrame === 0) {
+    hover.moved = false;
+    raycaster.setFromCamera(hover.pointer, camera);
+    let hit = null, best = Infinity;
+    for (const tg of hover.targets) { const h = raycaster.intersectObjects(tg.meshes, false); if (h.length && h[0].distance < best) { best = h[0].distance; hit = tg; } }
+    setHover(hit);
+  }
+  // t eases toward 1 on the lit object (the hovered one, or the shell's monitor while it has the keyboard). n eases toward 1 on that
+  // monitor while the shell is open: the camera sits at the screen, so its own light does the work and the edge outline stays off.
+  const lit = TERM.open ? hover.targets.find(tg => tg.insp.terminal) : hover.current;
+  const step = MOTION ? (1000 / 60) / CONFIG.hover.fade : 1, ease = (v, goal) => goal > v ? Math.min(1, v + step) : Math.max(0, v - step);
+  for (const tg of hover.targets) {
+    const goal = tg === lit ? 1 : 0, goalN = TERM.open && tg.insp.terminal ? 1 : 0;
+    if (tg.t === goal && tg.n === goalN) continue;
+    tg.t = ease(tg.t, goal); tg.n = ease(tg.n, goalN);
+    if (tg.apply) tg.apply(tg.t, tg.n);
+    if (tg.mat) { const o = 0.9 * tg.t * (1 - tg.n); tg.mat.opacity = o; tg.mat.color.lerpColors(hover.outlineC.dim, hover.outlineC.hot, tg.t); for (const l of tg.lines) l.visible = o > 0; }
+  }
+  if (hover.current && !locked) placeChip(hover.current);
+}
+canvas.addEventListener('pointermove', e => { hover.pointer.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); hover.moved = true; });
+canvas.addEventListener('pointerleave', () => { hover.pointer.set(2, 2); hover.moved = true; });
+canvas.addEventListener('wheel', e => {
+  if (debug.on || explorer.open || TERM.open || camTween.active) return;
+  e.preventDefault();
+  const W = CONFIG.wheel, k = -e.deltaY * W.sensitivity;   // > 0 zooms in
+  raycaster.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
+  const hit = raycaster.intersectObjects(BUILT.concat(scene.children.filter(o => o.name === 'room')), true).find(h => !h.object.isSprite && h.object.visible);
+  const aim = hit ? hit.point : raycaster.ray.at(freeGoal.position.distanceTo(freeGoal.target), new THREE.Vector3());
+  const toAim = aim.clone().sub(freeGoal.position), dist = toAim.length();
+  let f = k > 0 ? Math.min(k, Math.max(0, 1 - W.minDist / dist)) : k;
+  const delta = toAim.multiplyScalar(f);
+  const pos = freeGoal.position.clone().add(delta), tgt = freeGoal.target.clone().add(delta);
+  // zoom-out cap: `out` is the metres dollied back from the preset (dolly keeps pos→target constant, so measure travel, not distance);
+  // and the camera never leaves the room box (the open +z side allows up to the home preset)
+  if (k < 0 && freeGoal.out - f * dist > freeGoal.dist0 * (W.maxOut - 1)) return;
+  const R = CONFIG.room;
+  if (pos.x < -R.width / 2 + 0.2 || pos.x > R.width / 2 - 0.2 || pos.y < 0.2 || pos.y > R.height - 0.2 || pos.z < -R.depth / 2 + 0.2 || pos.z > 9.6) return;
+  freeGoal.out -= f * dist;
+  freeGoal.position.copy(pos); freeGoal.target.copy(tgt);
+}, { passive: false });
+// drag: left or right button orbits the look target (right-drag rotates, as in most 3D viewers); middle button pans (trucks) camera and target together
+const drag = { on: false, pan: false, x: 0, y: 0 };
+canvas.addEventListener('pointerdown', e => {
+  if (e.button > 2 || debug.on || explorer.open || TERM.open) return;
+  if (e.button) e.preventDefault();
+  drag.on = true; drag.pan = e.button === 1; drag.x = e.clientX; drag.y = e.clientY; canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('mousedown', e => { if (e.button === 1) e.preventDefault(); });   // no middle-click autoscroll
+canvas.addEventListener('contextmenu', e => { if (!debug.on) e.preventDefault(); });      // right button is an orbit handle, not a menu
+function panBy(dx, dy) {
+  const fwd = _v.copy(freeGoal.target).sub(freeGoal.position), dist = fwd.length(); fwd.normalize();
+  const right = new THREE.Vector3().crossVectors(fwd, UP).normalize(), up = new THREE.Vector3().crossVectors(right, fwd);
+  const mpp = 2 * dist * Math.tan(camera.fov * D2R / 2) / innerHeight;   // metres per pixel at the look distance
+  const delta = right.multiplyScalar(-dx * mpp).addScaledVector(up, dy * mpp);
+  const next = freeGoal.pan.clone().add(delta); if (next.length() > CONFIG.pan.limit) next.setLength(CONFIG.pan.limit);
+  delta.copy(next).sub(freeGoal.pan); freeGoal.pan.copy(next);
+  freeGoal.position.add(delta); freeGoal.target.add(delta);
+}
+canvas.addEventListener('pointermove', e => {
+  if (!drag.on || camTween.active) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+  if (dx || dy) canvas.classList.add(drag.pan ? 'pan' : 'drag');
+  if (drag.pan) return panBy(dx, dy);
+  const G = CONFIG.drag, off = freeGoal.position.clone().sub(freeGoal.target), sph = new THREE.Spherical().setFromVector3(off);
+  let th = sph.theta - dx * G.speed; th = Math.min(freeGoal.theta0 + G.yaw, Math.max(freeGoal.theta0 - G.yaw, th));
+  sph.theta = th; sph.phi = Math.min(G.pitch[1], Math.max(G.pitch[0], sph.phi - dy * G.speed));
+  freeGoal.position.copy(freeGoal.target).add(off.setFromSpherical(sph));
+});
+const endDrag = () => { drag.on = false; canvas.classList.remove('drag', 'pan'); };
+canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
+
+// ───────────────────────────── explorer (click → window) ─────────────────────────────
+// A click on an inspectable that carries `explorer` data opens a directory-listing window over a dimmed room.
+// Esc, `close [esc]`, or a click on the dim closes it. Arrow keys move the selection.
+const dimEl = document.getElementById('dim'), exEl = document.getElementById('explorer');
+const exPath = exEl.querySelector('.path'), exList = exEl.querySelector('.list'), exPreview = exEl.querySelector('.preview'), exStatus = exEl.querySelector('.status');
+const explorer = { open: false, insp: null, index: 0, timer: 0 };
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+function renderExplorer() {
+  const ex = explorer.insp.explorer, files = ex.files, f = files[explorer.index];
+  exPath.innerHTML = `<b>luiz@theroom:</b>${esc(ex.path)}`;
+  exList.innerHTML = files.map((file, i) => { const m = file.name.match(/^(.*?)(\.[^.]+)?$/); return `<button type="button" class="row" role="option" data-i="${i}" aria-selected="${i === explorer.index}" tabindex="${i === explorer.index ? 0 : -1}"><span class="perm">-rw-r--r--</span><span class="name">${esc(m[1])}<span class="ext">${esc(m[2] || '')}</span></span></button>`; }).join('');
+  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.bullets ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}${f.control === 'graph' ? graphHtml() : ''}`;
+  exStatus.textContent = `${files.length} items | ${f.name}`;
+}
+function selectFile(i, focus = true) {
+  const n = explorer.insp.explorer.files.length; explorer.index = (i + n) % n; renderExplorer();
+  if (focus) exList.querySelector('.row[aria-selected="true"]').focus({ preventScroll: true });
+}
+function openExplorer(insp) {
+  if (!insp?.explorer) return;
+  clearTimeout(explorer.timer);
+  explorer.open = true; explorer.insp = insp; explorer.index = 0;
+  setHover(null); hover.pointer.set(2, 2);
+  renderExplorer();
+  exEl.hidden = false; exEl.getBoundingClientRect();
+  dimEl.classList.add('on'); exEl.classList.add('on');
+  exList.querySelector('.row[aria-selected="true"]').focus({ preventScroll: true });
+  updateMenu();
+}
+function closeExplorer(fromHistory = false) {
+  if (!explorer.open) return;
+  explorer.open = false;
+  dimEl.classList.remove('on'); exEl.classList.remove('on');
+  const done = () => { if (!explorer.open) exEl.hidden = true; };
+  if (MOTION) explorer.timer = setTimeout(done, CONFIG.explorer.fade); else done();
+  if (exEl.contains(document.activeElement)) document.activeElement.blur();
+  if (camTween.back) { tweenCamera(camTween.back); camTween.back = null; }
+  if (!fromHistory && history.state?.insp) history.back();
+  updateMenu();
+}
+// ───────────────────────────── camera glide (zoom into an inspectable) ───────────────────────────
+// Click → the camera eases to a spot in front of the object; the explorer opens at tween.panelEnterAt.
+// Close → eases back to where it started. Reduced motion jumps. Optional per-inspectable `view: { dir, distance, lift }`.
+const easeInOut = k => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const camTween = { active: false, from: null, to: null, start: 0, fired: false, onMid: null, back: null };
+function tweenCamera(to, onMid) {
+  setFreeHome(to.position, to.target);
+  if (!MOTION) { camState.position.copy(to.position); camState.target.copy(to.target); onMid?.(); return; }
+  Object.assign(camTween, { active: true, from: { position: camState.position.clone(), target: camState.target.clone() }, to, start: performance.now(), fired: false, onMid });
+}
+function stepTween() {
+  if (!camTween.active) return;
+  const k = Math.min(1, (performance.now() - camTween.start) / CONFIG.tween.duration), e = easeInOut(k);
+  camState.position.lerpVectors(camTween.from.position, camTween.to.position, e);
+  camState.target.lerpVectors(camTween.from.target, camTween.to.target, e);
+  if (!camTween.fired && k >= CONFIG.tween.panelEnterAt) { camTween.fired = true; camTween.onMid?.(); }
+  if (k >= 1) camTween.active = false;
+}
+function viewFor(insp) {
+  const g = BUILT.find(o => o.name === insp.id); if (!g) return null;
+  const box = new THREE.Box3(); g.updateMatrixWorld(true); g.traverse(o => { if (o.isMesh) box.expandByObject(o); });
+  const c = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3()), v = insp.view || {}, { width: W, depth: D } = CONFIG.room;
+  let dir;
+  if (v.dir) dir = new THREE.Vector3().fromArray(v.dir).normalize();
+  else if (Math.abs(c.x) > W / 2 - 0.5) dir = new THREE.Vector3(-Math.sign(c.x), 0, 0);      // side walls face inward
+  else if (c.z < -D / 2 + 0.6) dir = new THREE.Vector3(0, 0, 1);                              // back wall faces +z
+  else dir = camState.position.clone().sub(c).setY(0).normalize();                            // free-standing: from where we look now
+  const dist = v.distance ?? (Math.max(size.x, size.y, size.z) / CONFIG.tween.inspectFill) / (2 * Math.tan(CONFIG.camera.fov * D2R / 2));
+  return { position: c.clone().addScaledVector(dir, dist).setY(c.y + (v.lift ?? 0)), target: c };
+}
+function inspect(insp) {
+  if (!insp?.explorer) return;
+  const view = viewFor(insp); if (!view) return openExplorer(insp);
+  if (!camTween.back) camTween.back = { position: camState.position.clone(), target: camState.target.clone() };
+  if (!history.state?.insp) history.pushState({ insp: insp.id, zone: nav.zone }, '', location.href);   // back closes the window
+  tweenCamera(view, () => openExplorer(insp));
+}
+// ───────────────────────────── terminal (the right monitor) ─────────────────────────────
+// The right screen is a shell. A click on it (or its menu word) glides the camera up to the screen; from then on the keyboard
+// types into it: cd <place> | ls | clear | exit. Esc, 'exit' or a click off the screen glides back. The transcript lives in
+// SHELL rather than in the texture, so a palette rebuild redraws it unchanged.
+const SHELL = { lines: [], input: '', solidUntil: 0, root: false, mode: null, tries: 0 };   // mode: null | 'password' (sudo is asking)
+const TERM = { open: false, back: null };
+const PLACES = ['home'].concat(CONFIG.inspectables.filter(i => i.explorer).map(i => i.cmd || i.label.replace(/\s+/g, '-')));
+const shellIn = document.getElementById('shell-in');   // offscreen field that holds focus while the shell is open: its value is the typed line
+const shellDraw = () => { if (TEX.termR) { TEX.termR.cursor = true; TEX.termR.draw(); } };
+function shellPrint(s) {   // word-wrapped to the screen's columns; the transcript keeps the last terminal.rows lines
+  const cols = CONFIG.terminal.cols; let line = '';
+  for (const w of String(s).split(' ')) { if (line && (line + ' ' + w).length > cols) { SHELL.lines.push(line); line = w; } else line = line ? line + ' ' + w : w; }
+  SHELL.lines.push(line);
+  while (SHELL.lines.length > CONFIG.terminal.rows) SHELL.lines.shift();
+}
+function shellGo(name) {   // an object by its shell name, id or any word of its label; else a zone
+  name = name.replace(/^[~/]+|\/+$/g, '') || 'home';
+  if (name === 'terminal') { shellPrint('already here'); return true; }
+  const insp = CONFIG.inspectables.find(i => !i.terminal && !i.hint && (i.id === name || i.cmd === name || i.label === name || i.label.split(/\s+/).includes(name)));
+  if (insp) { terminalTo(insp); return true; }
+  if (ZONES[name]) { goZone(name); return true; }
+  return false;
+}
+// the usual unix reflexes get an answer from the room; `sudo su` (password Tito, the dog) turns the prompt red
+const REFLEX = {
+  pwd: () => '/home/luiz/theroom  (the real one is in Curitiba)',
+  cat: () => 'cat: no cats here. the dog is asleep on the rug.',
+  rm: a => a && a.includes('-rf') ? 'rm: -rf? in my own room? no.' : 'rm: refusing. this room took a while to build.',
+  mkdir: () => 'mkdir: out of floor space. try the shelf.',
+  grep: () => 'grep: 0 matches. the room is not a text file.',
+  whoami: () => SHELL.root ? 'root' : 'luiz'
+};
+function shellRun(raw) {
+  const T = CONFIG.terminal;
+  if (SHELL.mode === 'password') {   // the typed line was a password: never echoed
+    SHELL.mode = null; shellPrint(T.sudoPrompt);
+    if (raw === T.password) { SHELL.root = true; SHELL.tries = 0; shellPrint('welcome, root. Tito is still asleep on the rug. try: phosphor'); }
+    else if (++SHELL.tries >= 3) { SHELL.tries = 0; shellPrint('sudo: 3 incorrect password attempts'); }
+    else { shellPrint('Sorry, try again.'); SHELL.mode = 'password'; }
+    return;
+  }
+  shellPrint((SHELL.root ? T.rootPrompt : T.prompt) + raw);
+  const words = raw.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return;
+  if (words[0] === 'su' || (words[0] === 'sudo' && ['su', '-i', '-s'].includes(words[1]))) { if (SHELL.root) shellPrint('already root.'); else SHELL.mode = 'password'; return; }
+  if (words[0] === 'sudo') {
+    if (words.length === 1) return shellPrint('usage: sudo <command>   (or: sudo su)');
+    if (!SHELL.root) return shellPrint('sudo: luiz is not in the sudoers file. this incident will be reported.');
+    words.shift();
+  }
+  const [cmd, arg] = words;
+  if (cmd === 'help' || cmd === '?') shellPrint('cd <place>  ls  clear  exit');
+  else if (cmd === 'ls') shellPrint(PLACES.join('  '));
+  else if (cmd === 'clear') SHELL.lines.length = 0;
+  else if (cmd === 'exit' || cmd === 'logout') { if (SHELL.root) { SHELL.root = false; shellPrint('logout'); } else leaveTerminal(); }
+  else if (cmd === 'cd' || cmd === 'go' || cmd === 'open') { if (!shellGo(arg || 'home')) shellPrint('cd: ' + arg + ': no such place'); }
+  else if (cmd === 'phosphor') {   // root only: the accent strip. `phosphor` shows it, `phosphor <name>` sets a colour, `phosphor off` hides it
+    if (!SHELL.root) return shellPrint('phosphor: permission denied. root can change the room\'s phosphor.');
+    const names = Object.keys(CONFIG.accent.presets);
+    if (arg === 'off') { accentEl.hidden = true; return shellPrint('phosphor strip hidden'); }
+    if (arg && !names.includes(arg)) return shellPrint('phosphor: no such colour. ' + names.join(' '));
+    if (arg) setAccent(arg);
+    accentEl.hidden = false;
+    shellPrint('phosphor: ' + CONFIG.accent.name + '. strip at the bottom right. ' + names.join(' '));
+  }
+  else if (REFLEX[cmd]) shellPrint(REFLEX[cmd](arg));
+  else if (!shellGo(cmd)) shellPrint(cmd + ': command not found');
+}
+// Keys while the shell is open. The field takes the characters (so the host's own shortcuts and mobile keyboards see a text
+// input, not bare keystrokes); Enter runs the line, Esc steps out. Nothing propagates on to shortcut handlers.
+function shellKey(e) {
+  e.stopPropagation();
+  if (e.metaKey || e.ctrlKey || e.altKey) return;   // browser shortcuts pass through
+  const k = e.key;
+  if (k === 'Escape') { e.preventDefault(); leaveTerminal(); return; }
+  if (k === 'Enter') { e.preventDefault(); const raw = shellIn.value; shellIn.value = ''; shellRun(raw); }
+  else if (k === 'Tab') e.preventDefault();
+  else if (document.activeElement !== shellIn) {   // focus strayed: take this key by hand and bring focus back
+    shellIn.focus({ preventScroll: true });
+    if (k.length === 1) shellIn.value += k; else if (k === 'Backspace') shellIn.value = shellIn.value.slice(0, -1); else return;
+    e.preventDefault();
+  } else return;   // the field takes the character; shellSync follows on its input event
+  shellSync();
+}
+function shellSync() {
+  if (shellIn.value.length > CONFIG.terminal.maxInput) shellIn.value = shellIn.value.slice(0, CONFIG.terminal.maxInput);
+  SHELL.input = shellIn.value; SHELL.solidUntil = performance.now() + 600;   // a keystroke holds the cursor solid; then it blinks again
+  shellDraw();
+}
+shellIn.addEventListener('input', shellSync);
+addEventListener('keydown', e => { if (TERM.open) shellKey(e); }, true);   // capture: ahead of every other key handler on the page
+for (const ev of ['keyup', 'keypress']) addEventListener(ev, e => { if (TERM.open) e.stopPropagation(); }, true);
+// the spot square on to the right screen, at the distance where the screen fills terminal.fill of the frame
+function terminalView() {
+  const screen = scene.getObjectByName('monitor-right')?.getObjectByName('screen'); if (!screen) return null;
+  screen.updateWorldMatrix(true, false);
+  const c = new THREE.Box3().setFromObject(screen).getCenter(new THREE.Vector3());
+  const n = new THREE.Vector3().fromBufferAttribute(screen.geometry.attributes.normal, 0).transformDirection(screen.matrixWorld);
+  const [sw, sh] = O('monitor-right').screen, k = 2 * Math.tan(camera.fov * D2R / 2) * CONFIG.terminal.fill;
+  return { position: c.clone().addScaledVector(n, Math.max(sh / k, sw / (k * camera.aspect))), target: c };
+}
+function enterTerminal() {
+  if (TERM.open) return;
+  const view = terminalView(); if (!view) return;
+  let back = { position: camState.position.clone(), target: camState.target.clone() };
+  if (explorer.open) { back = camTween.back || back; camTween.back = null; closeExplorer(true); }   // an open window folds; its return point carries over
+  TERM.open = true; TERM.back = back;
+  setHover(null); hover.pointer.set(2, 2); canvas.classList.add('shell');
+  shellIn.value = SHELL.input = ''; shellIn.focus({ preventScroll: true });   // the keyboard goes to the field, not to a focused link or the page
+  if (!history.state?.term) history.pushState({ term: true, zone: nav.zone }, '', location.href);   // back steps out of the shell
+  SHELL.solidUntil = performance.now() + CONFIG.tween.duration; shellDraw();   // cursor solid through the glide, blinking on arrival
+  tweenCamera(view);
+  updateMenu();
+}
+function leaveTerminal({ tween = true, fromHistory = false } = {}) {
+  if (!TERM.open) return;
+  TERM.open = false; hover.moved = true; canvas.classList.remove('shell'); shellIn.blur();
+  if (SHELL.mode) { SHELL.mode = null; shellIn.value = SHELL.input = ''; shellDraw(); }   // a half-typed password dies with the session
+  if (tween && TERM.back) tweenCamera(TERM.back);
+  TERM.back = null;
+  if (!fromHistory && history.state?.term) history.back();
+  updateMenu();
+}
+// step out of the shell without gliding back and go to insp; a window opened this way returns to the pre-shell spot on close
+function terminalTo(insp) { const back = TERM.back; leaveTerminal({ tween: false, fromHistory: true }); if (insp.explorer && back) camTween.back = back; focusObject(insp); }
+shellRun('help'); shellRun('ls');   // the screen boots with a session already on it
+// ───────────────────────────── zones, routes, menu ─────────────────────────────
+// A zone is a camera preset with a route. Links and the shell call goZone; the URL follows; back/forward follow the URL.
+const nav = { zone: 'home' };
+const topEl = document.getElementById('top'), navEl = topEl.querySelector('nav'), introEl = document.getElementById('intro');
+const ZONES = CONFIG.camera.presets;
+const hrefOf = z => CONFIG.routing.mode === 'hash' ? `#${ZONES[z].route}` : ZONES[z].route;
+const zoneOfUrl = () => { const p = CONFIG.routing.mode === 'hash' ? (location.hash.slice(1) || '/') : location.pathname; return Object.keys(ZONES).find(z => ZONES[z].route === p) || 'home'; };
+// top menu: `home` plus one word per object in the room (the inspectables' hover labels). A word glides the camera to
+// its object and opens the window when the object has one; the open object's word is underlined.
+navEl.innerHTML = [`<a href="${hrefOf('home')}" data-zone="home" aria-current="true">home</a>`]
+  .concat(CONFIG.inspectables.filter(i => !i.hint).map(i => `<a href="#${i.id}" data-insp="${i.id}" aria-current="false">${i.label}</a>`)).join('');
+function updateMenu() {
+  for (const a of navEl.children) {
+    const id = a.dataset.insp, insp = id && CONFIG.inspectables.find(i => i.id === id);
+    const on = id ? (explorer.open && explorer.insp?.id === id) || (TERM.open && !!insp?.terminal) : !explorer.open && !TERM.open && nav.zone === a.dataset.zone;
+    a.setAttribute('aria-current', String(on));
+  }
+}
+function focusObject(insp) {
+  if (insp.terminal) return enterTerminal();
+  if (insp.explorer) return inspect(insp);
+  const view = viewFor(insp); if (view) tweenCamera(view);
+}
+function goZone(z, { push = true } = {}) {
+  if (!ZONES[z]) return false;
+  if (explorer.open) { camTween.back = null; closeExplorer(true); }
+  if (TERM.open) leaveTerminal({ tween: false, fromHistory: true });
+  nav.zone = z;
+  updateMenu();
+  document.title = z === 'home' ? 'Luiz Cordeiro · theRoom' : `Luiz Cordeiro · ${ZONES[z].label}`;
+  if (push && hrefOf(z) !== (CONFIG.routing.mode === 'hash' ? location.hash || '#/' : location.pathname)) history.pushState({ zone: z }, '', hrefOf(z));
+  tweenCamera({ position: new THREE.Vector3().fromArray(ZONES[z].position), target: new THREE.Vector3().fromArray(ZONES[z].target) });
+  return true;
+}
+navEl.addEventListener('click', e => {
+  const a = e.target.closest('a[data-zone], a[data-insp]'); if (!a) return; e.preventDefault();
+  if (a.dataset.zone) return goZone(a.dataset.zone);
+  const insp = CONFIG.inspectables.find(i => i.id === a.dataset.insp);
+  if (!insp) return;
+  if (insp.terminal) return TERM.open ? leaveTerminal() : enterTerminal();   // the word toggles the shell
+  if (explorer.open && explorer.insp?.id === insp.id) return closeExplorer();
+  if (explorer.open) { camTween.back = null; closeExplorer(true); }
+  if (TERM.open) return terminalTo(insp);
+  focusObject(insp);
+});
+// reset view: shows once wheel/drag moved the camera off the zone preset; glides back to it
+const resetEl = document.getElementById('reset');
+resetEl.addEventListener('click', () => goZone(nav.zone, { push: false }));
+function updateReset() {
+  const p = ZONES[nav.zone], moved = !camTween.back && !explorer.open && !TERM.open && (freeGoal.position.distanceTo(_v.fromArray(p.position)) > 0.02 || freeGoal.target.distanceTo(_v.fromArray(p.target)) > 0.02);
+  if (resetEl.hidden === moved) resetEl.hidden = !moved;
+}
+addEventListener('popstate', () => {
+  if (TERM.open) { leaveTerminal({ fromHistory: true }); return; }
+  if (explorer.open) { closeExplorer(true); return; }
+  const z = zoneOfUrl(); if (z !== nav.zone) goZone(z, { push: false });
+});
+// intro: name and role over the room, gone on first interaction or after intro.hold
+function showIntro() {
+  introEl.classList.add('on'); topEl.classList.add('on');
+  let done = false;
+  const hide = () => { if (done) return; done = true; introEl.classList.remove('on'); for (const ev of evs) removeEventListener(ev, hide, true); };
+  const evs = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
+  for (const ev of evs) addEventListener(ev, hide, true);
+  setTimeout(hide, CONFIG.intro.hold);
+}
+exEl.addEventListener('click', e => {
+  if (e.target.closest('[data-close]')) return closeExplorer();
+  const rainBtn = e.target.closest('[data-rain]'); if (rainBtn) { rain.toggle().then(renderExplorer); return; }
+  const row = e.target.closest('.row'); if (row) selectFile(+row.dataset.i);
+});
+exEl.addEventListener('input', e => { if (e.target.matches('[data-rain-vol]')) rain.setVolume(+e.target.value); });
+exEl.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown') { e.preventDefault(); selectFile(explorer.index + 1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); selectFile(explorer.index - 1); }
+  else if (e.key === 'Home') { e.preventDefault(); selectFile(0); }
+  else if (e.key === 'End') { e.preventDefault(); selectFile(-1); }
+});
+dimEl.addEventListener('click', closeExplorer);
+// ───────────────────────────── rain (Web Audio) ─────────────────────────────
+// audio/rain.mp3 (a 15 s clip) decoded once and looped seamlessly: two alternating sources, each fading in over the
+// last second of the other (equal-power crossfade), so the seam never clicks. Autoplays on load where the browser
+// allows it; otherwise the first click or key starts it. Preference persists in localStorage
+// ('theroom.rain' = on | off, 'theroom.rainVol' 0..1).
+const rain = {
+  ctx: null, master: null, buffer: null, on: false, vol: 0.6, armed: false, timer: 0, src: [], XF: 1.0,
+  wantOn() { try { return localStorage.getItem('theroom.rain') !== 'off'; } catch { return true; } },
+  async build() {
+    if (this.ctx) return;
+    const C = new (window.AudioContext || window.webkitAudioContext)();
+    this.master = C.createGain(); this.master.gain.value = 0; this.master.connect(C.destination);
+    this.ctx = C;
+    const res = await fetch(window.__resources?.rainMp3 || 'audio/rain.mp3'); this.buffer = await C.decodeAudioData(await res.arrayBuffer());
+  },
+  // schedule one pass of the clip at time t0 with a fade-in and fade-out of XF seconds; queue the next pass to overlap
+  loop(t0) {
+    const C = this.ctx, B = this.buffer, D = B.duration, XF = Math.min(this.XF, D / 3);
+    const s = C.createBufferSource(), g = C.createGain(); s.buffer = B; s.connect(g).connect(this.master);
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(1, t0 + XF); g.gain.setValueAtTime(1, t0 + D - XF); g.gain.linearRampToValueAtTime(0, t0 + D);
+    s.start(t0); s.stop(t0 + D + 0.05); this.src.push(s); if (this.src.length > 3) this.src.shift();
+    const next = t0 + D - XF;
+    this.timer = setTimeout(() => { if (this.on) this.loop(next); }, Math.max(0, (next - C.currentTime - 0.5) * 1000));
+  },
+  async start() {
+    await this.build(); if (!this.buffer) return;
+    try { await this.ctx.resume(); } catch {}
+    if (this.ctx.state !== 'running') return false;   // autoplay blocked: arm() retries on the first gesture
+    if (!this.on) { this.on = true; this.loop(this.ctx.currentTime + 0.05); }
+    const g = this.master.gain, t = this.ctx.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(this.vol, t + 2);
+    return true;
+  },
+  stop() {
+    if (!this.ctx) return; this.on = false; clearTimeout(this.timer);
+    const g = this.master.gain, t = this.ctx.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(0, t + 0.8);
+    for (const s of this.src) { try { s.stop(t + 0.9); } catch {} } this.src = [];
+  },
+  toggle() { const on = !this.on; try { localStorage.setItem('theroom.rain', on ? 'on' : 'off'); } catch {} return on ? this.start() : (this.stop(), Promise.resolve(false)); },
+  setVolume(v) { this.vol = v; try { localStorage.setItem('theroom.rainVol', String(v)); } catch {} if (this.ctx && this.on) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.1); },
+  async arm() {
+    try { this.vol = Math.min(1, Math.max(0, parseFloat(localStorage.getItem('theroom.rainVol') ?? '0.6'))) || 0; } catch {}
+    if (!this.wantOn()) return;
+    const evs = ['pointerdown', 'keydown', 'touchstart'];
+    const go = async () => { if (this.armed) return; this.armed = true; for (const ev of evs) removeEventListener(ev, go, true); if (this.wantOn()) await this.start(); };
+    for (const ev of evs) addEventListener(ev, go, true);
+    if (await this.start()) { this.armed = true; for (const ev of evs) removeEventListener(ev, go, true); }   // autoplay allowed
+  }
+};
+// Paper diagram for the studies card. Top: the ontology (two tools joined by a `precedes` edge). Below: the LLM emits a call,
+// the validator looks the tool up in the graph, walks its precondition, then accepts or rejects. The animation alternates the two
+// outcomes (12 s period, 6 s each): base layers are always drawn, `.lit` copies and dots fade in on cue. Static under reduced motion.
+function graphHtml() {
+  const P = 12, pct = s => (s / P * 100).toFixed(3) + '%';
+  const both = w => w.flatMap(([a, b]) => [[a, b], [a + 6, b + 6]]);
+  const on = (n, w) => `@keyframes ${n}{0%{opacity:0}${w.map(([a, b]) => `${pct(a)}{opacity:0}${pct(a + .06)}{opacity:1}${pct(b)}{opacity:1}${pct(b + .12)}{opacity:0}`).join('')}100%{opacity:0}}`;
+  const tr = ([x, y]) => `transform:translate(${x}px,${y}px)`;
+  const move = (n, pts, t0, t1, offs) => {   // a dot rides the polyline `pts` from t0 to t1 in each cycle listed in offs
+    const d = pts.slice(1).map((p, i) => Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1])), L = d.reduce((a, b) => a + b, 0), last = pts[pts.length - 1];
+    let k = `0%{opacity:0;${tr(pts[0])}}`;
+    for (const o of offs) {
+      let acc = 0; k += `${pct(t0 + o)}{opacity:0;${tr(pts[0])}}${pct(t0 + o + .001)}{opacity:1;${tr(pts[0])}}`;
+      pts.slice(1).forEach((p, i) => { acc += d[i]; k += `${pct(t0 + o + (t1 - t0) * acc / L)}{opacity:1;${tr(p)}}`; });
+      k += `${pct(t1 + o + .001)}{opacity:0;${tr(last)}}`;
+    }
+    return `@keyframes ${n}{${k}100%{opacity:0;${tr(last)}}}`;
+  };
+  // the call is "typed": a cover the colour of the box shrinks away in character steps while a block cursor walks ahead of it
+  const type = (n, t0, t1, tEnd) => `@keyframes ${n}{0%{transform:scaleX(1)}${[0, 6].map(o => `${pct(t0 + o)}{transform:scaleX(1);animation-timing-function:steps(27,end)}${pct(t1 + o)}{transform:scaleX(0);animation-timing-function:steps(1,end)}${pct(tEnd + o)}{transform:scaleX(1)}`).join('')}100%{transform:scaleX(1)}}`;
+  const cursor = (n, t0, t1, tEnd) => `@keyframes ${n}{0%{opacity:0;transform:translateX(0)}${[0, 6].map(o => `${pct(t0 + o - .001)}{opacity:0;transform:translateX(0)}${pct(t0 + o)}{opacity:1;transform:translateX(0);animation-timing-function:steps(27,end)}${pct(t1 + o)}{opacity:1;transform:translateX(148px);animation-timing-function:steps(1,end)}${pct(t1 + o + .1)}{opacity:0;transform:translateX(148px)}${pct(tEnd + o)}{opacity:0;transform:translateX(0)}`).join('')}100%{opacity:0;transform:translateX(0)}}`;
+  const kf = [
+    on('kgCall', both([[.05, 1.5]])), type('kgType', .2, 1.2, 5.9), cursor('kgCur', .2, 1.2, 5.9),
+    move('kgP1', [[170, 124], [170, 144]], 1.5, 1.9, [0, 6]),
+    on('kgVal', both([[1.9, 4.6]])), on('kgQry', both([[2, 3.9]])),
+    move('kgP2', [[250, 163], [316, 163], [316, 70]], 2, 2.6, [0, 6]),
+    on('kgB', both([[2.6, 3.9]])), on('kgPre', both([[2.9, 3.9]])),
+    move('kgP3', [[192, 41], [148, 41]], 2.9, 3.2, [0, 6]),
+    on('kgAok', [[3.2, 3.9]]), on('kgAmiss', [[9.2, 9.32], [9.45, 9.57], [9.7, 9.9]]),
+    move('kgP4a', [[170, 182], [170, 194], [86, 194], [86, 204]], 3.9, 4.5, [0]),
+    move('kgP4b', [[170, 182], [170, 194], [254, 194], [254, 204]], 3.9, 4.5, [6]),
+    on('kgAcc', [[4.5, 5.7]]), on('kgRej', [[10.5, 10.7], [10.85, 11.05], [11.2, 11.7]])
+  ].join('');
+  const txt = (c, x, y, s) => `<text class="${c}" x="${x}" y="${y}">${s}</text>`;
+  const box = (rc, x, y, w, h, t, s, tc = '') => `<rect class="${rc}" x="${x}" y="${y}" width="${w}" height="${h}"/>${txt('t' + tc, x + w / 2, y + 16, t)}${txt('s' + tc, x + w / 2, y + 30, s)}`;
+  const lit = (n, inner) => `<g class="lit" style="animation-name:${n}">${inner}</g>`;
+  const dot = n => `<circle class="dot" r="2.5" style="animation-name:${n}"/>`;
+  const A = ['find_customer', 'param: cpf (string)'], B = ['issue_contract', 'requires: customer found'], CALL = ['LLM generates tool call', 'issue_contract(customer=42)'],
+    VAL = ['validator', 'queries the graph'], ACC = ['accept', 'find_customer ran before'], REJ = ['reject', 'precondition not met'];
+  const ah = (id, fill) => `<marker id="${id}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--${fill})"/></marker>`;
+  return `<div class="graph"><svg class="${MOTION ? 'anim' : ''}" viewBox="0 0 340 246" role="img" aria-label="The ontology declares that find_customer precedes issue_contract. The LLM generates the call issue_contract(customer=42); the validator queries the graph and accepts the call when find_customer ran before, or rejects it when that precondition is not met"><style>${kf}</style>
+<defs>${ah('kg-ah', 'phosphor-dim')}${ah('kg-ahb', 'phosphor-bloom')}</defs>
+<rect class="region" x="2" y="3" width="336" height="67"/>${txt('c l', 8, 14, 'ontology: semantic contract')}
+${box('nd', 8, 22, 140, 38, ...A)}${txt('c r', 145, 31, '[ ]')}
+${lit('kgAok', box('inv', 8, 22, 140, 38, ...A, ' ink') + txt('c r ink', 145, 31, '[x]'))}
+${lit('kgAmiss', '<rect class="hi" x="8" y="22" width="140" height="38"/>' + txt('c r', 145, 31, '[ ]'))}
+<line class="e" x1="148" y1="41" x2="192" y2="41" marker-end="url(#kg-ah)"/>${txt('c', 170, 36, 'precedes')}
+${lit('kgPre', '<line class="hi" x1="148" y1="41" x2="192" y2="41" marker-end="url(#kg-ahb)"/>' + txt('c', 170, 36, 'precedes'))}
+${box('nd', 192, 22, 140, 38, ...B)}${lit('kgB', box('hi', 192, 22, 140, 38, ...B))}
+${box('bx', 90, 86, 160, 38, ...CALL, ' live')}${lit('kgCall', '<rect class="hi" x="90" y="86" width="160" height="38"/>' + txt('t', 170, 102, CALL[0]))}
+<rect class="cover" x="96" y="108" width="148" height="11" style="animation-name:kgType"/><rect class="cur" x="96" y="109" width="5" height="9" style="animation-name:kgCur"/>
+<line class="e" x1="170" y1="124" x2="170" y2="144" marker-end="url(#kg-ah)"/>
+${box('bx', 90, 144, 160, 38, ...VAL)}${lit('kgVal', box('hi', 90, 144, 160, 38, ...VAL))}
+<polyline class="e qry" points="250,163 316,163 316,70"/>${lit('kgQry', '<polyline class="hi qry" points="250,163 316,163 316,70"/>')}
+<line class="e" x1="170" y1="182" x2="170" y2="194"/><line class="e" x1="86" y1="194" x2="254" y2="194"/><line class="e" x1="86" y1="194" x2="86" y2="204" marker-end="url(#kg-ah)"/><line class="e" x1="254" y1="194" x2="254" y2="204" marker-end="url(#kg-ah)"/>
+${box('bx', 8, 204, 156, 38, ...ACC)}${lit('kgAcc', box('inv', 8, 204, 156, 38, ...ACC, ' ink'))}
+${box('bx', 176, 204, 156, 38, ...REJ)}${lit('kgRej', box('hi', 176, 204, 156, 38, ...REJ))}
+${dot('kgP1')}${dot('kgP2')}${dot('kgP3')}${dot('kgP4a')}${dot('kgP4b')}</svg></div>`;
+}
+function rainControlHtml() {
+  return `<div class="ctl"><button type="button" class="tog" data-rain aria-pressed="${rain.on}">${rain.on ? 'rain: on' : 'rain: off'}</button><label>volume <input type="range" data-rain-vol min="0" max="1" step="0.05" value="${rain.vol}"></label></div>`;
+}
+rain.arm();
+// canvas click: a press that didn't drag; raycast at the release point
+let pressAt = null;
+canvas.addEventListener('pointerdown', e => { if (e.button === 0) pressAt = [e.clientX, e.clientY]; });
+canvas.addEventListener('pointerup', e => {
+  if (!pressAt || e.button !== 0 || debug.on || explorer.open) { pressAt = null; return; }
+  const moved = Math.hypot(e.clientX - pressAt[0], e.clientY - pressAt[1]); pressAt = null;
+  if (moved > CONFIG.explorer.dragTolerance) return;
+  raycaster.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
+  let hit = null, best = Infinity;
+  for (const tg of hover.targets) { const h = raycaster.intersectObjects(tg.meshes, false); if (h.length && h[0].distance < best) { best = h[0].distance; hit = tg; } }
+  if (TERM.open) { if (!hit?.insp.terminal) leaveTerminal(); else shellIn.focus({ preventScroll: true }); return; }   // a click off the screen glides back
+  if (hit) focusObject(hit.insp);   // shell, window, or (the dog) just a glide up close
+});
+// dither swatch for image placeholders: 4×4 Bayer at ~30%, moss on soil, regenerated with the accent
+function ditherSwatch() {
+  const [c, x] = cnv(4, 4);
+  for (let y = 0; y < 4; y++) for (let i = 0; i < 4; i++) { x.fillStyle = bayer4(i, y) < 0.2 ? CONFIG.palette.moss : CONFIG.palette.soil; x.fillRect(i, y, 1, 1); }
+  return `url("${c.toDataURL()}")`;
+}
+
+// ───────────────────────────── debug ─────────────────────────────
+const f2 = v => (Math.abs(v) < 0.005 ? 0 : v).toFixed(2);
+const arr3 = v => `[${f2(v.x)}, ${f2(v.y)}, ${f2(v.z)}]`;
+function hudJson() { return `{\n  "position": ${arr3(camera.position)},\n  "target":   ${arr3(controls ? controls.target : camState.target)}\n}`; }
+let hudNote = '';
+function updateHud() { hudEl.innerHTML = `${hudJson()}\n<span class="dim">d debug  c copy  p phosphor  f fps  a accent (${CONFIG.accent.name})${hudNote}</span>`; }
+function setDebug(on) {
+  debug.on = on; hudEl.hidden = !on; grid.visible = on;
+  if (on) {
+    if (!controls) { controls = new OrbitControls(camera, canvas); controls.enableDamping = true; controls.dampingFactor = 0.12; }
+    camera.position.copy(camState.position); controls.target.copy(camState.target); controls.enabled = true; controls.update();
+    updateHud();
+  } else if (controls) controls.enabled = false;
+}
+async function copyHud() {
+  try { await navigator.clipboard.writeText(hudJson()); hudNote = '  copied'; } catch { hudNote = '  copy failed'; }
+  setTimeout(() => { hudNote = ''; }, 1200);
+}
+function setPhosphor(on) { CONFIG.render.phosphor = on; post.uniforms.uPhosphor.value = on ? 1 : 0; }
+
+// ───────────────────────────── build / rebuild ─────────────────────────────
+function build() {
+  buildTextures();
+  const room = buildRoom(); scene.add(room); BUILT.push(room);
+  buildObjects(scene);
+  if (!MOTION) { updateLeds(0); for (const term of [TEX.termL, TEX.termR]) { term.cursor = true; term.draw(); } }
+  SPRITES.forEach(s => { s.visible = loaded && !(!MOTION && ANIM.steam.includes(s)); });
+  buildHoverTargets();
+}
+function clearScene() {
+  for (const g of BUILT) {
+    scene.remove(g);
+    g.traverse(o => {
+      if (o.geometry && !o.isSprite) o.geometry.dispose();   // sprites share one static geometry
+      if (o.material && ![MAT.lit, MAT.glow, MAT.led].includes(o.material)) { if (o.material.map && o.material.map !== TEX.glow) o.material.map.dispose(); o.material.dispose(); }
+    });
+  }
+  BUILT.length = 0; SPRITES.length = 0; ANIM.screens.length = 0; ANIM.leds.length = 0; ANIM.steam.length = 0;
+}
+// Applies the current CONFIG.palette/tones to everything that isn't baked into geometry or textures.
+function applyPaletteRuntime() {
+  refreshColorTables();
+  const c = CONFIG.palette;
+  MAT.wire.uniforms.uColor.value.set(c.phosphorDim); MAT.wire.uniforms.uEdge.value.set(c.phosphorBloom); onC.set(c.phosphor); offC.set(CONFIG.tones.ledOff); bloomC.set(c.phosphorBloom);
+  scene.background.set(c.ink); scene.fog.color.set(c.ink);
+  if (grid) grid.material.color.set(c.phosphorDim);
+  hoverOutlineColors();
+  if (post) { post.uniforms.uInk.value.set(c.ink); post.uniforms.uPhos.value.set(c.phosphor); post.uniforms.uBloom.value.set(c.phosphorBloom); }
+  const root = document.documentElement.style;
+  root.setProperty('--ink', c.ink); root.setProperty('--soil', c.soil); root.setProperty('--moss', c.moss); root.setProperty('--phosphor', c.phosphor); root.setProperty('--phosphor-dim', c.phosphorDim); root.setProperty('--phosphor-bloom', c.phosphorBloom); root.setProperty('--paper', c.paper);
+  root.setProperty('--dither', ditherSwatch());
+  const ex = CONFIG.explorer; root.setProperty('--ex-w', ex.width + 'px'); root.setProperty('--ex-h', ex.height + 'px'); root.setProperty('--ex-fade', ex.fade + 'ms'); root.setProperty('--ex-slide', ex.slide + 'px'); root.setProperty('--ex-dim', String(ex.dim));
+  document.querySelectorAll('#accent button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.accent === CONFIG.accent.name)));
+}
+// accent: preset name ('green' | 'blue' | 'orange') or an OKLCH hue in degrees.
+function setAccent(accent, { rebuild = true } = {}) {
+  const derived = paletteFor(accent);
+  Object.assign(CONFIG.palette, derived.palette); Object.assign(CONFIG.tones, derived.tones);
+  CONFIG.accent.name = typeof accent === 'number' ? `hue ${Math.round(accent)}` : accent;
+  applyPaletteRuntime();
+  if (rebuild) { clearScene(); build(); }
+  try { localStorage.setItem('theroom.accent', String(accent)); } catch {}
+  if (debug.on) updateHud();
+}
+function cycleAccent() {
+  const names = Object.keys(CONFIG.accent.presets), i = names.indexOf(CONFIG.accent.name);
+  setAccent(names[(i + 1) % names.length]);
+}
+
+addEventListener('keydown', e => {
+  if (TERM.open) return;   // the shell has the keyboard (handled in capture, above)
+  if (e.key === 'Escape' && explorer.open) { e.preventDefault(); closeExplorer(); return; }
+  if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+  if (explorer.open && e.target.closest?.('#explorer')) return;   // letters typed inside the window aren't shortcuts
+  const k = e.key.toLowerCase();
+  if (k === 'd') setDebug(!debug.on);
+  else if (k === 'c') { if (debug.on) copyHud(); }
+  else if (k === 'p') setPhosphor(!CONFIG.render.phosphor);
+  else if (k === 'f') { debug.fps = !debug.fps; fpsEl.hidden = !debug.fps; }
+  else if (k === 'a') { if (SHELL.root) cycleAccent(); }   // root only, like the phosphor command
+});
+const accentEl = document.getElementById('accent');
+accentEl.addEventListener('click', e => {
+  const b = e.target.closest('button[data-accent]'); if (b) setAccent(b.dataset.accent);
+});
+// one LED button per preset, each tinted with that preset's phosphor so the row reads as a colour strip
+accentEl.innerHTML = Object.keys(CONFIG.accent.presets).map(n =>
+  `<li><button type="button" data-accent="${n}" aria-label="${n}" title="${n}" aria-pressed="${String(n === CONFIG.accent.name)}" style="--led:${paletteFor(n).palette.phosphor}"></button></li>`).join('');
+
+// ───────────────────────────── init ─────────────────────────────
+async function init() {
+  await Promise.race([
+    Promise.all([document.fonts.load('14px VT323'), document.fonts.load('12px "IBM Plex Mono"')]),
+    new Promise(r => setTimeout(r, 1500))
+  ]);
+  // accent from ?accent=, then last choice, then CONFIG
+  const param = new URLSearchParams(location.search).get('accent');
+  let saved = null; try { saved = localStorage.getItem('theroom.accent'); } catch {}
+  const pick = param || saved || CONFIG.accent.name;
+  const accent = CONFIG.accent.presets[pick] ? pick : (isFinite(+pick) ? +pick : CONFIG.accent.name);
+  setAccent(accent, { rebuild: false });
+  // land on the zone the URL names, without a glide
+  const z0 = zoneOfUrl(); nav.zone = z0; camState.position.fromArray(ZONES[z0].position); camState.target.fromArray(ZONES[z0].target);
+  setFreeHome(camState.position, camState.target);
+  updateMenu();
+  history.replaceState({ zone: z0 }, '', location.href);
+  document.title = z0 === 'home' ? 'Luiz Cordeiro · theRoom' : `Luiz Cordeiro · ${ZONES[z0].label}`;
+
+  build();
+  grid = buildGrid(); scene.add(grid);
+  ({ composer, pass: post } = buildPost(renderer, scene, camera));
+  applyPaletteRuntime();
+  onResize(); addEventListener('resize', onResize);
+  // the top bar can wrap to two rows on narrow screens; HUD panels hang below whatever height it takes
+  const topH = () => document.documentElement.style.setProperty('--top-h', topEl.offsetHeight + 'px');
+  topH(); new ResizeObserver(topH).observe(topEl);
+
+  // loading: wireframe builds up for rise ms, holds hold ms, then a cut to ink that fades out over fade ms
+  scene.overrideMaterial = MAT.wire;
+  SPRITES.forEach(s => s.visible = false);
+  loadT0 = performance.now(); tick();
+  setTimeout(() => {
+    loaded = true;
+    scene.overrideMaterial = null;
+    SPRITES.forEach(s => { if (!(!MOTION && ANIM.steam.includes(s))) s.visible = true; });
+    if (MOTION) {
+      fade.style.transition = 'none'; fade.style.opacity = '1'; fade.getBoundingClientRect();
+      requestAnimationFrame(() => requestAnimationFrame(() => { fade.style.transition = `opacity ${CONFIG.loading.fade}ms linear`; fade.style.opacity = '0'; }));
+    }
+    setTimeout(showIntro, CONFIG.intro.delay);
+  }, MOTION ? CONFIG.loading.rise + CONFIG.loading.hold : CONFIG.loading.hold);
+}
+init();
+window.__theroom = { CONFIG, scene, camera, camState, renderer, setDebug, setPhosphor, setAccent, paletteFor };
+</script>
+</body>
+</html>
