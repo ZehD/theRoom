@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual">
 <title>Luiz Cordeiro · theRoom</title>
 <meta name="ext-resource-dependency" content="audio/rain.mp3" data-resource-id="rainMp3" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,14 +11,20 @@
 <style>
   :root { --ink: #060A07; --soil: #0E1610; --moss: #1B2A1F; --phosphor: #3BE77B; --phosphor-dim: #1F8A4A; --phosphor-bloom: #C8FFD6; --paper: #B9C9BC; --ex-w: 760px; --ex-h: 460px; --ex-fade: 250ms; --ex-slide: 12px; --ex-dim: 0.55; }
   html, body { margin: 0; height: 100%; background: var(--ink); overflow: hidden; }
-  #room { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; outline: none; }
+  /* #root is the frame: fixed UI hangs off it and the container queries below measure it. ?vp=390x844 shrinks it to a phone-sized preview. */
+  #root { position: fixed; inset: 0; container-type: size; }
+  #root.vp { inset: auto; left: 50%; top: 50%; transform: translate(-50%, -50%); outline: 1px solid var(--moss); overflow: hidden; }
+  #boot { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); font: 14px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-dim); white-space: nowrap; }
+  #boot i { display: inline-block; width: 7px; height: 12px; margin-left: 4px; vertical-align: -1px; background: var(--phosphor); animation: boot-blink 1s steps(1) infinite; }
+  @keyframes boot-blink { 50% { opacity: 0; } }
+  #room { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; outline: none; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
   #fade { position: fixed; inset: 0; background: var(--ink); opacity: 0; pointer-events: none; }
   .hud { position: fixed; right: 16px; font: 12px/1.5 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor); background: var(--soil); border: 1px solid var(--moss); padding: 8px 10px; white-space: pre; pointer-events: none; margin: 0; }
   #fps { top: calc(var(--top-h, 52px) + 16px); }
   #hud { top: calc(var(--top-h, 52px) + 56px); }
   #hud .dim { color: var(--phosphor-dim); }
   /* accent picker: a row of small LED push-buttons. Each shows its own colour (--led); the active one lights up and glows. */
-  #accent { position: fixed; right: 16px; bottom: 16px; display: flex; gap: 6px; margin: 0; padding: 6px; list-style: none; background: var(--ink); border: 1px solid var(--moss); }
+  #accent { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); display: flex; gap: 6px; margin: 0; padding: 6px; list-style: none; background: var(--ink); border: 1px solid var(--moss); }
   #accent button { appearance: none; width: 22px; height: 22px; padding: 0; cursor: pointer; border-radius: 0; background: var(--ink); border: 1px solid var(--moss); display: grid; place-items: center; }
   #accent button::before { content: ""; width: 8px; height: 8px; background: color-mix(in srgb, var(--led) 40%, var(--ink)); transition: background 120ms linear, box-shadow 120ms linear; }
   #accent button:hover { border-color: var(--led); }
@@ -26,6 +32,7 @@
   #accent button[aria-pressed="true"] { border-color: var(--led); }
   #accent button[aria-pressed="true"]::before { background: var(--led); box-shadow: 0 0 6px 1px var(--led), 0 0 14px 2px color-mix(in srgb, var(--led) 45%, transparent); }
   #accent button:focus-visible { outline: 2px solid var(--led); outline-offset: 2px; }
+  #root[data-touch] #accent button { width: 32px; height: 32px; }
   #chip { position: fixed; left: 0; top: 0; font: 15px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.04em; color: var(--phosphor-bloom); text-shadow: 0 0 8px var(--phosphor-bloom); background: var(--soil); border: 1px solid var(--phosphor); padding: 9px 12px 8px; pointer-events: none; white-space: nowrap; opacity: 0; transition: opacity 150ms linear; will-change: transform; }
   #chip.on { opacity: 1; }
   @media (prefers-reduced-motion: reduce) { #chip { transition: none; } }
@@ -95,11 +102,26 @@
   #explorer .status { display: flex; align-items: center; gap: 8px; padding: 0 16px; border-top: 1px solid var(--moss); color: var(--phosphor-dim); font-size: 12px; white-space: nowrap; }
   #explorer :focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: -2px; }
   @media (prefers-reduced-motion: reduce) { #dim, #explorer { transition: none; } }
-  @media (max-width: 767px) {
-    #explorer { left: 0; top: auto; bottom: 0; width: 100%; height: 70vh; transform: translateY(var(--ex-slide)); border-width: 1px 0 0; }
+  /* touch: no keyboard hints, 44px targets */
+  #root[data-touch] #explorer .close .kbd { display: none; }
+  #root[data-touch] #explorer .close { padding: 14px 16px; font-size: 13px; }
+  #root[data-touch] #explorer .row { padding: 12px 16px; }
+  #root[data-touch] #explorer .tog { padding: 12px 16px; }
+  /* phones: a sheet up from the bottom edge; the file list becomes a tab strip along its top */
+  @container (max-width: 767px) {
+    #explorer { left: 0; top: auto; bottom: 0; width: 100%; height: 62vh; height: 62dvh; transform: translateY(var(--ex-slide)); border-width: 1px 0 0; padding-bottom: env(safe-area-inset-bottom); }
     #explorer.on { transform: none; }
+    #explorer .path { font-size: 20px; }
     #explorer .body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-    #explorer .list { border-right: 0; border-bottom: 1px solid var(--moss); max-height: 38%; }
+    #explorer .list { flex-direction: row; border-right: 0; border-bottom: 1px solid var(--moss); padding: 0 8px; overflow: auto hidden; scrollbar-width: none; }
+    #explorer .list::-webkit-scrollbar { display: none; }
+    #explorer .row { display: flex; align-items: center; gap: 0; padding: 12px 10px; min-height: 44px; border-bottom: 2px solid transparent; }
+    #explorer .row .perm { display: none; }
+    #explorer .row .name { overflow: visible; }
+    #explorer .row[aria-selected="true"] { background: none; border-bottom-color: var(--phosphor-bloom); }
+    #explorer .preview { padding: 16px; }
+    #explorer .preview h2 { font-size: 20px; }
+    #explorer .status { display: none; }
   }
   [hidden] { display: none !important; }
   /* site chrome: a bar along the top with the name and one link per object in the room. Flat soil, 1px moss rule. */
@@ -111,28 +133,50 @@
   /* menu words: Silkscreen, a 5×5 bitmap face in the terminal/mainframe family; all caps, tracked out. One row: scrolls sideways before it wraps. */
   #top nav { display: flex; gap: 2px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
   #top nav a { font: 15px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.04em; color: var(--phosphor); opacity: 0.85; text-decoration: none; padding: 17px 12px 15px; border-bottom: 2px solid transparent; white-space: nowrap; flex: 0 0 auto; }
-  @media (max-width: 1500px) { #top nav a { font-size: 13px; padding: 14px 9px 12px; } }
-  @media (max-width: 1200px) { #top nav a { font-size: 12px; padding: 12px 8px 10px; } }
+  @container (max-width: 1500px) { #top nav a { font-size: 13px; padding: 14px 9px 12px; } }
+  @container (max-width: 1200px) { #top nav a { font-size: 12px; padding: 12px 8px 10px; } }
   #top nav a:hover { opacity: 1; text-shadow: 0 0 8px var(--phosphor-bloom); }
   #top nav a[aria-current="true"] { opacity: 1; color: var(--phosphor-bloom); border-bottom-color: var(--phosphor-bloom); text-shadow: 0 0 8px var(--phosphor-bloom); }
   #top :focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: -2px; }
   /* reset view: floats over the room at the bottom edge, solid phosphor so it can't be missed */
-  #reset { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); appearance: none; font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); padding: 10px 16px; cursor: pointer; border-radius: 0; white-space: nowrap; z-index: 2; }
+  #reset { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); appearance: none; font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); padding: 10px 16px; cursor: pointer; border-radius: 0; white-space: nowrap; z-index: 2; }
   #reset:hover { background: var(--phosphor-bloom); border-color: var(--phosphor-bloom); }
   #reset:focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: 2px; }
+  /* exit shell: touch screens have no Esc; sits under the bar, clear of the keyboard */
+  #exit { position: fixed; right: 12px; top: calc(var(--top-h, 52px) + 12px); appearance: none; font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); padding: 12px 16px; cursor: pointer; border-radius: 0; white-space: nowrap; z-index: 2; }
   #intro { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; gap: 12px; justify-items: center; text-align: center; pointer-events: none; opacity: 0; transition: opacity 600ms linear; }
   #intro.on { opacity: 1; }
   #intro b { font: 72px/1 VT323, ui-monospace, monospace; color: var(--phosphor); font-weight: 400; letter-spacing: 0.02em; text-shadow: none; }
   #intro span { font: 14px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--paper); }
   #intro small { font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-dim); margin-top: 16px; }
-  @media (max-width: 1400px) { #top .who span { font-size: 11px; } }
+  @container (max-width: 1400px) { #top .who span { font-size: 11px; } }
   @media (prefers-reduced-motion: reduce) { #top, #intro { transition: none; } }
-  @media (max-width: 767px) {
-    #top { gap: 4px 12px; padding: 6px 12px; }
-    #top nav { margin-left: 0; justify-content: flex-start; }
-    #top nav a { padding: 10px 8px 8px; font-size: 11px; }
-    #accent { display: none; }
-    #intro b { font-size: 48px; }
+  /* phones and short frames: the menu words become one row that scrolls sideways (fading at the right edge) instead of wrapping */
+  @container (max-width: 767px) or (max-height: 500px) {
+    #top nav { margin-left: 0; justify-content: flex-start; flex-wrap: nowrap; overflow: auto hidden; scrollbar-width: none; padding: 0 4px; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent); }
+    #top nav::-webkit-scrollbar { display: none; }
+    #top nav a { display: flex; align-items: center; min-height: 44px; padding: 0 10px; font-size: 12px; }
+    #accent { left: 12px; right: auto; }
+    #intro b { font-size: 44px; }
+    #intro span { font-size: 13px; text-wrap: balance; }
+    #chip { font-size: 13px; }
+  }
+  /* portrait phones: the name on its own row above the words */
+  @container (max-width: 767px) {
+    #top { flex-wrap: wrap; gap: 0; padding: 0; }
+    #top .who { padding: 8px 12px 2px; gap: 2px; }
+    #top .who b { font-size: 22px; }
+    #top .who span { font-size: 11px; }
+    #top nav { flex: 1 0 100%; }
+    #intro { width: 86%; }
+  }
+  /* short landscape frames: one 44px row, the role dropped */
+  @container (max-height: 500px) and (min-width: 768px) {
+    #top { gap: 0 8px; padding: 0 0 0 12px; min-height: 44px; }
+    #top .who { padding: 0; }
+    #top .who span { display: none; }
+    #top .who b { font-size: 20px; }
+    #top nav { flex: 1 1 auto; min-width: 0; }
   }
 </style>
 <template id="__bundler_thumbnail" data-bg-color="#060A07">
@@ -147,13 +191,14 @@
 </head>
 <body>
 <div id="root">
+<div id="boot" aria-hidden="true">booting theRoom<i></i></div>
 <canvas id="room" tabindex="-1"></canvas>
 <div id="fade"></div>
 <pre id="fps" class="hud" hidden></pre>
 <pre id="hud" class="hud" hidden></pre>
 <div id="chip" role="status" aria-live="polite"></div>
 <div id="dim"></div>
-<input id="shell-in" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" tabindex="-1" aria-label="Terminal input">
+<input id="shell-in" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" tabindex="-1" aria-label="Terminal input">
 <div id="intro" aria-hidden="true">
   <b>Luiz Cordeiro</b>
   <span>Artificial Intelligence Engineer &middot; Curitiba</span>
@@ -166,7 +211,7 @@
 <section id="explorer" role="dialog" aria-modal="true" aria-labelledby="explorer-path" hidden>
   <header class="bar">
     <div class="path" id="explorer-path"></div>
-    <button type="button" class="close" data-close>close [esc]</button>
+    <button type="button" class="close" data-close>close <span class="kbd">[esc]</span></button>
   </header>
   <div class="body">
     <div class="list" role="listbox" aria-label="Files"></div>
@@ -175,8 +220,17 @@
   <footer class="status"></footer>
 </section>
 <button type="button" id="reset" hidden>reset view</button>
+<button type="button" id="exit" hidden>exit shell</button>
 <ul id="accent" aria-label="Accent colour" hidden></ul>
 </div>
+<script>
+(function () {   // runs before the three.js modules download: a phone on a slow link sees the boot line, and a dead load names itself instead of staying black
+  var q = new URLSearchParams(location.search), vp = /^(\d+)x(\d+)$/.exec(q.get('vp') || ''), root = document.getElementById('root');
+  if (vp) { root.className = 'vp'; root.style.width = vp[1] + 'px'; root.style.height = vp[2] + 'px'; var s = Math.min(1, (innerWidth - 16) / vp[1], (innerHeight - 16) / vp[2]); if (s < 1) root.style.transform = 'translate(-50%, -50%) scale(' + s + ')'; }   // ?vp=390x844: phone-sized preview frame, scaled down to fit
+  if (q.has('touch') || matchMedia('(pointer: coarse)').matches) root.dataset.touch = '';                 // ?touch: preview the touch UI with a mouse
+  setTimeout(function () { if (!window.__theroom) document.getElementById('boot').textContent = 'the room did not load. it needs WebGL and a current browser.'; }, 15000);
+})();
+</script>
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.185.1/+esm';
@@ -203,13 +257,15 @@ const CONFIG = {
     pale: '#3E4841', paleDim: '#2A352E', marker: '#166B3A', night: '#0A120C', white: '#FFFFFF'
   },
   room: { width: 8, depth: 6, height: 3 },
-  render: { scale: 0.6, ditherLevels: 16, scanline: 0.08, vignette: 0.35, phosphor: false, exposure: 2 },
+  // scale = internal buffer as a fraction of css px; minShort = the buffer's short side never drops under this many px (phones have few css px and many device px)
+  render: { scale: 0.6, minShort: 540, ditherLevels: 16, scanline: 0.08, vignette: 0.35, phosphor: false, exposure: 2 },
   fog: { near: 6, far: 18 },
   camera: {
     fov: 35, near: 0.1, far: 40,
     presets: {
       // Appendix A had home at z 8.5; pulled back so the exit door is in frame at 16:9. Replace with a HUD capture.
-      home:     { position: [0.0, 2.7, 9.4],   target: [0.0, 0.9, -0.6],    route: '/',         label: 'home' },
+      home:     { position: [0.0, 2.7, 9.4],   target: [0.0, 0.9, -0.6],    route: '/',         label: 'home',
+                  portrait: { position: [0.4, 1.7, 2.85], target: [-0.8, 1.05, -1.9] } },   // tall frames: standing just inside the open side, facing the desk
       work:     { position: [-1.2, 1.5, 0.6],  target: [-1.2, 1.1, -2.4],   route: '/work',     label: 'work' },
       projects: { position: [1.6, 1.4, 0.4],   target: [3.2, 1.0, -2.3],    route: '/projects', label: 'projects' },
       about:    { position: [-1.0, 1.4, -0.5], target: [-3.7, 1.3, -0.5],   route: '/about',    label: 'about' },
@@ -219,8 +275,8 @@ const CONFIG = {
   },
   // Camera glide (ms), explorer opens at this fraction of the glide, and how much of the frame height an inspected object fills.
   tween: { duration: 1000, panelEnterAt: 0.65, inspectFill: 0.55 },
-  // Portrait: keep this much horizontal field of view; widen the vertical fov up to maxFov, pull the camera back for the rest.
-  portrait: { hfov: 58, maxFov: 62 },
+  // Narrow frames: widen the vertical fov (up to maxFov) to hold hfov of horizontal view. A preset may carry its own `portrait` shot for tall frames.
+  portrait: { hfov: 58, maxFov: 66 },
   // Routing: 'hash' (#/work) while the file is served from a path; 'path' (/work) on the real domain.
   routing: { mode: 'hash' },
   // Entry: after the wireframe cut, the name fades in, stays `hold` ms or until the first interaction.
@@ -334,7 +390,9 @@ const CONFIG = {
   explorer: { fade: 250, slide: 12, dim: 0.55, width: 760, height: 460, dragTolerance: 6 },
   // Terminal: the right monitor is a shell. A click glides the camera to where the screen fills `fill` of the frame; then the keyboard
   // types into it. scale multiplies the 256×160 screen texture; cols/rows = its text grid; maxInput = typed chars on the prompt line.
-  terminal: { fill: 0.78, prompt: 'luiz@theroom:~$ ', rootPrompt: 'root@theroom:~# ', sudoPrompt: '[sudo] password for luiz: ', password: 'Tito', scale: 1.5, cols: 42, rows: 9, maxInput: 24 },
+  // fillPortrait = fill on tall frames; keyboard = the frame fraction a phone keyboard is assumed to leave visible until the browser reports it;
+  // touch = overrides on coarse-pointer devices: fewer, larger characters on the shell screen (font multiplies the glyph size)
+  terminal: { fill: 0.78, fillPortrait: 0.92, keyboard: 0.55, touch: { cols: 30, rows: 7, maxInput: 14, font: 1.35 }, prompt: 'luiz@theroom:~$ ', rootPrompt: 'root@theroom:~# ', sudoPrompt: '[sudo] password for luiz: ', password: 'Tito', scale: 1.5, cols: 42, rows: 9, maxInput: 24 },
   // Inspectables: id = object group name, label = hover chip and menu word, cmd = the shell's name for it (defaults to the label).
   // Each builder defines how its object lights up (b.hover); objects without one fall back to a hairline outline.
   hotspots: [],
@@ -621,7 +679,7 @@ class Terminal {
   }
   push() { if (!this.gen) return; const g = this.gen[Math.floor(Math.random() * this.gen.length)]; this.lines.push(this.stamp ? stamp() + ' ' + g() : g()); if (this.lines.length > 10) this.lines.shift(); }
   draw() {
-    const x = this.x, S = this.S, lh = 14 * S, n = this.lines.length, T = CONFIG.terminal, sh = this.shell, pw = sh?.mode === 'password';
+    const x = this.x, F = this.shell ? (CONFIG.terminal.font || 1) : 1, S = this.S * F, lh = 14 * S, n = this.lines.length, T = CONFIG.terminal, sh = this.shell, pw = sh?.mode === 'password';   // F: larger shell glyphs on touch screens
     x.fillStyle = pal.ink; x.fillRect(0, 0, 256 * S, 160 * S);
     x.font = (14 * S) + 'px VT323, monospace'; x.textBaseline = 'top';
     this.lines.forEach((l, i) => { const dim = sh ? [T.prompt, T.rootPrompt, T.sudoPrompt].some(p => l.startsWith(p)) : i < n - 4; x.fillStyle = dim ? pal.phosphorDim : pal.phosphor; x.fillText(l, 5 * S, 4 * S + i * lh); });
@@ -638,7 +696,7 @@ class Terminal {
 
 function buildTextures() {
   TEX.termL = new Terminal(LOG.agent);
-  TEX.termR = new Terminal(null, { scale: CONFIG.terminal.scale, shell: SHELL });   // the shell; its transcript lives in SHELL and survives a rebuild
+  TEX.termR = new Terminal(null, { scale: CONFIG.terminal.scale * (devicePixelRatio >= 1.5 ? 2 : 1), shell: SHELL });   // the shell; its transcript lives in SHELL and survives a rebuild. Dense screens get a sharper texture
   // phone: chat screen
   { const [c, x] = cnv(24, 48); x.fillStyle = pal.soil; x.fillRect(0, 0, 24, 48); x.fillStyle = pal.phosphorDim; x.fillRect(0, 0, 24, 6);
     const rows = [[2, 10, 13, 5], [9, 17, 13, 6], [2, 25, 10, 4], [7, 31, 15, 6], [2, 39, 12, 5]];
@@ -1270,7 +1328,8 @@ const fade = document.getElementById('fade');
 const fpsEl = document.getElementById('fps');
 const hudEl = document.getElementById('hud');
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: document.getElementById('root').classList.contains('vp') });   // the preview frame keeps its buffer so captures see the live frame
+document.getElementById('boot').hidden = true;   // a context exists: the room will paint
 renderer.setPixelRatio(1);
 renderer.toneMapping = THREE.NoToneMapping;
 renderer.shadowMap.enabled = false;
@@ -1286,7 +1345,7 @@ const camState = { position: new THREE.Vector3().fromArray(home.position), targe
 
 let composer, post, controls = null;
 const debug = { on: false, fps: false };
-let internal = { w: 1, h: 1 }, portraitPull = 1;
+let internal = { w: 1, h: 1 };
 // where wheel and drag want the camera; camState eases toward it whenever no glide is running
 const freeGoal = { position: camState.position.clone(), target: camState.target.clone(), theta0: 0, dist0: 1, pan: new THREE.Vector3(), out: 0 };
 function setFreeHome(pos, tgt) {
@@ -1294,18 +1353,28 @@ function setFreeHome(pos, tgt) {
   const off = _v.copy(pos).sub(tgt); freeGoal.theta0 = Math.atan2(off.x, off.z); freeGoal.dist0 = off.length();
 }
 
+// VP is the frame everything is measured against: the window, or the phone-sized #root a ?vp=390x844 preview shrinks it to.
+const rootEl = document.getElementById('root'), VP = { w: 1, h: 1, portrait: null };
+const TOUCH = 'touch' in rootEl.dataset;   // coarse pointer: taps pick, one finger orbits, two pinch and pan; no hover, no key hints
+if (TOUCH && CONFIG.terminal.touch) Object.assign(CONFIG.terminal, CONFIG.terminal.touch);
+const ndcOf = e => { const r = rootEl.getBoundingClientRect(); return new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); };
+function measureVP() { VP.w = rootEl.clientWidth || innerWidth; VP.h = rootEl.clientHeight || innerHeight; VP.portrait = VP.h > VP.w; }
 function onResize() {
-  const w = innerWidth, h = innerHeight, s = CONFIG.render.scale;
+  const wasPortrait = VP.portrait; measureVP();
+  const { w, h } = VP, R = CONFIG.render;
+  const s = Math.max(R.scale, Math.min(R.minShort / Math.min(w, h), devicePixelRatio || 1));
   internal = { w: Math.max(1, Math.floor(w * s)), h: Math.max(1, Math.floor(h * s)) };
   renderer.setSize(internal.w, internal.h, false);
   composer.setSize(internal.w, internal.h);
   post.uniforms.uResolution.value.set(internal.w, internal.h);
   camera.aspect = w / h;
-  // portrait: widen vertical fov to hold hfov, pull back (portraitPull) for what the fov cap can't cover
-  const P = CONFIG.portrait, want = Math.tan(P.hfov * D2R / 2) / camera.aspect;
-  const fov = Math.min(P.maxFov, Math.max(CONFIG.camera.fov, 2 * Math.atan(want) / D2R));
-  camera.fov = fov; portraitPull = Math.max(1, want / Math.tan(fov * D2R / 2));
+  // narrow frames: widen the vertical fov, up to maxFov, to hold hfov of horizontal view
+  const P = CONFIG.portrait;
+  camera.fov = Math.min(P.maxFov, Math.max(CONFIG.camera.fov, 2 * Math.atan(Math.tan(P.hfov * D2R / 2) / camera.aspect) / D2R));
   camera.updateProjectionMatrix();
+  // orientation flipped: a zone with its own portrait shot re-frames (not mid-inspection); an open shell re-aims at the screen
+  if (wasPortrait !== null && wasPortrait !== VP.portrait && loaded && !explorer.open && !TERM.open && !camTween.back && ZONES[nav.zone]?.portrait) goZone(nav.zone, { push: false });
+  if (TERM.open) { const v = terminalView(); if (v) tweenCamera(v); }
 }
 
 // debug 1 m floor grid
@@ -1361,8 +1430,8 @@ function animate(t, dt) {
     const v = (inDip ? F.dip : 1) * (1 + 0.5 * (L.boost || 0)); L.mat.color.setScalar(v); L.glow.material.opacity = (0.3 + 0.2 * (L.boost || 0)) * (inDip ? F.dip : 1);
   }
 }
-function tick() {
-  requestAnimationFrame(tick);
+function tick() { requestAnimationFrame(tick); frame(); }
+function frame() {   // one frame: load reveal, motion, glide, render, hover. Exposed on window.__theroom so a throttled tab can still be stepped
   const dt = Math.min(0.1, clock.getDelta()), t = clock.elapsedTime;
   if (!loaded) {   // wireframe build-up: the reveal height sweeps floor to ceiling, eased in and out
     const p = MOTION ? Math.min(1, (performance.now() - loadT0) / CONFIG.loading.rise) : 1, e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
@@ -1378,7 +1447,6 @@ function tick() {
       camState.position.lerp(freeGoal.position, k); camState.target.lerp(freeGoal.target, k);
     }
     camera.position.copy(camState.position);
-    if (portraitPull > 1) camera.position.sub(camState.target).multiplyScalar(portraitPull).add(camState.target);
     if (MOTION) camera.position.y += CONFIG.motion.breathe.amp * Math.sin(2 * Math.PI * t / CONFIG.motion.breathe.period);
     camera.lookAt(camState.target);
   }
@@ -1430,8 +1498,8 @@ function placeChip(target) {
   _box.makeEmpty();
   for (const m of target.meshes) _box.expandByObject(m);       // meshes only; glow sprites would inflate the bounds
   _v.set(_box.max.x, _box.max.y, (_box.min.z + _box.max.z) / 2).project(camera);   // top-right of the bounds
-  const x = Math.round((_v.x + 1) / 2 * innerWidth) + CONFIG.hover.offset[0], y = Math.round((1 - _v.y) / 2 * innerHeight) + CONFIG.hover.offset[1];
-  const cx = Math.max(8, Math.min(innerWidth - chipEl.offsetWidth - 8, x)), cy = Math.max(chipEl.offsetHeight + 8, Math.min(innerHeight - 8, y));
+  const x = Math.round((_v.x + 1) / 2 * VP.w) + CONFIG.hover.offset[0], y = Math.round((1 - _v.y) / 2 * VP.h) + CONFIG.hover.offset[1];
+  const cx = Math.max(8, Math.min(VP.w - chipEl.offsetWidth - 8, x)), cy = Math.max(chipEl.offsetHeight + 8, Math.min(VP.h - 8, y));
   chipEl.style.transform = `translate(${cx}px, ${cy - chipEl.offsetHeight}px)`;
 }
 function hoverTick(t) {
@@ -1458,13 +1526,12 @@ function hoverTick(t) {
   }
   if (hover.current && !locked) placeChip(hover.current);
 }
-canvas.addEventListener('pointermove', e => { hover.pointer.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); hover.moved = true; });
+canvas.addEventListener('pointermove', e => { if (e.pointerType === 'touch') return; hover.pointer.copy(ndcOf(e)); hover.moved = true; });   // a finger doesn't hover: a tap lights the object instead
 canvas.addEventListener('pointerleave', () => { hover.pointer.set(2, 2); hover.moved = true; });
-canvas.addEventListener('wheel', e => {
-  if (debug.on || explorer.open || TERM.open || camTween.active) return;
-  e.preventDefault();
-  const W = CONFIG.wheel, k = -e.deltaY * W.sensitivity;   // > 0 zooms in
-  raycaster.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
+// dolly by fraction k of the distance to the point under ndc (k > 0 moves in, k < 0 out); the wheel and a pinch both land here
+function dollyAt(ndc, k) {
+  const W = CONFIG.wheel;
+  raycaster.setFromCamera(ndc, camera);
   const hit = raycaster.intersectObjects(BUILT.concat(scene.children.filter(o => o.name === 'room')), true).find(h => !h.object.isSprite && h.object.visible);
   const aim = hit ? hit.point : raycaster.ray.at(freeGoal.position.distanceTo(freeGoal.target), new THREE.Vector3());
   const toAim = aim.clone().sub(freeGoal.position), dist = toAim.length();
@@ -1474,40 +1541,64 @@ canvas.addEventListener('wheel', e => {
   // zoom-out cap: `out` is the metres dollied back from the preset (dolly keeps pos→target constant, so measure travel, not distance);
   // and the camera never leaves the room box (the open +z side allows up to the home preset)
   if (k < 0 && freeGoal.out - f * dist > freeGoal.dist0 * (W.maxOut - 1)) return;
-  const R = CONFIG.room;
-  if (pos.x < -R.width / 2 + 0.2 || pos.x > R.width / 2 - 0.2 || pos.y < 0.2 || pos.y > R.height - 0.2 || pos.z < -R.depth / 2 + 0.2 || pos.z > 9.6) return;
+  if (!inRoom(pos)) return;
   freeGoal.out -= f * dist;
   freeGoal.position.copy(pos); freeGoal.target.copy(tgt);
+}
+function inRoom(p) { const R = CONFIG.room; return !(p.x < -R.width / 2 + 0.2 || p.x > R.width / 2 - 0.2 || p.y < 0.2 || p.y > R.height - 0.2 || p.z < -R.depth / 2 + 0.2 || p.z > 9.6); }
+canvas.addEventListener('wheel', e => {
+  if (debug.on || explorer.open || TERM.open || camTween.active) return;
+  e.preventDefault();
+  dollyAt(ndcOf(e), -e.deltaY * CONFIG.wheel.sensitivity);   // > 0 zooms in
 }, { passive: false });
-// drag: left or right button orbits the look target (right-drag rotates, as in most 3D viewers); middle button pans (trucks) camera and target together
+// drag: left or right button orbits the look target (right-drag rotates, as in most 3D viewers); middle button pans (trucks) camera and target together.
+// touch: one finger orbits; two fingers pinch to dolly toward their midpoint and pan by moving it. `pointers` holds every finger on the canvas.
 const drag = { on: false, pan: false, x: 0, y: 0 };
+const pointers = new Map(); let pinch = null;   // pinch: { dist, x, y } of the previous two-finger frame
+const midOf = () => { const [a, b] = [...pointers.values()]; return { dist: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
 canvas.addEventListener('pointerdown', e => {
   if (e.button > 2 || debug.on || explorer.open || TERM.open) return;
   if (e.button) e.preventDefault();
-  drag.on = true; drag.pan = e.button === 1; drag.x = e.clientX; drag.y = e.clientY; canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); try { canvas.setPointerCapture(e.pointerId); } catch {}
+  if (pointers.size >= 2) { pinch = midOf(); drag.on = false; return; }   // a second finger: pinch, not orbit
+  drag.on = true; drag.pan = e.button === 1; drag.x = e.clientX; drag.y = e.clientY;
 });
 canvas.addEventListener('mousedown', e => { if (e.button === 1) e.preventDefault(); });   // no middle-click autoscroll
 canvas.addEventListener('contextmenu', e => { if (!debug.on) e.preventDefault(); });      // right button is an orbit handle, not a menu
 function panBy(dx, dy) {
   const fwd = _v.copy(freeGoal.target).sub(freeGoal.position), dist = fwd.length(); fwd.normalize();
   const right = new THREE.Vector3().crossVectors(fwd, UP).normalize(), up = new THREE.Vector3().crossVectors(right, fwd);
-  const mpp = 2 * dist * Math.tan(camera.fov * D2R / 2) / innerHeight;   // metres per pixel at the look distance
+  const mpp = 2 * dist * Math.tan(camera.fov * D2R / 2) / VP.h;   // metres per pixel at the look distance
   const delta = right.multiplyScalar(-dx * mpp).addScaledVector(up, dy * mpp);
   const next = freeGoal.pan.clone().add(delta); if (next.length() > CONFIG.pan.limit) next.setLength(CONFIG.pan.limit);
   delta.copy(next).sub(freeGoal.pan); freeGoal.pan.copy(next);
   freeGoal.position.add(delta); freeGoal.target.add(delta);
 }
-canvas.addEventListener('pointermove', e => {
-  if (!drag.on || camTween.active) return;
-  const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
-  if (dx || dy) canvas.classList.add(drag.pan ? 'pan' : 'drag');
-  if (drag.pan) return panBy(dx, dy);
+function orbitBy(dx, dy) {
   const G = CONFIG.drag, off = freeGoal.position.clone().sub(freeGoal.target), sph = new THREE.Spherical().setFromVector3(off);
   let th = sph.theta - dx * G.speed; th = Math.min(freeGoal.theta0 + G.yaw, Math.max(freeGoal.theta0 - G.yaw, th));
   sph.theta = th; sph.phi = Math.min(G.pitch[1], Math.max(G.pitch[0], sph.phi - dy * G.speed));
-  freeGoal.position.copy(freeGoal.target).add(off.setFromSpherical(sph));
+  const pos = freeGoal.target.clone().add(off.setFromSpherical(sph));
+  if (pos.z >= CONFIG.room.depth / 2 || inRoom(pos)) freeGoal.position.copy(pos);   // inside the room the orbit stops at the walls; outside the open side it swings free
+}
+canvas.addEventListener('pointermove', e => {
+  const p = pointers.get(e.pointerId); if (p) { p.x = e.clientX; p.y = e.clientY; }
+  if (camTween.active) return;
+  if (pinch && pointers.size >= 2) {
+    const m = midOf(); canvas.classList.add('drag');
+    if (pinch.dist > 0 && m.dist > 0) dollyAt(ndcOf({ clientX: m.x, clientY: m.y }), 1 - pinch.dist / m.dist);   // spread by a ratio = move in by that ratio
+    panBy(m.x - pinch.x, m.y - pinch.y); pinch = m; return;
+  }
+  if (!drag.on) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+  if (dx || dy) canvas.classList.add(drag.pan ? 'pan' : 'drag');
+  if (drag.pan) panBy(dx, dy); else orbitBy(dx, dy);
 });
-const endDrag = () => { drag.on = false; canvas.classList.remove('drag', 'pan'); };
+const endDrag = e => {
+  if (e) pointers.delete(e.pointerId);
+  if (pointers.size < 2) pinch = null;
+  if (pointers.size === 0) { drag.on = false; canvas.classList.remove('drag', 'pan'); }
+};
 canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
 
 // ───────────────────────────── explorer (click → window) ─────────────────────────────
@@ -1526,7 +1617,9 @@ function renderExplorer() {
 }
 function selectFile(i, focus = true) {
   const n = explorer.insp.explorer.files.length; explorer.index = (i + n) % n; renderExplorer();
-  if (focus) exList.querySelector('.row[aria-selected="true"]').focus({ preventScroll: true });
+  const row = exList.querySelector('.row[aria-selected="true"]');
+  if (focus) row.focus({ preventScroll: true });
+  if (exList.scrollWidth > exList.clientWidth) exList.scrollTo({ left: Math.max(0, row.offsetLeft - exList.offsetLeft - 8), behavior: 'smooth' });   // the phone tab strip follows the selection
 }
 function openExplorer(insp) {
   if (!insp?.explorer) return;
@@ -1595,6 +1688,7 @@ const SHELL = { lines: [], input: '', solidUntil: 0, root: false, mode: null, tr
 const TERM = { open: false, back: null };
 const PLACES = ['home'].concat(CONFIG.inspectables.filter(i => i.explorer).map(i => i.cmd || i.label.replace(/\s+/g, '-')));
 const shellIn = document.getElementById('shell-in');   // offscreen field that holds focus while the shell is open: its value is the typed line
+const exitEl = document.getElementById('exit'); exitEl.addEventListener('click', () => leaveTerminal());   // touch: no Esc key, so a button steps out
 const shellDraw = () => { if (TEX.termR) { TEX.termR.cursor = true; TEX.termR.draw(); } };
 function shellPrint(s) {   // word-wrapped to the screen's columns; the transcript keeps the last terminal.rows lines
   const cols = CONFIG.terminal.cols; let line = '';
@@ -1679,22 +1773,34 @@ function shellSync() {
 shellIn.addEventListener('input', shellSync);
 addEventListener('keydown', e => { if (TERM.open) shellKey(e); }, true);   // capture: ahead of every other key handler on the page
 for (const ev of ['keyup', 'keypress']) addEventListener(ev, e => { if (TERM.open) e.stopPropagation(); }, true);
-// the spot square on to the right screen, at the distance where the screen fills terminal.fill of the frame
+// the spot square on to the right screen, at the distance where the screen fills terminal.fill of the band it may use: under the top bar,
+// above the on-screen keyboard (a phone's takes the lower part of the frame). The screen is centred in that band by shifting camera and target together.
 function terminalView() {
   const screen = scene.getObjectByName('monitor-right')?.getObjectByName('screen'); if (!screen) return null;
   screen.updateWorldMatrix(true, false);
   const c = new THREE.Box3().setFromObject(screen).getCenter(new THREE.Vector3());
   const n = new THREE.Vector3().fromBufferAttribute(screen.geometry.attributes.normal, 0).transformDirection(screen.matrixWorld);
-  const [sw, sh] = O('monitor-right').screen, k = 2 * Math.tan(camera.fov * D2R / 2) * CONFIG.terminal.fill;
-  return { position: c.clone().addScaledVector(n, Math.max(sh / k, sw / (k * camera.aspect))), target: c };
+  const vis = keyboardFree(), top = topEl.offsetHeight / VP.h, band = Math.max(0.2, vis - top), T = CONFIG.terminal, [sw, sh] = O('monitor-right').screen;
+  const th = Math.tan(camera.fov * D2R / 2), k = 2 * th * (VP.portrait ? T.fillPortrait : T.fill);
+  const d = Math.max(sh / (k * band), sw / (k * camera.aspect)), dy = (1 - (top + vis)) * d * th;   // dy: band centre, as a world offset at the screen's distance
+  const pos = c.clone().addScaledVector(n, d); pos.y -= dy;
+  return { position: pos, target: c.clone().setY(c.y - dy) };
 }
+// fraction of the frame height the on-screen keyboard leaves visible: what the browser reports, else the touch assumption, else all of it. ?kb=0.5 fakes one
+function keyboardFree() {
+  const forced = +new URLSearchParams(location.search).get('kb'); if (forced) return forced;
+  const vv = window.visualViewport, real = vv && !rootEl.classList.contains('vp') ? vv.height / VP.h : 1;   // the preview frame ignores the browser's own viewport
+  return Math.min(1, Math.max(0.35, real < 0.9 ? real : (TOUCH && TERM.open ? CONFIG.terminal.keyboard : 1)));
+}
+window.visualViewport?.addEventListener('resize', () => { if (!TERM.open) return; const v = terminalView(); if (v && v.position.distanceTo(freeGoal.position) > 0.02) tweenCamera(v); });
 function enterTerminal() {
   if (TERM.open) return;
-  const view = terminalView(); if (!view) return;
+  TERM.open = true;   // set first: the view assumes a phone keyboard only while the shell is open
+  const view = terminalView(); if (!view) { TERM.open = false; return; }
   let back = { position: camState.position.clone(), target: camState.target.clone() };
   if (explorer.open) { back = camTween.back || back; camTween.back = null; closeExplorer(true); }   // an open window folds; its return point carries over
   TERM.open = true; TERM.back = back;
-  setHover(null); hover.pointer.set(2, 2); canvas.classList.add('shell');
+  setHover(null); hover.pointer.set(2, 2); canvas.classList.add('shell'); exitEl.hidden = !TOUCH;
   shellIn.value = SHELL.input = ''; shellIn.focus({ preventScroll: true });   // the keyboard goes to the field, not to a focused link or the page
   if (!history.state?.term) history.pushState({ term: true, zone: nav.zone }, '', location.href);   // back steps out of the shell
   SHELL.solidUntil = performance.now() + CONFIG.tween.duration; shellDraw();   // cursor solid through the glide, blinking on arrival
@@ -1703,7 +1809,7 @@ function enterTerminal() {
 }
 function leaveTerminal({ tween = true, fromHistory = false } = {}) {
   if (!TERM.open) return;
-  TERM.open = false; hover.moved = true; canvas.classList.remove('shell'); shellIn.blur();
+  TERM.open = false; hover.moved = true; canvas.classList.remove('shell'); shellIn.blur(); exitEl.hidden = true;
   if (SHELL.mode) { SHELL.mode = null; shellIn.value = SHELL.input = ''; shellDraw(); }   // a half-typed password dies with the session
   if (tween && TERM.back) tweenCamera(TERM.back);
   TERM.back = null;
@@ -1718,6 +1824,7 @@ shellRun('help'); shellRun('ls');   // the screen boots with a session already o
 const nav = { zone: 'home' };
 const topEl = document.getElementById('top'), navEl = topEl.querySelector('nav'), introEl = document.getElementById('intro');
 const ZONES = CONFIG.camera.presets;
+const presetOf = z => (VP.portrait && ZONES[z].portrait) ? { ...ZONES[z], ...ZONES[z].portrait } : ZONES[z];   // a zone's shot for the current frame
 const hrefOf = z => CONFIG.routing.mode === 'hash' ? `#${ZONES[z].route}` : ZONES[z].route;
 const zoneOfUrl = () => { const p = CONFIG.routing.mode === 'hash' ? (location.hash.slice(1) || '/') : location.pathname; return Object.keys(ZONES).find(z => ZONES[z].route === p) || 'home'; };
 // top menu: `home` plus one word per object in the room (the inspectables' hover labels). A word glides the camera to
@@ -1729,6 +1836,7 @@ function updateMenu() {
     const id = a.dataset.insp, insp = id && CONFIG.inspectables.find(i => i.id === id);
     const on = id ? (explorer.open && explorer.insp?.id === id) || (TERM.open && !!insp?.terminal) : !explorer.open && !TERM.open && nav.zone === a.dataset.zone;
     a.setAttribute('aria-current', String(on));
+    if (on && navEl.scrollWidth > navEl.clientWidth) navEl.scrollTo({ left: Math.max(0, a.offsetLeft - navEl.offsetLeft - 12), behavior: 'smooth' });   // the phone strip follows the current word
   }
 }
 function focusObject(insp) {
@@ -1744,7 +1852,8 @@ function goZone(z, { push = true } = {}) {
   updateMenu();
   document.title = z === 'home' ? 'Luiz Cordeiro · theRoom' : `Luiz Cordeiro · ${ZONES[z].label}`;
   if (push && hrefOf(z) !== (CONFIG.routing.mode === 'hash' ? location.hash || '#/' : location.pathname)) history.pushState({ zone: z }, '', hrefOf(z));
-  tweenCamera({ position: new THREE.Vector3().fromArray(ZONES[z].position), target: new THREE.Vector3().fromArray(ZONES[z].target) });
+  const p = presetOf(z);
+  tweenCamera({ position: new THREE.Vector3().fromArray(p.position), target: new THREE.Vector3().fromArray(p.target) });
   return true;
 }
 navEl.addEventListener('click', e => {
@@ -1762,7 +1871,7 @@ navEl.addEventListener('click', e => {
 const resetEl = document.getElementById('reset');
 resetEl.addEventListener('click', () => goZone(nav.zone, { push: false }));
 function updateReset() {
-  const p = ZONES[nav.zone], moved = !camTween.back && !explorer.open && !TERM.open && (freeGoal.position.distanceTo(_v.fromArray(p.position)) > 0.02 || freeGoal.target.distanceTo(_v.fromArray(p.target)) > 0.02);
+  const p = presetOf(nav.zone), moved = !camTween.back && !explorer.open && !TERM.open && (freeGoal.position.distanceTo(_v.fromArray(p.position)) > 0.02 || freeGoal.target.distanceTo(_v.fromArray(p.target)) > 0.02);
   if (resetEl.hidden === moved) resetEl.hidden = !moved;
 }
 addEventListener('popstate', () => {
@@ -1905,15 +2014,16 @@ function rainControlHtml() {
 rain.arm();
 // canvas click: a press that didn't drag; raycast at the release point
 let pressAt = null;
-canvas.addEventListener('pointerdown', e => { if (e.button === 0) pressAt = [e.clientX, e.clientY]; });
+canvas.addEventListener('pointerdown', e => { pressAt = e.button === 0 && pointers.size <= 1 ? [e.clientX, e.clientY] : null; });   // a second finger is a pinch, never a tap
 canvas.addEventListener('pointerup', e => {
   if (!pressAt || e.button !== 0 || debug.on || explorer.open) { pressAt = null; return; }
   const moved = Math.hypot(e.clientX - pressAt[0], e.clientY - pressAt[1]); pressAt = null;
   if (moved > CONFIG.explorer.dragTolerance) return;
-  raycaster.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
+  raycaster.setFromCamera(ndcOf(e), camera);
   let hit = null, best = Infinity;
   for (const tg of hover.targets) { const h = raycaster.intersectObjects(tg.meshes, false); if (h.length && h[0].distance < best) { best = h[0].distance; hit = tg; } }
   if (TERM.open) { if (!hit?.insp.terminal) leaveTerminal(); else shellIn.focus({ preventScroll: true }); return; }   // a click off the screen glides back
+  if (e.pointerType === 'touch') setHover(hit);   // no hover on glass: the tap lights the object and shows its label (the dog's chip is the clue)
   if (hit) focusObject(hit.insp);   // shell, window, or (the dog) just a glide up close
 });
 // dither swatch for image placeholders: 4×4 Bayer at ~30%, moss on soil, regenerated with the accent
@@ -2025,9 +2135,11 @@ async function init() {
   const accent = CONFIG.accent.presets[pick] ? pick : (isFinite(+pick) ? +pick : CONFIG.accent.name);
   setAccent(accent, { rebuild: false });
   // land on the zone the URL names, without a glide
-  const z0 = zoneOfUrl(); nav.zone = z0; camState.position.fromArray(ZONES[z0].position); camState.target.fromArray(ZONES[z0].target);
+  measureVP();
+  const z0 = zoneOfUrl(), p0 = presetOf(z0); nav.zone = z0; camState.position.fromArray(p0.position); camState.target.fromArray(p0.target);
   setFreeHome(camState.position, camState.target);
   updateMenu();
+  if (TOUCH) introEl.querySelector('small').textContent = 'tap anything that glows';
   history.replaceState({ zone: z0 }, '', location.href);
   document.title = z0 === 'home' ? 'Luiz Cordeiro · theRoom' : `Luiz Cordeiro · ${ZONES[z0].label}`;
 
@@ -2056,7 +2168,7 @@ async function init() {
   }, MOTION ? CONFIG.loading.rise + CONFIG.loading.hold : CONFIG.loading.hold);
 }
 init();
-window.__theroom = { CONFIG, scene, camera, camState, renderer, setDebug, setPhosphor, setAccent, paletteFor };
+window.__theroom = { CONFIG, scene, camera, camState, renderer, setDebug, setPhosphor, setAccent, paletteFor, frame };
 </script>
 </body>
 </html>
