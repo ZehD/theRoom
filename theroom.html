@@ -109,7 +109,7 @@
   #root[data-touch] #explorer .tog { padding: 12px 16px; }
   /* phones: a sheet up from the bottom edge; the file list becomes a tab strip along its top */
   @container (max-width: 767px) {
-    #explorer { left: 0; top: auto; bottom: 0; width: 100%; height: 62vh; height: 62dvh; transform: translateY(var(--ex-slide)); border-width: 1px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+    #explorer { left: 0; top: var(--top-h, 96px); bottom: 0; width: 100%; height: auto; transform: translateY(var(--ex-slide)); border-width: 1px 0 0; padding-bottom: env(safe-area-inset-bottom); }
     #explorer.on { transform: none; }
     #explorer .path { font-size: 20px; }
     #explorer .body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
@@ -1557,6 +1557,7 @@ const drag = { on: false, pan: false, x: 0, y: 0 };
 const pointers = new Map(); let pinch = null;   // pinch: { dist, x, y } of the previous two-finger frame
 const midOf = () => { const [a, b] = [...pointers.values()]; return { dist: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
 canvas.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'touch') e.preventDefault();   // no synthetic mouse events after a tap: they would steal focus from the shell field and drop the phone keyboard
   if (e.button > 2 || debug.on || explorer.open || TERM.open) return;
   if (e.button) e.preventDefault();
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); try { canvas.setPointerCapture(e.pointerId); } catch {}
@@ -1564,6 +1565,7 @@ canvas.addEventListener('pointerdown', e => {
   drag.on = true; drag.pan = e.button === 1; drag.x = e.clientX; drag.y = e.clientY;
 });
 canvas.addEventListener('mousedown', e => { if (e.button === 1) e.preventDefault(); });   // no middle-click autoscroll
+canvas.addEventListener('touchend', e => { if (TERM.open) e.preventDefault(); }, { passive: false });   // shell open: the tap ends here; no gesture-tap focus change under the keyboard
 canvas.addEventListener('contextmenu', e => { if (!debug.on) e.preventDefault(); });      // right button is an orbit handle, not a menu
 function panBy(dx, dy) {
   const fwd = _v.copy(freeGoal.target).sub(freeGoal.position), dist = fwd.length(); fwd.normalize();
@@ -2022,7 +2024,7 @@ canvas.addEventListener('pointerup', e => {
   raycaster.setFromCamera(ndcOf(e), camera);
   let hit = null, best = Infinity;
   for (const tg of hover.targets) { const h = raycaster.intersectObjects(tg.meshes, false); if (h.length && h[0].distance < best) { best = h[0].distance; hit = tg; } }
-  if (TERM.open) { if (!hit?.insp.terminal) leaveTerminal(); else shellIn.focus({ preventScroll: true }); return; }   // a click off the screen glides back
+  if (TERM.open) { if (!hit?.insp.terminal) leaveTerminal(); else { if (document.activeElement === shellIn) shellIn.blur(); shellIn.focus({ preventScroll: true }); } return; }   // a click off the screen glides back; on the screen, re-summons a dismissed keyboard
   if (e.pointerType === 'touch') setHover(hit);   // no hover on glass: the tap lights the object and shows its label (the dog's chip is the clue)
   if (hit) focusObject(hit.insp);   // shell, window, or (the dog) just a glide up close
 });
