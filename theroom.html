@@ -35,6 +35,7 @@
   #root[data-touch] #accent button { width: 32px; height: 32px; }
   #chip { position: fixed; left: 0; top: 0; font: 15px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.04em; color: var(--phosphor-bloom); text-shadow: 0 0 8px var(--phosphor-bloom); background: var(--soil); border: 1px solid var(--phosphor); padding: 9px 12px 8px; pointer-events: none; white-space: nowrap; opacity: 0; transition: opacity 150ms linear; will-change: transform; }
   #chip.on { opacity: 1; }
+  #chip .more { color: var(--phosphor); text-shadow: none; opacity: 0.7; }
   @media (prefers-reduced-motion: reduce) { #chip { transition: none; } }
   #room.hot { cursor: pointer; }
   #room.drag { cursor: grabbing; }
@@ -1493,7 +1494,7 @@ function setHover(target) {
   if (hover.current === target) return;
   hover.current = target;
   canvas.classList.toggle('hot', !!target);
-  if (target) { chipEl.textContent = target.insp.label; chipEl.classList.add('on'); } else chipEl.classList.remove('on');
+  if (target) { chipEl.textContent = target.insp.label; if (TOUCH) chipEl.insertAdjacentHTML('beforeend', '<span class="more"> · tap again</span>'); chipEl.classList.add('on'); } else chipEl.classList.remove('on');   // on glass the chip also says how to open
 }
 function placeChip(target) {
   _box.makeEmpty();
@@ -1528,7 +1529,7 @@ function hoverTick(t) {
   if (hover.current && !locked) placeChip(hover.current);
 }
 canvas.addEventListener('pointermove', e => { if (e.pointerType === 'touch') return; hover.pointer.copy(ndcOf(e)); hover.moved = true; });   // a finger doesn't hover: a tap lights the object instead
-canvas.addEventListener('pointerleave', () => { hover.pointer.set(2, 2); hover.moved = true; });
+canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; hover.pointer.set(2, 2); hover.moved = true; });   // a lifted finger leaves too; that must not clear the lit object
 // dolly by fraction k of the distance to the point under ndc (k > 0 moves in, k < 0 out); the wheel and a pinch both land here
 function dollyAt(ndc, k) {
   const W = CONFIG.wheel;
@@ -2026,7 +2027,10 @@ canvas.addEventListener('pointerup', e => {
   let hit = null, best = Infinity;
   for (const tg of hover.targets) { const h = raycaster.intersectObjects(tg.meshes, false); if (h.length && h[0].distance < best) { best = h[0].distance; hit = tg; } }
   if (TERM.open) { if (!hit?.insp.terminal) leaveTerminal(); else { if (document.activeElement === shellIn) shellIn.blur(); shellIn.focus({ preventScroll: true }); } return; }   // a click off the screen glides back; on the screen, re-summons a dismissed keyboard
-  if (e.pointerType === 'touch') setHover(hit);   // no hover on glass: the tap lights the object and shows its label (the dog's chip is the clue)
+  if (e.pointerType === 'touch') {   // no hover on glass: the first tap lights the object and holds its label (the dog's chip is the clue); the next tap on it opens
+    if (hit && hover.current !== hit) { setHover(hit); return; }
+    setHover(hit); chipEl.querySelector('.more')?.remove();
+  }
   if (hit) focusObject(hit.insp);   // shell, window, or (the dog) just a glide up close
 });
 // dither swatch for image placeholders: 4×4 Bayer at ~30%, moss on soil, regenerated with the accent
