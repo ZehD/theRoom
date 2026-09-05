@@ -275,8 +275,9 @@ const CONFIG = {
   },
   // Camera glide (ms), explorer opens at this fraction of the glide, and how much of the frame height an inspected object fills.
   tween: { duration: 1000, panelEnterAt: 0.65, inspectFill: 0.55 },
-  // Narrow frames: widen the vertical fov (up to maxFov) to hold hfov of horizontal view. A preset may carry its own `portrait` shot for tall frames.
-  portrait: { hfov: 58, maxFov: 66 },
+  // Narrow frames: widen the vertical fov (up to maxFov) to hold hfov of horizontal view, and let the wheel/pinch back out to maxOut × the preset distance
+  // (the tall home shot stands inside the room). A preset may carry its own `portrait` shot for tall frames.
+  portrait: { hfov: 58, maxFov: 66, maxOut: 2.5 },
   // Routing: 'hash' (#/work) while the file is served from a path; 'path' (/work) on the real domain.
   routing: { mode: 'hash' },
   // Entry: after the wireframe cut, the name fades in, stays `hold` ms or until the first interaction.
@@ -353,7 +354,7 @@ const CONFIG = {
     { id: 'led-strip',     position: [-1.2, 0.715, -2.005], length: 3.4 },
     { id: 'rug',           position: [0.5, 0.01, 1.0],    size: [2.4, 1.6] },
     { id: 'chair',         position: [-1.6, 0, -1.55],    rotation: 0.35 },
-    { id: 'frenchie',      position: [1.72, 0.012, 1.72],  rotation: -0.85, breathe: { amp: 0.11, period: 3.8 } }
+    { id: 'frenchie',      position: [-0.38, 0.012, 0.5],  rotation: -0.6,  breathe: { amp: 0.11, period: 3.8 } }   // the rug corner by the chair: in frame on the phone home shot, nose toward the open side
   ],
   // Bookshelf contents, rows bottom-up. Titles print on the spines (uppercase, top to bottom); the tones and sizes per row
   // live in BUILD.shelf. Board games stack flat on the top shelf, bottom of the stack first, title on the side facing the
@@ -1540,7 +1541,7 @@ function dollyAt(ndc, k) {
   const pos = freeGoal.position.clone().add(delta), tgt = freeGoal.target.clone().add(delta);
   // zoom-out cap: `out` is the metres dollied back from the preset (dolly keeps pos→target constant, so measure travel, not distance);
   // and the camera never leaves the room box (the open +z side allows up to the home preset)
-  if (k < 0 && freeGoal.out - f * dist > freeGoal.dist0 * (W.maxOut - 1)) return;
+  if (k < 0 && freeGoal.out - f * dist > freeGoal.dist0 * (((VP.portrait && CONFIG.portrait.maxOut) || W.maxOut) - 1)) return;   // tall frames: the portrait shot starts inside the room, so it may back out to the open side
   if (!inRoom(pos)) return;
   freeGoal.out -= f * dist;
   freeGoal.position.copy(pos); freeGoal.target.copy(tgt);
