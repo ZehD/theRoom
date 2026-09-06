@@ -143,6 +143,9 @@
   #reset { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); appearance: none; font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); padding: 10px 16px; cursor: pointer; border-radius: 0; white-space: nowrap; z-index: 2; }
   #reset:hover { background: var(--phosphor-bloom); border-color: var(--phosphor-bloom); }
   #reset:focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: 2px; }
+  /* secrets toast: under the top bar, centred; fades in for a moment on each find */
+  #toast { position: fixed; left: 50%; top: calc(var(--top-h, 52px) + 12px); transform: translateX(-50%); font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-bloom); background: var(--soil); border: 1px solid var(--phosphor); padding: 9px 14px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 200ms linear; z-index: 3; }
+  #toast.on { opacity: 1; }
   /* exit shell: touch screens have no Esc; sits under the bar, clear of the keyboard */
   #exit { position: fixed; right: 12px; top: calc(var(--top-h, 52px) + 12px); appearance: none; font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); padding: 12px 16px; cursor: pointer; border-radius: 0; white-space: nowrap; z-index: 2; }
   #intro { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; gap: 12px; justify-items: center; text-align: center; pointer-events: none; opacity: 0; transition: opacity 600ms linear; }
@@ -221,6 +224,7 @@
   <footer class="status"></footer>
 </section>
 <button type="button" id="reset" hidden>reset view</button>
+<div id="toast" role="status" aria-live="polite"></div>
 <button type="button" id="exit" hidden>exit shell</button>
 <ul id="accent" aria-label="Accent colour" hidden></ul>
 </div>
@@ -341,6 +345,7 @@ const CONFIG = {
     { id: 'microscope',    position: [0.3, 0.75, -2.45],  rotation: -0.25 },
     { id: 'cert-frame',    position: [-2.75, 1.75, -2.97], size: [0.3, 0.38] },
     { id: 'whiteboard',    position: [0.35, 1.6, -2.97],   size: [1.2, 0.8], beaconOf: 'writing' },
+    { id: 'post-it',       position: [-0.95, 1.15, -2.97], size: 0.09, tilt: -6 },   // a note stuck by the shell monitor: the root recipe
     { id: 'pixel-frames',  position: [2.7, 2.15, -2.97],  frame: 0.3, gap: 0.42 },
     { id: 'rack',          position: [3.2, 0, -2.3],      size: [0.6, 1.8, 0.8], beaconOf: 'projects' },
     { id: 'bench-arduino', position: [3.75, 0.95, -1.3],  size: [0.45, 0.03, 0.5] },
@@ -466,7 +471,8 @@ const CONFIG = {
         { name: 'on-the-deck.txt', title: 'On the deck', meta: 'side B, 33⅓', bullets: ['Getz/Gilberto — Stan Getz, João Gilberto (1964)', 'Clube da Esquina — Milton Nascimento, Lô Borges (1972)', 'Kind of Blue — Miles Davis (1959)', 'Elis & Tom — Elis Regina, Tom Jobim (1974)', 'A Love Supreme — John Coltrane (1965)'] },
         { name: 'receiver.txt', title: 'The receiver', meta: '1970s silver face', text: 'Belt-drive deck on a walnut plinth, a second-hand receiver with the one warm display in the room. The records are on the shelf below, the ones that get played on top.' }
       ] } },
-    { id: 'frenchie',      label: "this is Tito, he's the key", hint: true, phase: 1 },   // hover only: no menu word, no shell place; the chip is the clue to the sudo password
+    { id: 'frenchie',      label: "this is Tito, he's the key", hint: true, phase: 1, secret: 'dog' },   // hover only: no menu word, no shell place; the chip is the clue to the sudo password
+    { id: 'post-it',       label: 'a post-it. of course.', hint: true, phase: 1, secret: 'note', view: { distance: 0.5 } }   // hover only; a click glides close enough to read it
   ],
   content: {}
 };
@@ -733,6 +739,14 @@ function buildTextures() {
     x2.beginPath(); x2.arc(20, 16, 7, 0, Math.PI * 2); x2.stroke();
     [[7, 31, 26], [10, 37, 20], [8, 43, 24]].forEach(([lx, ly, lw]) => x2.fillRect(lx, ly, lw, 2));
     TEX.certInk = canvasTex(c2); }
+  // post-it: the root recipe in the owner's hand. Drawn twice like the board: paper + ink, and ink alone (the hover glow layer).
+  { const LINES = ['note to self', '(root, again)', ' sudo su', ' pw: the dog', ' then type', ' phosphor'];
+    const drawInk = (x, ink) => { x.fillStyle = ink; x.font = '11px VT323, monospace'; x.textBaseline = 'top'; LINES.forEach((l, i) => x.fillText(l, 5, 5 + i * 10)); };
+    const [c, x] = cnv(72, 72); x.fillStyle = CONFIG.tones.pale; x.fillRect(0, 0, 72, 72); x.fillStyle = CONFIG.tones.paleDim; x.fillRect(0, 0, 72, 4);   // the sticky strip
+    drawInk(x, CONFIG.tones.marker);
+    TEX.postit = canvasTex(c);
+    const [c2, x2] = cnv(72, 72); drawInk(x2, '#ffffff');
+    TEX.postitInk = canvasTex(c2); }
   // mug print: a prompt glyph, white on transparent, wrapped around the mug
   { const [c, x] = cnv(96, 32); x.fillStyle = '#ffffff'; x.font = '26px VT323, monospace'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('>_', 48, 17);
     TEX.mugInk = canvasTex(c); }
@@ -887,6 +901,16 @@ const BUILD = {
     const inkMat = b.inkMaterial(TEX.certInk);
     const ink = b.plane(w - 0.04, h - 0.04, { at: [0, 0, 0.013], material: inkMat, emissive: true, color: T.white, name: 'ink' }); ink.renderOrder = 5;
     const glow = b.sprite([0, 0, 0.08], [w * 1.6, h * 1.5], pal.phosphor, 0);
+    b.hover(t => { inkMat.opacity = t; glow.material.opacity = 0.14 * t; });
+    return b.finish();
+  },
+  // post-it: a square of paper on the wall, slightly askew; the writing glows on hover
+  'post-it'(def) {
+    const b = new Builder(def), s = def.size, rot = [0, 0, def.tilt];
+    b.plane(s, s, { at: [0, 0, 0.004], rot, material: texMat(TEX.postit, false), color: T.white });
+    const inkMat = b.inkMaterial(TEX.postitInk);
+    const ink = b.plane(s, s, { at: [0, 0, 0.006], rot, material: inkMat, emissive: true, color: T.white, name: 'ink' }); ink.renderOrder = 5;
+    const glow = b.sprite([0, 0, 0.06], [s * 2.4, s * 2.4], pal.phosphor, 0);
     b.hover(t => { inkMat.opacity = t; glow.material.opacity = 0.14 * t; });
     return b.finish();
   },
@@ -1721,7 +1745,7 @@ function shellRun(raw) {
   const T = CONFIG.terminal;
   if (SHELL.mode === 'password') {   // the typed line was a password: never echoed
     SHELL.mode = null; shellPrint(T.sudoPrompt);
-    if (raw === T.password) { SHELL.root = true; SHELL.tries = 0; shellPrint('welcome, root. Tito is still asleep on the rug. try: phosphor'); }
+    if (raw === T.password) { SHELL.root = true; SHELL.tries = 0; shellPrint('welcome, root. Tito is still asleep on the rug. try: phosphor'); foundSecret('root'); }
     else if (++SHELL.tries >= 3) { SHELL.tries = 0; shellPrint('sudo: 3 incorrect password attempts'); }
     else { shellPrint('Sorry, try again.'); SHELL.mode = 'password'; }
     return;
@@ -1844,6 +1868,7 @@ function updateMenu() {
   }
 }
 function focusObject(insp) {
+  if (insp.secret) foundSecret(insp.secret);
   if (insp.terminal) return enterTerminal();
   if (insp.explorer) return inspect(insp);
   const view = viewFor(insp); if (view) tweenCamera(view);
@@ -1871,6 +1896,15 @@ navEl.addEventListener('click', e => {
   if (TERM.open) return terminalTo(insp);
   focusObject(insp);
 });
+// secrets: the note, the dog, and root. A click on either object or a root login toasts the tally; unique finds survive a reload.
+const SECRETS = ['note', 'dog', 'root'], toastEl = document.getElementById('toast'); let toastTimer = 0;
+function toast(text) { toastEl.textContent = text; toastEl.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('on'), 2600); }
+function foundSecret(id) {
+  let found; try { found = new Set(JSON.parse(localStorage.getItem('theroom.secrets') || '[]')); } catch { found = new Set(); }
+  found.add(id); try { localStorage.setItem('theroom.secrets', JSON.stringify([...found])); } catch {}
+  const n = SECRETS.filter(k => found.has(k)).length;
+  toast(`${n}/${SECRETS.length} secrets found` + (n === SECRETS.length ? '. root has the lights.' : ''));
+}
 // reset view: shows once wheel/drag moved the camera off the zone preset; glides back to it
 const resetEl = document.getElementById('reset');
 resetEl.addEventListener('click', () => goZone(nav.zone, { push: false }));
