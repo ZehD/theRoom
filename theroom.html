@@ -148,21 +148,14 @@
   #toast.on { opacity: 1; }
   /* exit shell: touch screens have no Esc; sits under the bar, clear of the keyboard */
   #exit { position: fixed; right: 12px; top: calc(var(--top-h, 52px) + 12px); appearance: none; font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); padding: 12px 16px; cursor: pointer; border-radius: 0; white-space: nowrap; z-index: 2; }
-  #intro { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; gap: 12px; justify-items: center; text-align: center; pointer-events: none; opacity: 0; transition: opacity 600ms linear; }
-  #intro.on { opacity: 1; }
-  #intro b { font: 72px/1 VT323, ui-monospace, monospace; color: var(--phosphor); font-weight: 400; letter-spacing: 0.02em; text-shadow: none; }
-  #intro span { font: 14px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--paper); }
-  #intro small { font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-dim); margin-top: 16px; }
   @container (max-width: 1400px) { #top .who span { font-size: 11px; } }
-  @media (prefers-reduced-motion: reduce) { #top, #intro { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { #top { transition: none; } }
   /* phones and short frames: the menu words become one row that scrolls sideways (fading at the right edge) instead of wrapping */
   @container (max-width: 767px) or (max-height: 500px) {
     #top nav { margin-left: 0; justify-content: flex-start; flex-wrap: nowrap; overflow: auto hidden; scrollbar-width: none; padding: 0 4px; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent); }
     #top nav::-webkit-scrollbar { display: none; }
     #top nav a { display: flex; align-items: center; min-height: 44px; padding: 0 10px; font-size: 12px; }
     #accent { left: 12px; right: auto; }
-    #intro b { font-size: 44px; }
-    #intro span { font-size: 13px; text-wrap: balance; }
     #chip { font-size: 13px; }
   }
   /* portrait phones: the name on its own row above the words */
@@ -172,7 +165,6 @@
     #top .who b { font-size: 22px; }
     #top .who span { font-size: 11px; }
     #top nav { flex: 1 0 100%; }
-    #intro { width: 86%; }
   }
   /* short landscape frames: one 44px row, the role dropped */
   @container (max-height: 500px) and (min-width: 768px) {
@@ -203,11 +195,6 @@
 <div id="chip" role="status" aria-live="polite"></div>
 <div id="dim"></div>
 <input id="shell-in" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" tabindex="-1" aria-label="Terminal input">
-<div id="intro" aria-hidden="true">
-  <b>Luiz Cordeiro</b>
-  <span>Artificial Intelligence Engineer &middot; Curitiba</span>
-  <small>click anything that glows</small>
-</div>
 <div id="top">
   <div class="who"><b>Luiz Cordeiro</b><span>Artificial Intelligence Engineer</span></div>
   <nav aria-label="Objects in the room"></nav>
@@ -280,13 +267,14 @@ const CONFIG = {
   },
   // Camera glide (ms), explorer opens at this fraction of the glide, and how much of the frame height an inspected object fills.
   tween: { duration: 1000, panelEnterAt: 0.65, inspectFill: 0.55 },
-  // Narrow frames: widen the vertical fov (up to maxFov) to hold hfov of horizontal view, and let the wheel/pinch back out to maxOut × the preset distance
-  // (the tall home shot stands inside the room). A preset may carry its own `portrait` shot for tall frames.
-  portrait: { hfov: 58, maxFov: 66, maxOut: 2.5 },
+  // Narrow frames: widen the vertical fov (up to maxFov) to hold hfov of horizontal view. A preset may carry its own `portrait` shot for tall frames;
+  // zooming out of one slides toward the wide (landscape) shot, wideRate of the way per unit of pinch, the fov opening by wideFov at the far end so the
+  // whole room fits a 33° phone; other zones back out to maxOut × the preset distance.
+  portrait: { hfov: 58, maxFov: 66, maxOut: 2.5, wideRate: 0.5, wideFov: 0.25 },
   // Routing: 'hash' (#/work) while the file is served from a path; 'path' (/work) on the real domain.
   routing: { mode: 'hash' },
-  // Entry: after the wireframe cut, the name fades in, stays `hold` ms or until the first interaction.
-  intro: { delay: 400, hold: 5000 },
+  // Entry: the top bar fades in `delay` ms after the wireframe cut.
+  intro: { delay: 400 },
   // Free look. Wheel dollies toward the point under the cursor (minDist m from it, at most maxOut × the preset distance);
   // left- or right-drag orbits the look target, limited to ±yaw rad from the preset and a pitch band (polar angle, rad). ease = per-second rate.
   // middle-drag trucks camera + target across the view plane, 1:1 with the cursor at the look distance, at most limit m from the preset.
@@ -345,7 +333,7 @@ const CONFIG = {
     { id: 'microscope',    position: [0.3, 0.75, -2.45],  rotation: -0.25 },
     { id: 'cert-frame',    position: [-2.75, 1.75, -2.97], size: [0.3, 0.38] },
     { id: 'whiteboard',    position: [0.35, 1.6, -2.97],   size: [1.2, 0.8], beaconOf: 'writing' },
-    { id: 'post-it',       position: [-0.95, 1.15, -2.97], size: 0.09, tilt: -6 },   // a note stuck by the shell monitor: the root recipe
+    { id: 'post-it',       position: [-0.95, 1.15, -2.97], size: 0.11, tilt: -6 },   // a note stuck by the shell monitor: the root recipe
     { id: 'pixel-frames',  position: [2.7, 2.15, -2.97],  frame: 0.3, gap: 0.42 },
     { id: 'rack',          position: [3.2, 0, -2.3],      size: [0.6, 1.8, 0.8], beaconOf: 'projects' },
     { id: 'bench-arduino', position: [3.75, 0.95, -1.3],  size: [0.45, 0.03, 0.5] },
@@ -740,12 +728,12 @@ function buildTextures() {
     [[7, 31, 26], [10, 37, 20], [8, 43, 24]].forEach(([lx, ly, lw]) => x2.fillRect(lx, ly, lw, 2));
     TEX.certInk = canvasTex(c2); }
   // post-it: the root recipe in the owner's hand. Drawn twice like the board: paper + ink, and ink alone (the hover glow layer).
-  { const LINES = ['note to self', '(root, again)', ' sudo su', ' pw: the dog', ' then type', ' phosphor'];
-    const drawInk = (x, ink) => { x.fillStyle = ink; x.font = '11px VT323, monospace'; x.textBaseline = 'top'; LINES.forEach((l, i) => x.fillText(l, 5, 5 + i * 10)); };
-    const [c, x] = cnv(72, 72); x.fillStyle = CONFIG.tones.pale; x.fillRect(0, 0, 72, 72); x.fillStyle = CONFIG.tones.paleDim; x.fillRect(0, 0, 72, 4);   // the sticky strip
+  { const LINES = ['in the terminal', 'type "su"', 'insert the KEY', 'then type', '"phosphor"'];
+    const drawInk = (x, ink) => { x.fillStyle = ink; x.font = '12px VT323, monospace'; x.textBaseline = 'top'; LINES.forEach((l, i) => x.fillText(l, 6, 10 + i * 16)); };
+    const [c, x] = cnv(96, 96); x.fillStyle = CONFIG.tones.pale; x.fillRect(0, 0, 96, 96); x.fillStyle = CONFIG.tones.paleDim; x.fillRect(0, 0, 96, 5);   // the sticky strip
     drawInk(x, CONFIG.tones.marker);
     TEX.postit = canvasTex(c);
-    const [c2, x2] = cnv(72, 72); drawInk(x2, '#ffffff');
+    const [c2, x2] = cnv(96, 96); drawInk(x2, '#ffffff');
     TEX.postitInk = canvasTex(c2); }
   // mug print: a prompt glyph, white on transparent, wrapped around the mug
   { const [c, x] = cnv(96, 32); x.fillStyle = '#ffffff'; x.font = '26px VT323, monospace'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('>_', 48, 17);
@@ -1373,9 +1361,10 @@ let composer, post, controls = null;
 const debug = { on: false, fps: false };
 let internal = { w: 1, h: 1 };
 // where wheel and drag want the camera; camState eases toward it whenever no glide is running
-const freeGoal = { position: camState.position.clone(), target: camState.target.clone(), theta0: 0, dist0: 1, pan: new THREE.Vector3(), out: 0 };
+const freeGoal = { position: camState.position.clone(), target: camState.target.clone(), theta0: 0, dist0: 1, pan: new THREE.Vector3(), out: 0, wide: 0 };
+function applyWideFov() { camera.fov = (VP.fov || CONFIG.camera.fov) * (1 + CONFIG.portrait.wideFov * freeGoal.wide); camera.updateProjectionMatrix(); }   // the frame fov, opened along the wide path
 function setFreeHome(pos, tgt) {
-  freeGoal.position.copy(pos); freeGoal.target.copy(tgt); freeGoal.pan.set(0, 0, 0); freeGoal.out = 0;
+  freeGoal.position.copy(pos); freeGoal.target.copy(tgt); freeGoal.pan.set(0, 0, 0); freeGoal.out = 0; if (freeGoal.wide) { freeGoal.wide = 0; applyWideFov(); }
   const off = _v.copy(pos).sub(tgt); freeGoal.theta0 = Math.atan2(off.x, off.z); freeGoal.dist0 = off.length();
 }
 
@@ -1396,8 +1385,8 @@ function onResize() {
   camera.aspect = w / h;
   // narrow frames: widen the vertical fov, up to maxFov, to hold hfov of horizontal view
   const P = CONFIG.portrait;
-  camera.fov = Math.min(P.maxFov, Math.max(CONFIG.camera.fov, 2 * Math.atan(Math.tan(P.hfov * D2R / 2) / camera.aspect) / D2R));
-  camera.updateProjectionMatrix();
+  VP.fov = Math.min(P.maxFov, Math.max(CONFIG.camera.fov, 2 * Math.atan(Math.tan(P.hfov * D2R / 2) / camera.aspect) / D2R));
+  applyWideFov();
   // orientation flipped: a zone with its own portrait shot re-frames (not mid-inspection); an open shell re-aims at the screen
   if (wasPortrait !== null && wasPortrait !== VP.portrait && loaded && !explorer.open && !TERM.open && !camTween.back && ZONES[nav.zone]?.portrait) goZone(nav.zone, { push: false });
   if (TERM.open) { const v = terminalView(); if (v) tweenCamera(v); }
@@ -1557,6 +1546,18 @@ canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') re
 // dolly by fraction k of the distance to the point under ndc (k > 0 moves in, k < 0 out); the wheel and a pinch both land here
 function dollyAt(ndc, k) {
   const W = CONFIG.wheel;
+  // tall frames, a zone with a portrait shot: zoom-out slides along the line to the zone's wide shot (which frames the whole room), zoom-in retraces it.
+  // Each step moves freeGoal by the path delta, so an orbit or pan made along the way is kept.
+  const Z = ZONES[nav.zone];
+  if (VP.portrait && Z.portrait && (k < 0 || freeGoal.wide > 0)) {
+    const at = u => [new THREE.Vector3().fromArray(Z.portrait.position).lerp(_v.fromArray(Z.position), u), new THREE.Vector3().fromArray(Z.portrait.target).lerp(_v.fromArray(Z.target), u)];
+    const next = Math.min(1, Math.max(0, freeGoal.wide - k * CONFIG.portrait.wideRate));
+    if (next === freeGoal.wide) return;
+    const [p0, t0] = at(freeGoal.wide), [p1, t1] = at(next), pos = freeGoal.position.clone().add(p1.sub(p0));
+    if (!inRoom(pos)) return;
+    freeGoal.wide = next; freeGoal.position.copy(pos); freeGoal.target.add(t1.sub(t0)); applyWideFov();
+    return;
+  }
   raycaster.setFromCamera(ndc, camera);
   const hit = raycaster.intersectObjects(BUILT.concat(scene.children.filter(o => o.name === 'room')), true).find(h => !h.object.isSprite && h.object.visible);
   const aim = hit ? hit.point : raycaster.ray.at(freeGoal.position.distanceTo(freeGoal.target), new THREE.Vector3());
@@ -1850,7 +1851,7 @@ shellRun('help'); shellRun('ls');   // the screen boots with a session already o
 // ───────────────────────────── zones, routes, menu ─────────────────────────────
 // A zone is a camera preset with a route. Links and the shell call goZone; the URL follows; back/forward follow the URL.
 const nav = { zone: 'home' };
-const topEl = document.getElementById('top'), navEl = topEl.querySelector('nav'), introEl = document.getElementById('intro');
+const topEl = document.getElementById('top'), navEl = topEl.querySelector('nav');
 const ZONES = CONFIG.camera.presets;
 const presetOf = z => (VP.portrait && ZONES[z].portrait) ? { ...ZONES[z], ...ZONES[z].portrait } : ZONES[z];   // a zone's shot for the current frame
 const hrefOf = z => CONFIG.routing.mode === 'hash' ? `#${ZONES[z].route}` : ZONES[z].route;
@@ -1917,15 +1918,8 @@ addEventListener('popstate', () => {
   if (explorer.open) { closeExplorer(true); return; }
   const z = zoneOfUrl(); if (z !== nav.zone) goZone(z, { push: false });
 });
-// intro: name and role over the room, gone on first interaction or after intro.hold
-function showIntro() {
-  introEl.classList.add('on'); topEl.classList.add('on');
-  let done = false;
-  const hide = () => { if (done) return; done = true; introEl.classList.remove('on'); for (const ev of evs) removeEventListener(ev, hide, true); };
-  const evs = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
-  for (const ev of evs) addEventListener(ev, hide, true);
-  setTimeout(hide, CONFIG.intro.hold);
-}
+// entry: the top bar fades in over the room once the wireframe cut is done
+function showIntro() { topEl.classList.add('on'); }
 exEl.addEventListener('click', e => {
   if (e.target.closest('[data-close]')) return closeExplorer();
   const rainBtn = e.target.closest('[data-rain]'); if (rainBtn) { rain.toggle().then(renderExplorer); return; }
@@ -2180,7 +2174,6 @@ async function init() {
   const z0 = zoneOfUrl(), p0 = presetOf(z0); nav.zone = z0; camState.position.fromArray(p0.position); camState.target.fromArray(p0.target);
   setFreeHome(camState.position, camState.target);
   updateMenu();
-  if (TOUCH) introEl.querySelector('small').textContent = 'tap anything that glows';
   history.replaceState({ zone: z0 }, '', location.href);
   document.title = z0 === 'home' ? 'Luiz Cordeiro · theRoom' : `Luiz Cordeiro · ${ZONES[z0].label}`;
 
