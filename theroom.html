@@ -100,20 +100,38 @@
   #explorer .graph .anim .lit, #explorer .graph .anim .dot, #explorer .graph .anim .cover, #explorer .graph .anim .cur { animation: 12s linear infinite; }
   #explorer .ph { width: 100%; aspect-ratio: 16 / 9; max-height: 220px; border: 1px solid var(--moss); background-color: var(--soil); background-image: var(--dither); background-size: 16px 16px; image-rendering: pixelated; display: grid; place-items: center; }
   #explorer .ph span { font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-dim); background: var(--soil); padding: 5px 8px; border: 1px solid var(--moss); }
-  /* the spinning book: a 112×160×26 box on the dithered stage, one turn per 8 s, starting with its back to the viewer */
-  #explorer .stage { width: 100%; aspect-ratio: 16 / 9; max-height: 220px; border: 1px solid var(--moss); background-color: var(--soil); background-image: var(--dither); background-size: 16px 16px; image-rendering: pixelated; display: grid; place-items: center; perspective: 700px; overflow: hidden; }
-  #explorer .book { position: relative; width: 112px; height: 160px; transform-style: preserve-3d; animation: book-spin 8s linear infinite; }
-  #explorer .book .face { position: absolute; top: 0; bottom: 0; border: 1px solid var(--phosphor-dim); background: var(--moss); backface-visibility: hidden; }
-  #explorer .book .front, #explorer .book .back { left: 0; right: 0; background: var(--soil); }
-  #explorer .book .front { transform: translateZ(13px); display: grid; align-content: end; gap: 8px; padding: 12px 10px; border-color: var(--phosphor); box-shadow: inset 0 0 0 4px var(--soil), inset 0 0 0 5px var(--moss); }
-  #explorer .book .front b { font: 11px/1.3 Silkscreen, VT323, ui-monospace, monospace; font-weight: 400; text-transform: uppercase; color: var(--phosphor); text-shadow: 0 0 8px var(--phosphor-dim); }
-  #explorer .book .front i { font: 14px/1 VT323, ui-monospace, monospace; font-style: normal; color: var(--paper); }
-  #explorer .book .back { transform: rotateY(180deg) translateZ(13px); background-image: var(--dither); background-size: 16px 16px; }
+  /* the stage: a dithered box looked at from a little above; on it a book (112×160×26), a game box (150×100×34) or a paint pot (an eight-sided body
+     under a wider lid) turns once per 8 s, starting with its back to the viewer so the swap to the next item goes unseen */
+  #explorer .stage { position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: 220px; border: 1px solid var(--moss); background-color: var(--soil); background-image: var(--dither); background-size: 16px 16px; image-rendering: pixelated; display: grid; place-items: center; perspective: 700px; perspective-origin: 50% 30%; overflow: hidden; }
+  #explorer .spin { position: relative; transform-style: preserve-3d; animation: book-spin 8s linear infinite; }
+  #explorer .spin .face { position: absolute; top: 0; bottom: 0; border: 1px solid var(--phosphor-dim); background: var(--moss); backface-visibility: hidden; }
+  #explorer .spin b { font: 11px/1.3 Silkscreen, VT323, ui-monospace, monospace; font-weight: 400; text-transform: uppercase; color: var(--phosphor); text-shadow: 0 0 8px var(--phosphor-dim); }
+  #explorer .spin i { font: 14px/1 VT323, ui-monospace, monospace; font-style: normal; color: var(--paper); }
+  #explorer .spin .front, #explorer .spin .back { left: 0; right: 0; background: var(--soil); }
+  #explorer .spin .front { display: grid; align-content: end; gap: 8px; padding: 12px 10px; border-color: var(--phosphor); box-shadow: inset 0 0 0 4px var(--soil), inset 0 0 0 5px var(--moss); }
+  #explorer .spin .back { background-image: var(--dither); background-size: 16px 16px; }
+  #explorer .book { width: 112px; height: 160px; }
+  #explorer .book .front { transform: translateZ(13px); }
+  #explorer .book .back { transform: rotateY(180deg) translateZ(13px); }
   #explorer .book .spine { left: 0; width: 26px; transform: translateX(-13px) rotateY(-90deg); background: var(--soil); border-color: var(--phosphor); display: grid; place-items: center; }
-  #explorer .book .spine b { writing-mode: vertical-rl; font: 9px/1 Silkscreen, VT323, ui-monospace, monospace; font-weight: 400; text-transform: uppercase; color: var(--phosphor-dim); white-space: nowrap; }
+  #explorer .book .spine b, #explorer .box .side b { writing-mode: vertical-rl; font-size: 9px; color: var(--phosphor-dim); text-shadow: none; white-space: nowrap; }
   #explorer .book .edge { right: 0; width: 26px; transform: translateX(13px) rotateY(90deg); background: repeating-linear-gradient(90deg, var(--paper) 0 1px, var(--soil) 1px 3px); border-color: var(--moss); }
+  #explorer .box { width: 150px; height: 100px; }
+  #explorer .box .front { transform: translateZ(17px); align-content: space-between; }
+  #explorer .box .back { transform: rotateY(180deg) translateZ(17px); }
+  #explorer .box .side { width: 34px; background: var(--soil); border-color: var(--phosphor); display: grid; place-items: center; }
+  #explorer .box .side.l { left: 0; transform: translateX(-17px) rotateY(-90deg); }
+  #explorer .box .side.r { right: 0; transform: translateX(17px) rotateY(90deg); }
+  #explorer .box .cap { left: 0; right: 0; height: 34px; bottom: auto; background: var(--soil); }
+  #explorer .box .cap.top { top: 0; transform: translateY(-17px) rotateX(90deg); }
+  #explorer .box .cap.bottom { top: auto; bottom: 0; transform: translateY(17px) rotateX(-90deg); }
+  #explorer .pot { width: 28px; height: 72px; margin-top: 20px; }
+  #explorer .pot .f, #explorer .pot .lid { left: 0; width: 28px; transform: rotateY(calc(var(--i) * 45deg)) translateZ(34px); background: linear-gradient(var(--soil) 0 28%, var(--paper) 28% 72%, var(--soil) 72%); border-color: var(--moss); }
+  #explorer .pot .lid { top: -16px; bottom: auto; height: 16px; width: 31px; left: -1.5px; transform: rotateY(calc(var(--i) * 45deg)) translateZ(37px); background: var(--phosphor-dim); border-color: var(--phosphor); }
+  #explorer .pot .disc { top: -16px; bottom: auto; left: 50%; width: 76px; height: 76px; margin-left: -38px; transform: translateY(-38px) rotateX(-90deg); border-radius: 50%; background: var(--phosphor-dim); border-color: var(--phosphor); }
+  #explorer .caption { position: absolute; left: 0; right: 0; bottom: 12px; display: grid; justify-items: center; gap: 4px; }
   @keyframes book-spin { from { transform: rotateY(180deg); } to { transform: rotateY(540deg); } }
-  @media (prefers-reduced-motion: reduce) { #explorer .book { animation: none; transform: rotateY(-30deg); } }
+  @media (prefers-reduced-motion: reduce) { #explorer .spin { animation: none; transform: rotateY(-30deg); } }
   #explorer .status { display: flex; align-items: center; gap: 8px; padding: 0 16px; border-top: 1px solid var(--moss); color: var(--phosphor-dim); font-size: 12px; white-space: nowrap; }
   #explorer :focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: -2px; }
   @media (prefers-reduced-motion: reduce) { #dim, #explorer { transition: none; } }
@@ -460,10 +478,10 @@ const CONFIG = {
     { id: 'shelf',         label: 'about me', cmd: 'about', title: 'The shelf', line: 'what I read, play and tinker with', phase: 1,
       explorer: { path: '~/shelf', files: [
         { name: 'whoami', title: 'Luiz Aurio Cordeiro Junior', meta: 'AI engineer · Curitiba, Paraná, Brazil', text: '11 years in IT, the last 4 building software and AI systems. Days go to agents, RAG pipelines and automations that have to survive production; nights go to this shelf.', text2: 'Off the clock it is board games with friends, classic cinema with the lights off, science fiction by the stack, and a paint desk of Warhammer miniatures that never quite gets tidy.', text3: 'theRoom is a real place in Curitiba, where it rains most afternoons. The dog is real too.' },
-        { name: 'now-reading.txt', title: 'Now reading', meta: 'bookmark at page 212', control: 'book', books: [['AI Engineering', 'Chip Huyen'], ['The Dark Forest', 'Cixin Liu'], ['Perdido Street Station', 'China Miéville']], bullets: ['AI Engineering — Chip Huyen. Third pass, this time with a notebook.', 'The Dark Forest — Cixin Liu. Rereading the trilogy, slower.', 'Perdido Street Station — China Miéville. The one I lend to people and never get back.'] },
+        { name: 'now-reading.txt', title: 'Now reading', meta: 'bookmark at page 212', control: 'spin', spin: 'book', items: [['AI Engineering', 'Chip Huyen'], ['The Dark Forest', 'Cixin Liu'], ['Perdido Street Station', 'China Miéville']], bullets: ['AI Engineering — Chip Huyen. Third pass, this time with a notebook.', 'The Dark Forest — Cixin Liu. Rereading the trilogy, slower.', 'Perdido Street Station — China Miéville. The one I lend to people and never get back.'] },
         { name: 'favourites.txt', title: 'Read more than once', meta: 'the fiction row, eye level', bullets: ['The Lord of the Rings, every few years since school.', 'The Three-Body Problem and the two that follow.', 'Perdido Street Station, The Scar, The City & the City.', 'Dune, Neuromancer, Hyperion, Blindsight.'] },
-        { name: 'table.txt', title: 'On the table', meta: 'top shelf, heaviest boxes first', bullets: ['Twilight Struggle — the one game I would keep if I could keep one.', 'Puerto Rico — twenty years old and still the tightest euro on the shelf.', 'Terraforming Mars, Brass: Birmingham, Agricola — for the long Sunday sessions.'] },
-        { name: 'paint-desk.txt', title: 'The paint desk', meta: 'Warhammer, one squad at a time', bullets: ['Miniatures are the slow hobby: assemble, prime, base coat, wash, edge highlight, repeat until the squad looks like a squad.', 'Mostly Warhammer. The backlog of grey plastic is a running joke at home.', 'A game now and then, whenever the table clears of board games.'] },
+        { name: 'table.txt', title: 'On the table', meta: 'top shelf, heaviest boxes first', control: 'spin', spin: 'box', items: [['Twilight Struggle', '2 players · 3 h'], ['Puerto Rico', '3–5 players · 90 min'], ['Terraforming Mars', '1–5 players · 2 h'], ['Brass: Birmingham', '2–4 players · 2 h'], ['Agricola', '1–4 players · 2 h']], bullets: ['Twilight Struggle — the one game I would keep if I could keep one.', 'Puerto Rico — twenty years old and still the tightest euro on the shelf.', 'Terraforming Mars, Brass: Birmingham, Agricola — for the long Sunday sessions.'] },
+        { name: 'paint-desk.txt', title: 'The paint desk', meta: 'Warhammer, one squad at a time', control: 'spin', spin: 'pot', items: [['Abaddon Black', 'base'], ['Mephiston Red', 'base'], ['Retributor Armour', 'base'], ['Nuln Oil', 'shade'], ['Agrax Earthshade', 'shade'], ['Screaming Skull', 'layer']], bullets: ['Miniatures are the slow hobby: assemble, prime, base coat, wash, edge highlight, repeat until the squad looks like a squad.', 'Mostly Warhammer. The backlog of grey plastic is a running joke at home.', 'A game now and then, whenever the table clears of board games.'] },
         { name: 'matinee.txt', title: 'Classic cinema', meta: 'lights off, no second screen', bullets: ['Old films watched the old way: one sitting, no phone in hand.', 'Noir, westerns, the studio-era greats. Pacing that trusts you to pay attention.', 'Rewatched more often than anything new.'] },
         { name: 'stack.log', title: 'The reference row', meta: 'academic, pale spines', text: 'Clean Code and The Pragmatic Programmer for how to write it, Designing Data-Intensive Applications for where it runs, Speech and Language Processing and Deep Learning for why the models do what they do. AI Engineering ties the row together.' },
         { name: 'off-shelf.txt', title: 'Off the shelf', meta: 'the rest of the room', bullets: ['Vinyl on the turntable, mostly jazz and Brazilian records from the 60s and 70s.', 'A telescope by the window for the rare clear night.', 'A French bulldog asleep on the rug, breathing slowly.'] }
@@ -1657,18 +1675,22 @@ function renderExplorer() {
   const ex = explorer.insp.explorer, files = ex.files, f = files[explorer.index];
   exPath.innerHTML = `<b>luiz@theroom:</b>${esc(ex.path)}`;
   exList.innerHTML = files.map((file, i) => { const m = file.name.match(/^(.*?)(\.[^.]+)?$/); return `<button type="button" class="row" role="option" data-i="${i}" aria-selected="${i === explorer.index}" tabindex="${i === explorer.index ? 0 : -1}"><span class="perm">-rw-r--r--</span><span class="name">${esc(m[1])}<span class="ext">${esc(m[2] || '')}</span></span></button>`; }).join('');
-  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}${f.control === 'graph' ? graphHtml() : ''}${f.control === 'book' ? bookHtml(f) : ''}`;
-  if (f.control === 'book') {   // each turn starts with the back to the viewer: swap the cover then, unseen
-    const el = exPreview.querySelector('.book');
-    el.addEventListener('animationiteration', () => { const i = (+el.dataset.i + 1) % f.books.length, [t, a] = f.books[i]; el.dataset.i = i; el.querySelector('.front b').textContent = t; el.querySelector('.front i').textContent = a; el.querySelector('.spine b').textContent = t; });
+  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}${f.control === 'graph' ? graphHtml() : ''}${f.control === 'spin' ? spinHtml(f) : ''}`;
+  if (f.control === 'spin') {   // each turn starts with the back to the viewer: swap to the next item then, unseen
+    const stage = exPreview.querySelector('.stage'), el = stage.querySelector('.spin'); spinShow(stage, f.items[0]);
+    el.addEventListener('animationiteration', () => { el.dataset.i = (+el.dataset.i + 1) % f.items.length; spinShow(stage, f.items[+el.dataset.i]); });
   }
   exStatus.textContent = `${files.length} items | ${f.name}`;
 }
-// a book turning on a dithered stage: cover, spine, fore-edge and back in the room's palette; the cover reads the current title
-function bookHtml(f) {
-  const [t, a] = f.books[0];
-  return `<div class="stage" aria-hidden="true"><div class="book" data-i="0"><div class="face front"><b>${esc(t)}</b><i>${esc(a)}</i></div><div class="face back"></div><div class="face spine"><b>${esc(t)}</b></div><div class="face edge"></div></div></div>`;
-}
+// a thing turning on the dithered stage: a book (cover, spine, fore-edge, back), a game box (lid, spines, caps) or a paint pot (an eight-sided body under
+// a wider lid, named in a caption), built from faces in the room's palette. Every .t reads the item's title and every .a its line.
+const SPIN = {
+  book: () => `<div class="face front"><b class="t"></b><i class="a"></i></div><div class="face back"></div><div class="face spine"><b class="t"></b></div><div class="face edge"></div>`,
+  box: () => `<div class="face front"><b class="t"></b><i class="a"></i></div><div class="face back"></div><div class="face side l"><b class="t"></b></div><div class="face side r"><b class="t"></b></div><div class="face cap top"></div><div class="face cap bottom"></div>`,
+  pot: () => Array.from({ length: 8 }, (_, i) => `<div class="face f" style="--i:${i}"></div><div class="face lid" style="--i:${i}"></div>`).join('') + `<div class="face disc"></div>`
+};
+function spinHtml(f) { return `<div class="stage" aria-hidden="true"><div class="spin ${f.spin}" data-i="0">${SPIN[f.spin]()}</div>${f.spin === 'pot' ? '<div class="caption"><b class="t"></b><i class="a"></i></div>' : ''}</div>`; }
+function spinShow(root, [t, a]) { for (const el of root.querySelectorAll('.t')) el.textContent = t; for (const el of root.querySelectorAll('.a')) el.textContent = a; }
 function selectFile(i, focus = true) {
   const n = explorer.insp.explorer.files.length; explorer.index = (i + n) % n; renderExplorer();
   const row = exList.querySelector('.row[aria-selected="true"]');
