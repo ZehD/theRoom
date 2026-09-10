@@ -129,6 +129,16 @@
   #explorer .pot .f, #explorer .pot .lid { left: 0; width: 28px; transform: rotateY(calc(var(--i) * 45deg)) translateZ(34px); background: linear-gradient(var(--soil) 0 28%, var(--paper) 28% 72%, var(--soil) 72%); border-color: var(--moss); }
   #explorer .pot .lid { top: -16px; bottom: auto; height: 16px; width: 31px; left: -1.5px; transform: rotateY(calc(var(--i) * 45deg)) translateZ(37px); background: var(--phosphor-dim); border-color: var(--phosphor); }
   #explorer .pot .disc { top: -16px; bottom: auto; left: 50%; width: 76px; height: 76px; margin-left: -38px; transform: translateY(-38px) rotateX(-90deg); border-radius: 50%; background: var(--phosphor-dim); border-color: var(--phosphor); }
+  #explorer .cert { width: 130px; height: 170px; }
+  #explorer .cert .front { transform: translateZ(4px); grid-template-rows: auto 1fr auto; align-content: start; justify-items: center; text-align: center; padding: 14px 12px; }
+  #explorer .cert .front b { font-size: 9px; align-self: center; }
+  #explorer .cert .ring { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--phosphor-dim); box-shadow: inset 0 0 0 3px var(--soil), inset 0 0 0 5px var(--phosphor-dim); }
+  #explorer .cert .back { transform: rotateY(180deg) translateZ(4px); }
+  #explorer .cert .side { width: 8px; background: var(--soil); border-color: var(--phosphor); }
+  #explorer .cert .side.l { left: 0; transform: translateX(-4px) rotateY(-90deg); }
+  #explorer .cert .side.r { right: 0; transform: translateX(4px) rotateY(90deg); }
+  #explorer .stage.matrix { display: block; background-image: none; background: var(--ink); }
+  #explorer .stage.matrix canvas { display: block; width: 100%; height: 100%; }
   #explorer .caption { position: absolute; left: 0; right: 0; bottom: 12px; display: grid; justify-items: center; gap: 4px; }
   @keyframes book-spin { from { transform: rotateY(180deg); } to { transform: rotateY(540deg); } }
   @media (prefers-reduced-motion: reduce) { #explorer .spin { animation: none; transform: rotateY(-30deg); } }
@@ -456,18 +466,18 @@ const CONFIG = {
     { id: 'monitor-right', label: 'terminal', title: 'Terminal', line: 'a shell into the room: cd, ls, help', phase: 1, terminal: true },
     { id: 'rack',          label: 'stack', title: 'Stack', line: 'Python, TypeScript, n8n and what runs on them', phase: 1, view: { dir: [-1, 0, 0] },
       explorer: { path: '~/stack', files: [
-        { name: 'languages.conf', title: 'Languages', meta: 'what the code is written in', bullets: ['Python', 'Java', 'SQL', 'JavaScript', 'TypeScript', 'C/C++'] },
-        { name: 'frameworks.conf', title: 'Frameworks and tools', meta: 'the working set', bullets: ['FastAPI', 'LangChain', 'LangGraph', 'n8n', 'CrewAI', 'PySpark', 'Git', 'Docker', 'Pandas', 'NumPy', 'Matplotlib'] },
-        { name: 'ai-data.conf', title: 'AI and data', meta: 'models, retrieval, agents', bullets: ['Machine Learning', 'Neural Networks', 'NLP', 'Tokenization', 'Vector Databases (Pinecone, Supabase pgvector)', 'RAG pipelines', 'Embedding generation', 'Prompt engineering', 'Claude Agent SDK'] },
-        { name: 'cloud-db.conf', title: 'Cloud and databases', meta: 'where it runs and what it stores', bullets: ['PostgreSQL', 'MySQL', 'Supabase', 'SQLAlchemy', 'Google Cloud Platform (GCP)', 'Amazon Web Services (AWS)'] },
-        { name: 'process.conf', title: 'Project and collaboration', meta: 'how the work gets shipped', bullets: ['Agile methodologies', 'Scrum', 'Kanban', 'JIRA', 'CI/CD workflows'] }
+        { name: 'languages.conf', control: 'matrix', title: 'Languages', meta: 'what the code is written in', bullets: ['Python', 'Java', 'SQL', 'JavaScript', 'TypeScript', 'C/C++'] },
+        { name: 'frameworks.conf', control: 'matrix', title: 'Frameworks and tools', meta: 'the working set', bullets: ['FastAPI', 'LangChain', 'LangGraph', 'n8n', 'CrewAI', 'PySpark', 'Git', 'Docker', 'Pandas', 'NumPy', 'Matplotlib'] },
+        { name: 'ai-data.conf', control: 'matrix', title: 'AI and data', meta: 'models, retrieval, agents', bullets: ['Machine Learning', 'Neural Networks', 'NLP', 'Tokenization', 'Vector Databases (Pinecone, Supabase pgvector)', 'RAG pipelines', 'Embedding generation', 'Prompt engineering', 'Claude Agent SDK'] },
+        { name: 'cloud-db.conf', control: 'matrix', title: 'Cloud and databases', meta: 'where it runs and what it stores', bullets: ['PostgreSQL', 'MySQL', 'Supabase', 'SQLAlchemy', 'Google Cloud Platform (GCP)', 'Amazon Web Services (AWS)'] },
+        { name: 'process.conf', control: 'matrix', title: 'Project and collaboration', meta: 'how the work gets shipped', bullets: ['Agile methodologies', 'Scrum', 'Kanban', 'JIRA', 'CI/CD workflows'] }
       ] } },
     { id: 'cert-frame',    label: 'certifications', title: 'CCA-F', line: 'Claude Certified Architect (Foundations), IBM certs', phase: 1,
       explorer: { path: '~/certifications', files: [
-        { name: 'claude-certified-architect-foundations.pdf', title: 'Claude Certified Architect (Foundations)', meta: 'Anthropic', image: 'CCA-F badge image', text: 'Claude Certified Architect, Foundations level.' },
-        { name: 'ibm-generative-ai-architecture.pdf', title: 'Generative AI architecture', meta: 'IBM', image: 'certificate image', text: 'IBM certification in generative AI architecture.' },
-        { name: 'ibm-llm-data-preparation.pdf', title: 'LLM data preparation', meta: 'IBM', image: 'certificate image', text: 'IBM certification in LLM data preparation.' },
-        { name: 'ibm-nlp-foundations.pdf', title: 'NLP foundations', meta: 'IBM', image: 'certificate image', text: 'IBM certification in NLP foundations.' }
+        { name: 'claude-certified-architect-foundations.pdf', title: 'Claude Certified Architect (Foundations)', meta: 'Anthropic', control: 'spin', spin: 'cert', items: [['Claude Certified Architect', 'Foundations · Anthropic']], text: 'Claude Certified Architect, Foundations level.' },
+        { name: 'ibm-generative-ai-architecture.pdf', title: 'Generative AI architecture', meta: 'IBM', control: 'spin', spin: 'cert', items: [['Generative AI architecture', 'IBM']], text: 'IBM certification in generative AI architecture.' },
+        { name: 'ibm-llm-data-preparation.pdf', title: 'LLM data preparation', meta: 'IBM', control: 'spin', spin: 'cert', items: [['LLM data preparation', 'IBM']], text: 'IBM certification in LLM data preparation.' },
+        { name: 'ibm-nlp-foundations.pdf', title: 'NLP foundations', meta: 'IBM', control: 'spin', spin: 'cert', items: [['NLP foundations', 'IBM']], text: 'IBM certification in NLP foundations.' }
       ] } },
     { id: 'whiteboard',    label: 'studies', title: 'Pre-Execution Ontology-Based Validation of LLM Tool Calls', line: 'academic paper: a knowledge graph checks every tool call before it runs', phase: 1,
       explorer: { path: '~/studies/paper', files: [
@@ -1681,11 +1691,12 @@ function renderExplorer() {
   const ex = explorer.insp.explorer, files = ex.files, f = files[explorer.index];
   exPath.innerHTML = `<b>luiz@theroom:</b>${esc(ex.path)}`;
   exList.innerHTML = files.map((file, i) => { const m = file.name.match(/^(.*?)(\.[^.]+)?$/); return `<button type="button" class="row" role="option" data-i="${i}" aria-selected="${i === explorer.index}" tabindex="${i === explorer.index ? 0 : -1}"><span class="perm">-rw-r--r--</span><span class="name">${esc(m[1])}<span class="ext">${esc(m[2] || '')}</span></span></button>`; }).join('');
-  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.control === 'spin' ? spinHtml(f) : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}${f.control === 'graph' ? graphHtml() : ''}`;
+  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.control === 'spin' ? spinHtml(f) : ''}${f.control === 'matrix' ? '<div class="stage matrix" aria-hidden="true"><canvas></canvas></div>' : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}${f.control === 'graph' ? graphHtml() : ''}`;
   if (f.control === 'spin') {   // each turn starts with the back to the viewer: swap to the next item then, unseen
     const stage = exPreview.querySelector('.stage'), el = stage.querySelector('.spin'); spinShow(stage, f.items[0]);
     el.addEventListener('animationiteration', () => { el.dataset.i = (+el.dataset.i + 1) % f.items.length; spinShow(stage, f.items[+el.dataset.i]); });
   }
+  if (f.control === 'matrix') matrixStart(exPreview.querySelector('.stage'), f.bullets);
   exStatus.textContent = `${files.length} items | ${f.name}`;
 }
 // a thing turning on the dithered stage: a book (cover, spine, fore-edge, back), a game box (lid, spines, caps) or a paint pot (an eight-sided body under
@@ -1693,10 +1704,40 @@ function renderExplorer() {
 const SPIN = {
   book: () => `<div class="face front"><b class="t"></b><i class="a"></i></div><div class="face back"></div><div class="face spine"><b class="t"></b></div><div class="face edge"></div>`,
   box: () => `<div class="face front"><b class="t"></b><i class="a"></i></div><div class="face back"></div><div class="face side l"><b class="t"></b></div><div class="face side r"><b class="t"></b></div><div class="face cap top"></div><div class="face cap bottom"></div>`,
+  cert: () => `<div class="face front"><span class="ring"></span><b class="t"></b><i class="a"></i></div><div class="face back"></div><div class="face side l"></div><div class="face side r"></div>`,
   pot: () => Array.from({ length: 8 }, (_, i) => `<div class="face f" style="--i:${i}"></div><div class="face lid" style="--i:${i}"></div>`).join('') + `<div class="face disc"></div>`
 };
 function spinHtml(f) { return `<div class="stage" aria-hidden="true"><div class="spin ${f.spin}" data-i="0">${SPIN[f.spin]()}</div>${f.spin === 'pot' ? '<div class="caption"><b class="t"></b><i class="a"></i></div>' : ''}</div>`; }
 function spinShow(root, [t, a]) { for (const el of root.querySelectorAll('.t')) el.textContent = t; for (const el of root.querySelectorAll('.a')) el.textContent = a; }
+// matrix rain on the stage: columns of glyphs fall in phosphor; now and then one of the file's entries resolves out of the rain on a row,
+// holds, and dissolves. Runs until the stage leaves the document (the next file or the window closing replaces it).
+function matrixStart(stage, words) {
+  const c = stage.querySelector('canvas'), x = c.getContext('2d'), dpr = Math.min(2, devicePixelRatio || 1);
+  const W = stage.clientWidth, H = stage.clientHeight; c.width = W * dpr; c.height = H * dpr; x.scale(dpr, dpr);
+  const cw = 11, ch = 16, cols = Math.floor(W / cw), rows = Math.ceil(H / ch), GLYPHS = '01<>/{}[]()=+-*#%&;:$λπΣ∂∇→≠≈';
+  const drops = Array.from({ length: cols }, () => ({ y: -Math.random() * rows * 2, v: 0.15 + Math.random() * 0.35 }));
+  const css = getComputedStyle(document.documentElement), tone = k => css.getPropertyValue(k).trim();
+  let word = null, next = 40;
+  x.font = '15px VT323, ui-monospace, monospace'; x.textBaseline = 'top';
+  x.fillStyle = tone('--ink'); x.fillRect(0, 0, W, H);
+  const frame = () => {
+    if (!stage.isConnected || !explorer.open) return;
+    if (!MOTION) { requestAnimationFrame(frame); return; }
+    x.globalAlpha = 0.18; x.fillStyle = tone('--ink'); x.fillRect(0, 0, W, H); x.globalAlpha = 1;   // the trails fade
+    for (let i = 0; i < cols; i++) {
+      const d = drops[i]; d.y += d.v; const r = Math.floor(d.y);
+      if (r >= 0 && r < rows && !(word && r === word.row && i >= word.col && i < word.col + word.text.length)) { x.fillStyle = tone('--phosphor'); x.fillText(GLYPHS[(Math.random() * GLYPHS.length) | 0], i * cw, r * ch); }
+      if (r > rows + 4) { d.y = -Math.random() * rows; d.v = 0.15 + Math.random() * 0.35; }
+    }
+    if (word) {   // a resolved entry: bloom while it holds, then let the rain have it
+      x.fillStyle = tone('--ink'); x.fillRect(word.col * cw - 2, word.row * ch, word.text.length * cw + 4, ch);
+      x.fillStyle = tone(--word.hold > 12 ? '--phosphor-bloom' : '--phosphor-dim'); for (let k = 0; k < word.text.length; k++) x.fillText(word.text[k], (word.col + k) * cw, word.row * ch);
+      if (word.hold <= 0) { word = null; next = 30 + Math.random() * 60; }
+    } else if (--next <= 0) { const text = words[(Math.random() * words.length) | 0].slice(0, cols - 2); word = { text, row: 1 + ((Math.random() * (rows - 3)) | 0), col: 1 + ((Math.random() * Math.max(1, cols - text.length - 2)) | 0), hold: 90 }; }
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
 function selectFile(i, focus = true) {
   const n = explorer.insp.explorer.files.length; explorer.index = (i + n) % n; renderExplorer();
   const row = exList.querySelector('.row[aria-selected="true"]');
