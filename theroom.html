@@ -280,7 +280,7 @@ const CONFIG = {
     fur: '#3A4A40', furDark: '#1A261E', furLight: '#4E5C53',
     pale: '#3E4841', paleDim: '#2A352E', marker: '#166B3A', night: '#0A120C', white: '#FFFFFF'
   },
-  room: { width: 8, depth: 6, height: 3 },
+  room: { width: 8, depth: 6, height: 3 },   // TODO: try a smaller room; every preset, the AO occluder and inRoom's open-side literal follow
   // scale = internal buffer as a fraction of css px; minShort = the buffer's short side never drops under this many px (phones have few css px and many device px)
   render: { scale: 0.6, minShort: 540, ditherLevels: 16, scanline: 0.08, vignette: 0.35, phosphor: false, exposure: 2 },
   fog: { near: 6, far: 18 },
@@ -340,9 +340,11 @@ const CONFIG = {
     log: { interval: 800 },
     cursor: { interval: 500 },
     steam: { count: 3, rise: 0.28, period: 2.6 },
-    rain: { speed: 0.9 },
+    rain: { speed: 1.4 },
     platter: { rpm: 33 },
-    led: { period: [0.6, 2.4], duty: [0.3, 0.8] }
+    // rack LEDs, like a router: link lights stay on and drop out now and then; every `every`th LED is an activity light that flickers
+    // fast, in bursts that fill `burst` of a slow envelope cycle and rest between them
+    led: { period: [1.5, 4], duty: [0.85, 0.98], activity: { every: 3, period: [0.07, 0.22], duty: [0.25, 0.55], envelope: [2, 5], burst: [0.25, 0.6] } }
   },
   // Loading: the wireframe builds up floor to ceiling over `rise` ms (a bright edge leading it), holds `hold` ms, then a cut to ink that fades out over `fade` ms.
   loading: { rise: 1600, hold: 450, fade: 200 },
@@ -975,8 +977,10 @@ const BUILD = {
     const vents = (y, n, z0, dz, vh) => { for (let i = 0; i < n; i++) b.box(0.004, vh, 0.008, { at: [face - 0.002, y, z0 + i * dz], color: T.night }); };
     const dot = (y, z, color = P.phosphor, x = face - 0.005) => b.box(0.01, 0.012, 0.012, { at: [x, y, z], color, emissive: true });
     const shelf = y => b.box(0.5, 0.012, bw, { at: [face + 0.28, y + 0.006, 0], color: T.metal });
-    const ledGeos = [], [p0, p1] = CONFIG.motion.led.period, [d0, d1] = CONFIG.motion.led.duty;
-    const led = (y, z) => { const g = new THREE.BoxGeometry(0.012, 0.012, 0.012); g.translate(face - 0.006, y, z); ledGeos.push(g); ANIM.leds.push({ period: lerp(p0, p1, rnd()), phase: rnd(), duty: lerp(d0, d1, rnd()) }); };
+    const ledGeos = [], L = CONFIG.motion.led, A = L.activity, span = ([a, b]) => lerp(a, b, rnd());
+    const led = (y, z) => { const g = new THREE.BoxGeometry(0.012, 0.012, 0.012); g.translate(face - 0.006, y, z); ledGeos.push(g);
+      const act = ledGeos.length % A.every === 0, P = act ? A : L;
+      ANIM.leds.push({ period: span(P.period), phase: rnd(), duty: span(P.duty), act, envelope: act ? span(A.envelope) : 0, burst: act ? span(A.burst) : 0 }); };
     const disk = [T.dark, T.bookB, T.paleDim, T.metal, T.bookA];
     const hdd = (x, y, z) => { b.box(0.147, 0.026, 0.102, { at: [x, y, z], color: T.metal }); b.box(0.06, 0.001, 0.07, { at: [x - 0.01, y + 0.0135, z], color: T.pale }); b.box(0.149, 0.004, 0.104, { at: [x, y - 0.011, z], color: P.moss }); };
     // UPS: display, status LED, vents
@@ -1445,7 +1449,9 @@ function updateLeds(t) {
   const col = ANIM.ledMesh.geometry.attributes.color, arr = col.array; let lit = 0;
   const boost = ANIM.rackBoost || 0, hotC = _c.lerpColors(onC, bloomC, boost);
   ANIM.leds.forEach((l, i) => {
-    const on = boost >= 1 || ((t / l.period + l.phase) % 1) < l.duty || Math.random() < boost; if (on) lit++;
+    let on = ((t / l.period + l.phase) % 1) < l.duty;
+    if (l.act && ((t / l.envelope + l.phase * 7) % 1) > l.burst) on = false;   // an activity light rests between bursts
+    on = on || boost >= 1 || Math.random() < boost; if (on) lit++;
     const c = on ? hotC : offC;
     for (let v = i * 24; v < (i + 1) * 24; v++) { arr[v * 3] = c.r; arr[v * 3 + 1] = c.g; arr[v * 3 + 2] = c.b; }
   });
@@ -1675,7 +1681,7 @@ function renderExplorer() {
   const ex = explorer.insp.explorer, files = ex.files, f = files[explorer.index];
   exPath.innerHTML = `<b>luiz@theroom:</b>${esc(ex.path)}`;
   exList.innerHTML = files.map((file, i) => { const m = file.name.match(/^(.*?)(\.[^.]+)?$/); return `<button type="button" class="row" role="option" data-i="${i}" aria-selected="${i === explorer.index}" tabindex="${i === explorer.index ? 0 : -1}"><span class="perm">-rw-r--r--</span><span class="name">${esc(m[1])}<span class="ext">${esc(m[2] || '')}</span></span></button>`; }).join('');
-  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}${f.control === 'graph' ? graphHtml() : ''}${f.control === 'spin' ? spinHtml(f) : ''}`;
+  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.control === 'spin' ? spinHtml(f) : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}${f.control === 'graph' ? graphHtml() : ''}`;
   if (f.control === 'spin') {   // each turn starts with the back to the viewer: swap to the next item then, unseen
     const stage = exPreview.querySelector('.stage'), el = stage.querySelector('.spin'); spinShow(stage, f.items[0]);
     el.addEventListener('animationiteration', () => { el.dataset.i = (+el.dataset.i + 1) % f.items.length; spinShow(stage, f.items[+el.dataset.i]); });

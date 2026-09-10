@@ -30,3 +30,7 @@ Workflow: edit -> `npm test` -> commit -> push -> Vercel deploys -> `npm run tes
 - There is no build step. Vercel serves the repo root as static files; `vercel.json` rewrites `/` to `/theroom.html`.
 - The page loads Three.js from jsDelivr and fonts from Google Fonts at runtime, so it needs network access to render.
 - The Claude Design export zip stays out of git (`*.zip` is ignored) because it contains process uploads.
+
+## Later
+
+- Try a smaller room (`CONFIG.room`): the camera presets, the desk AO occluder and the open-side clamp in `inRoom` are all in metres and would move with it.
