@@ -137,8 +137,22 @@
   #explorer .cert .side { width: 8px; background: var(--soil); border-color: var(--phosphor); }
   #explorer .cert .side.l { left: 0; transform: translateX(-4px) rotateY(-90deg); }
   #explorer .cert .side.r { right: 0; transform: translateX(4px) rotateY(90deg); }
-  #explorer .stage.matrix { display: block; background-image: none; background: var(--ink); }
-  #explorer .stage.matrix canvas { display: block; width: 100%; height: 100%; }
+  /* the stack rack: 26 px units between two rails; over-long lists scroll at 1.6 s per unit */
+  #explorer .stage.rack { display: grid; place-items: stretch; align-content: start; padding: 2px 18px; background-image: none; background: var(--ink); box-shadow: inset 14px 0 0 var(--moss), inset -14px 0 0 var(--moss); }
+  #explorer .stage.rack .units { display: grid; gap: 2px; width: 100%; }
+  #explorer .stage.rack .scroll { animation: rack-scroll calc(var(--n) * 1.6s) linear infinite; }
+  #explorer .stage.rack .unit { height: 24px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 0 8px; background: var(--soil); border: 1px solid var(--moss); }
+  #explorer .stage.rack .unit b { font: 9px/1 Silkscreen, VT323, ui-monospace, monospace; font-weight: 400; text-transform: uppercase; color: var(--phosphor); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #explorer .stage.rack .leds { display: flex; gap: 4px; }
+  #explorer .stage.rack .leds i { width: 5px; height: 5px; background: var(--phosphor); box-shadow: 0 0 4px var(--phosphor-dim); animation: rack-led var(--p) steps(1) infinite var(--d); }
+  #explorer .stage.rack .leds i.act { animation-name: rack-act; }
+  #explorer .stage.rack .meter { width: 44px; height: 4px; background: var(--moss); }
+  #explorer .stage.rack .meter i { display: block; height: 100%; width: var(--w); background: var(--phosphor-dim); transform-origin: left; animation: rack-meter var(--p) ease-in-out infinite alternate var(--d); }
+  @keyframes rack-scroll { to { transform: translateY(-50%); } }
+  @keyframes rack-led { 0%, 88% { background: var(--phosphor); } 88.1%, 100% { background: var(--moss); box-shadow: none; } }
+  @keyframes rack-act { 0%, 45% { background: var(--phosphor); } 45.1%, 100% { background: var(--moss); box-shadow: none; } }
+  @keyframes rack-meter { from { transform: scaleX(0.55); } to { transform: scaleX(1); } }
+  @media (prefers-reduced-motion: reduce) { #explorer .stage.rack .scroll, #explorer .stage.rack .leds i, #explorer .stage.rack .meter i { animation: none; } }
   #explorer .caption { position: absolute; left: 0; right: 0; bottom: 12px; display: grid; justify-items: center; gap: 4px; }
   @keyframes book-spin { from { transform: rotateY(180deg); } to { transform: rotateY(540deg); } }
   @media (prefers-reduced-motion: reduce) { #explorer .spin { animation: none; transform: rotateY(-30deg); } }
@@ -466,11 +480,11 @@ const CONFIG = {
     { id: 'monitor-right', label: 'terminal', title: 'Terminal', line: 'a shell into the room: cd, ls, help', phase: 1, terminal: true },
     { id: 'rack',          label: 'stack', title: 'Stack', line: 'Python, TypeScript, n8n and what runs on them', phase: 1, view: { dir: [-1, 0, 0] },
       explorer: { path: '~/stack', files: [
-        { name: 'languages.conf', control: 'matrix', title: 'Languages', meta: 'what the code is written in', bullets: ['Python', 'Java', 'SQL', 'JavaScript', 'TypeScript', 'C/C++'] },
-        { name: 'frameworks.conf', control: 'matrix', title: 'Frameworks and tools', meta: 'the working set', bullets: ['FastAPI', 'LangChain', 'LangGraph', 'n8n', 'CrewAI', 'PySpark', 'Git', 'Docker', 'Pandas', 'NumPy', 'Matplotlib'] },
-        { name: 'ai-data.conf', control: 'matrix', title: 'AI and data', meta: 'models, retrieval, agents', bullets: ['Machine Learning', 'Neural Networks', 'NLP', 'Tokenization', 'Vector Databases (Pinecone, Supabase pgvector)', 'RAG pipelines', 'Embedding generation', 'Prompt engineering', 'Claude Agent SDK'] },
-        { name: 'cloud-db.conf', control: 'matrix', title: 'Cloud and databases', meta: 'where it runs and what it stores', bullets: ['PostgreSQL', 'MySQL', 'Supabase', 'SQLAlchemy', 'Google Cloud Platform (GCP)', 'Amazon Web Services (AWS)'] },
-        { name: 'process.conf', control: 'matrix', title: 'Project and collaboration', meta: 'how the work gets shipped', bullets: ['Agile methodologies', 'Scrum', 'Kanban', 'JIRA', 'CI/CD workflows'] }
+        { name: 'languages.conf', control: 'rack', title: 'Languages', meta: 'what the code is written in', bullets: ['Python', 'Java', 'SQL', 'JavaScript', 'TypeScript', 'C/C++'] },
+        { name: 'frameworks.conf', control: 'rack', title: 'Frameworks and tools', meta: 'the working set', bullets: ['FastAPI', 'LangChain', 'LangGraph', 'n8n', 'CrewAI', 'PySpark', 'Git', 'Docker', 'Pandas', 'NumPy', 'Matplotlib'] },
+        { name: 'ai-data.conf', control: 'rack', title: 'AI and data', meta: 'models, retrieval, agents', bullets: ['Machine Learning', 'Neural Networks', 'NLP', 'Tokenization', 'Vector Databases (Pinecone, Supabase pgvector)', 'RAG pipelines', 'Embedding generation', 'Prompt engineering', 'Claude Agent SDK'] },
+        { name: 'cloud-db.conf', control: 'rack', title: 'Cloud and databases', meta: 'where it runs and what it stores', bullets: ['PostgreSQL', 'MySQL', 'Supabase', 'SQLAlchemy', 'Google Cloud Platform (GCP)', 'Amazon Web Services (AWS)'] },
+        { name: 'process.conf', control: 'rack', title: 'Project and collaboration', meta: 'how the work gets shipped', bullets: ['Agile methodologies', 'Scrum', 'Kanban', 'JIRA', 'CI/CD workflows'] }
       ] } },
     { id: 'cert-frame',    label: 'certifications', title: 'CCA-F', line: 'Claude Certified Architect (Foundations), IBM certs', phase: 1,
       explorer: { path: '~/certifications', files: [
@@ -1691,12 +1705,11 @@ function renderExplorer() {
   const ex = explorer.insp.explorer, files = ex.files, f = files[explorer.index];
   exPath.innerHTML = `<b>luiz@theroom:</b>${esc(ex.path)}`;
   exList.innerHTML = files.map((file, i) => { const m = file.name.match(/^(.*?)(\.[^.]+)?$/); return `<button type="button" class="row" role="option" data-i="${i}" aria-selected="${i === explorer.index}" tabindex="${i === explorer.index ? 0 : -1}"><span class="perm">-rw-r--r--</span><span class="name">${esc(m[1])}<span class="ext">${esc(m[2] || '')}</span></span></button>`; }).join('');
-  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.control === 'spin' ? spinHtml(f) : ''}${f.control === 'matrix' ? '<div class="stage matrix" aria-hidden="true"><canvas></canvas></div>' : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}${f.control === 'graph' ? graphHtml() : ''}`;
+  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.control === 'spin' ? spinHtml(f) : ''}${f.control === 'rack' ? rackHtml(f) : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}${f.control === 'graph' ? graphHtml() : ''}`;
   if (f.control === 'spin') {   // each turn starts with the back to the viewer: swap to the next item then, unseen
     const stage = exPreview.querySelector('.stage'), el = stage.querySelector('.spin'); spinShow(stage, f.items[0]);
     el.addEventListener('animationiteration', () => { el.dataset.i = (+el.dataset.i + 1) % f.items.length; spinShow(stage, f.items[+el.dataset.i]); });
   }
-  if (f.control === 'matrix') matrixStart(exPreview.querySelector('.stage'), f.bullets);
   exStatus.textContent = `${files.length} items | ${f.name}`;
 }
 // a thing turning on the dithered stage: a book (cover, spine, fore-edge, back), a game box (lid, spines, caps) or a paint pot (an eight-sided body under
@@ -1709,34 +1722,13 @@ const SPIN = {
 };
 function spinHtml(f) { return `<div class="stage" aria-hidden="true"><div class="spin ${f.spin}" data-i="0">${SPIN[f.spin]()}</div>${f.spin === 'pot' ? '<div class="caption"><b class="t"></b><i class="a"></i></div>' : ''}</div>`; }
 function spinShow(root, [t, a]) { for (const el of root.querySelectorAll('.t')) el.textContent = t; for (const el of root.querySelectorAll('.a')) el.textContent = a; }
-// matrix rain on the stage: columns of glyphs fall in phosphor; now and then one of the file's entries resolves out of the rain on a row,
-// holds, and dissolves. Runs until the stage leaves the document (the next file or the window closing replaces it).
-function matrixStart(stage, words) {
-  const c = stage.querySelector('canvas'), x = c.getContext('2d'), dpr = Math.min(2, devicePixelRatio || 1);
-  const W = stage.clientWidth, H = stage.clientHeight; c.width = W * dpr; c.height = H * dpr; x.scale(dpr, dpr);
-  const cw = 11, ch = 16, cols = Math.floor(W / cw), rows = Math.ceil(H / ch), GLYPHS = '01<>/{}[]()=+-*#%&;:$λπΣ∂∇→≠≈';
-  const drops = Array.from({ length: cols }, () => ({ y: -Math.random() * rows * 2, v: 0.15 + Math.random() * 0.35 }));
-  const css = getComputedStyle(document.documentElement), tone = k => css.getPropertyValue(k).trim();
-  let word = null, next = 40;
-  x.font = '15px VT323, ui-monospace, monospace'; x.textBaseline = 'top';
-  x.fillStyle = tone('--ink'); x.fillRect(0, 0, W, H);
-  const frame = () => {
-    if (!stage.isConnected || !explorer.open) return;
-    if (!MOTION) { requestAnimationFrame(frame); return; }
-    x.globalAlpha = 0.18; x.fillStyle = tone('--ink'); x.fillRect(0, 0, W, H); x.globalAlpha = 1;   // the trails fade
-    for (let i = 0; i < cols; i++) {
-      const d = drops[i]; d.y += d.v; const r = Math.floor(d.y);
-      if (r >= 0 && r < rows && !(word && r === word.row && i >= word.col && i < word.col + word.text.length)) { x.fillStyle = tone('--phosphor'); x.fillText(GLYPHS[(Math.random() * GLYPHS.length) | 0], i * cw, r * ch); }
-      if (r > rows + 4) { d.y = -Math.random() * rows; d.v = 0.15 + Math.random() * 0.35; }
-    }
-    if (word) {   // a resolved entry: bloom while it holds, then let the rain have it
-      x.fillStyle = tone('--ink'); x.fillRect(word.col * cw - 2, word.row * ch, word.text.length * cw + 4, ch);
-      x.fillStyle = tone(--word.hold > 12 ? '--phosphor-bloom' : '--phosphor-dim'); for (let k = 0; k < word.text.length; k++) x.fillText(word.text[k], (word.col + k) * cw, word.row * ch);
-      if (word.hold <= 0) { word = null; next = 30 + Math.random() * 60; }
-    } else if (--next <= 0) { const text = words[(Math.random() * words.length) | 0].slice(0, cols - 2); word = { text, row: 1 + ((Math.random() * (rows - 3)) | 0), col: 1 + ((Math.random() * Math.max(1, cols - text.length - 2)) | 0), hold: 90 }; }
-    requestAnimationFrame(frame);
-  };
-  requestAnimationFrame(frame);
+// the stack as rack units: one 1U per entry, its name on the bezel, two link LEDs and an activity LED on their own clocks, a meter
+// that breathes. More units than the stage holds scroll by slowly (the list is doubled so the loop is seamless).
+function rackHtml(f) {
+  const seed = seeded(f.bullets.length * 7), r = (a, b) => (a + (b - a) * seed()).toFixed(2);
+  const unit = name => `<div class="unit"><span class="leds"><i style="--p:${r(2, 5)}s;--d:-${r(0, 4)}s"></i><i style="--p:${r(2, 5)}s;--d:-${r(0, 4)}s"></i><i class="act" style="--p:${r(0.25, 0.6)}s;--d:-${r(0, 1)}s"></i></span><b>${esc(name.replace(/\s*\(.*\)$/, ''))}</b><span class="meter"><i style="--w:${r(35, 90)}%;--p:${r(2.5, 5)}s;--d:-${r(0, 4)}s"></i></span></div>`;
+  const rows = f.bullets.map(unit).join(''), over = f.bullets.length * 26 > 196;
+  return `<div class="stage rack" aria-hidden="true"><div class="units${over ? ' scroll' : ''}" style="--n:${f.bullets.length}">${rows}${over ? rows : ''}</div></div>`;
 }
 function selectFile(i, focus = true) {
   const n = explorer.insp.explorer.files.length; explorer.index = (i + n) % n; renderExplorer();
