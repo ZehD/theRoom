@@ -142,7 +142,11 @@
   #explorer .mini .trim .fc { background: var(--mini-trim); }
   #explorer .mini .gun .fc, #explorer .mini .rock .fc { background: var(--mini-gun); border-color: var(--ink); }
   #explorer .mini .rock .fc { background: color-mix(in srgb, var(--paper) 30%, var(--soil)); }
-  #explorer .mini .head .fn { background: radial-gradient(circle at 32% 48%, var(--mini-eye) 1.5px, transparent 2.5px), radial-gradient(circle at 68% 48%, var(--mini-eye) 1.5px, transparent 2.5px), var(--mini-front); }
+  #explorer .mini .fs { background: color-mix(in srgb, var(--mini-front) calc(var(--k) * 100%), var(--mini-side)); }
+  #explorer .mini .pad .fs { background: color-mix(in srgb, var(--mini-top) calc(var(--k) * 100%), var(--mini-side)); }
+  #explorer .mini .cap { border-radius: 50%; }
+  #explorer .mini .half { border-radius: 50%; clip-path: inset(0 0 50% 0); background: var(--mini-side); border: 2px solid var(--mini-trim); }
+  #explorer .mini .snout .fn { background: radial-gradient(circle at 30% 35%, var(--mini-eye) 1.2px, transparent 2px), radial-gradient(circle at 70% 35%, var(--mini-eye) 1.2px, transparent 2px), var(--mini-front); }
   #explorer .mini .rim { background: var(--soil); border-color: var(--phosphor-dim); }
   #explorer .mini .disc { border-radius: 50%; background: var(--soil); border: 2px solid var(--phosphor); }
   #explorer .cert { width: 130px; height: 170px; }
@@ -1729,34 +1733,40 @@ const SPIN = {
   book: () => `<div class="face front"><b class="t"></b><i class="a"></i></div><div class="face back"></div><div class="face spine"><b class="t"></b></div><div class="face edge"></div>`,
   box: () => `<div class="face front"><b class="t"></b><i class="a"></i></div><div class="face back"></div><div class="face side l"><b class="t"></b></div><div class="face side r"><b class="t"></b></div><div class="face cap top"></div><div class="face cap bottom"></div>`,
   cert: () => `<div class="face front"><span class="ring"></span><b class="t"></b><i class="a"></i></div><div class="face back"></div><div class="face side l"></div><div class="face side r"></div>`,
-  // a miniature on a round base, in the proportions of a power-armoured marine: wide stance on greaves and boots, a belt, a barrel chest with
-  // its plate, shoulder pads wider than the body, forearms brought together on a bolter, a backpack with twin exhausts, a crested helmet.
-  // Boxes of six faces each over an eight-sided base with a disc and two rocks. Colours come from --mini-* on the .mini, which the
-  // painting step (data-i) sets; .trim parts take --mini-trim, the gun --mini-gun.
+  // a miniature on a round base, in the shapes of a power-armoured marine: boxes for boots, belt, plate, pack and gun; prisms (n faces,
+  // shaded by their angle, a squashed one for the barrel chest) for limbs, torso and vents; a stepped dome for the helmet; half-drums
+  // of seven slats with a rimmed end cap for the shoulder pads. Colours come from --mini-* on the .mini, which the painting step
+  // (data-i) sets; .trim parts take --mini-trim, the gun and rocks --mini-gun.
   mini: () => {
-    const fc = (cls, w, h, tf) => `<i class="fc ${cls}" style="width:${w}px;height:${h}px;margin:${-h / 2}px 0 0 ${-w / 2}px;transform:${tf}"></i>`;
-    const box = (cls, x, y, z, w, h, d, rot = '') => `<div class="bx ${cls}" style="transform:translate3d(${x}px,${-y}px,${z}px) ${rot}">` +
+    const D2 = Math.PI / 180;
+    const fc = (cls, w, h, tf, k) => `<i class="fc ${cls}" style="${k == null ? '' : `--k:${k};`}width:${w}px;height:${h}px;margin:${-h / 2}px 0 0 ${-w / 2}px;transform:${tf}"></i>`;
+    const at = (cls, x, y, z, extra = '') => `<div class="bx ${cls}" style="transform:translate3d(${x}px,${-y}px,${z}px) ${extra}">`;
+    const box = (cls, x, y, z, w, h, d, rot = '') => at(cls, x, y, z, rot) +
       fc('fn', w, h, `translateZ(${d / 2}px)`) + fc('fb', w, h, `rotateY(180deg) translateZ(${d / 2}px)`) +
       fc('fl', d, h, `rotateY(-90deg) translateZ(${w / 2}px)`) + fc('fr', d, h, `rotateY(90deg) translateZ(${w / 2}px)`) +
       fc('ft', w, d, `rotateX(90deg) translateZ(${h / 2}px)`) + fc('fd', w, d, `rotateX(-90deg) translateZ(${h / 2}px)`) + '</div>';
+    const prism = (cls, x, y, z, r, h, n = 8, extra = '') => { const w = 2 * r * Math.tan(Math.PI / n) + 0.6; let o = at(cls, x, y, z, extra);
+      for (let i = 0; i < n; i++) { const a = i * 360 / n; o += fc('fs', w, h, `rotateY(${a}deg) translateZ(${r}px)`, (0.5 + 0.5 * Math.cos(a * D2)).toFixed(2)); }
+      return o + fc('ft cap', 2 * r, 2 * r, `rotateX(90deg) translateZ(${h / 2}px)`) + fc('fd cap', 2 * r, 2 * r, `rotateX(-90deg) translateZ(${h / 2}px)`) + '</div>'; };
+    const pad = (x, y, z, side) => { const r = 12, len = 20, sh = 2 * r * Math.tan(15 * D2) + 0.6; let o = at('pad', x, y, z);
+      for (let i = 0; i <= 6; i++) { const th = i * 30; o += fc('fs', len, sh, `rotateX(${th}deg) translateZ(${r}px)`, Math.sin(th * D2).toFixed(2)); }
+      return o + fc('half', 2 * r, 2 * r, `rotateY(${side * 90}deg) translateZ(${len / 2}px)`) + '</div>'; };
     const base = Array.from({ length: 8 }, (_, i) => fc('rim', 33, 8, `rotateY(${i * 45}deg) translateZ(40px)`)).join('') + fc('disc', 80, 80, 'rotateX(90deg) translateZ(4px)');
-    const M = (s) => s.map(a => box(...a)).join('');
-    return `<div class="fig"><div class="bx" style="transform:translateY(-4px)">${base}</div>` + M([
-      ['rock', -20, 3, 12, 10, 6, 8, 'rotateY(30deg)'], ['rock', 16, 2, -10, 7, 4, 6, 'rotateY(-20deg)'],
-      ['boot', -12, 11, 3, 14, 6, 18], ['boot', 12, 11, 3, 14, 6, 18],                 // boots, toes forward
-      ['greave', -12, 22, 0, 14, 16, 16], ['greave', 12, 22, 0, 14, 16, 16],           // shins
-      ['knee', -12, 28, 9, 10, 7, 5], ['knee', 12, 28, 9, 10, 7, 5],                   // knee pads on the shin fronts
-      ['thigh', -10, 36, 0, 13, 12, 14], ['thigh', 10, 36, 0, 13, 12, 14],
-      ['belt', 0, 44, 0, 28, 8, 16],
-      ['torso', 0, 58, 0, 32, 22, 20],
-      ['plate trim', 0, 58, 12, 20, 12, 4],                                             // the chest plate
-      ['pack', 0, 58, -17, 26, 22, 12], ['vent', -9, 73, -17, 8, 10, 8], ['vent', 9, 73, -17, 8, 10, 8],
-      ['arm', -23, 54, 2, 10, 14, 12], ['arm', 23, 54, 2, 10, 14, 12],                 // upper arms
-      ['fore', -13, 50, 14, 10, 9, 14, 'rotateY(35deg)'], ['fore', 13, 50, 14, 10, 9, 14, 'rotateY(-35deg)'],   // forearms in on the gun
-      ['pad trim', -26, 66, 0, 20, 14, 20], ['pad trim', 26, 66, 0, 20, 14, 20],       // shoulder pads
-      ['gun', 3, 53, 21, 30, 8, 8, 'rotateY(-18deg)'], ['gun', 0, 47, 20, 6, 8, 5, 'rotateY(-18deg)'], ['gun', 21, 54, 26, 14, 4, 4, 'rotateY(-18deg)'],   // bolter, magazine, barrel
-      ['head', 0, 76, 2, 14, 14, 14], ['crest trim', 0, 86, 0, 4, 7, 10]
-    ]) + '</div>';
+    return `<div class="fig">${at('', 0, 4, 0)}${base}</div>` +
+      box('rock', -20, 3, 12, 10, 6, 8, 'rotateY(30deg)') + box('rock', 16, 2, -10, 7, 4, 6, 'rotateY(-20deg)') +
+      box('boot', -12, 11, 3, 14, 6, 18) + box('boot', 12, 11, 3, 14, 6, 18) +
+      prism('greave', -12, 22, 0, 7.5, 16, 8, 'scaleZ(1.1)') + prism('greave', 12, 22, 0, 7.5, 16, 8, 'scaleZ(1.1)') +
+      box('knee', -12, 28.5, 9, 9, 7, 5) + box('knee', 12, 28.5, 9, 9, 7, 5) +
+      prism('thigh', -10, 36, 0, 7, 12) + prism('thigh', 10, 36, 0, 7, 12) +
+      box('belt', 0, 44, 0, 28, 8, 16) +
+      prism('torso', 0, 58, 0, 16, 22, 10, 'scaleZ(0.62)') + box('plate trim', 0, 58, 12, 18, 12, 4) +
+      box('pack', 0, 58, -17, 26, 20, 12) + prism('vent', -9, 72, -17, 4, 10, 8) + prism('vent', 9, 72, -17, 4, 10, 8) +
+      prism('arm', -23, 54, 2, 5.5, 14) + prism('arm', 23, 54, 2, 5.5, 14) +
+      box('fore', -13, 50, 14, 10, 9, 14, 'rotateY(35deg)') + box('fore', 13, 50, 14, 10, 9, 14, 'rotateY(-35deg)') +
+      pad(-26, 66, 0, -1) + pad(26, 66, 0, 1) +
+      box('gun', 3, 53, 21, 30, 8, 8, 'rotateY(-18deg)') + box('gun', 0, 47, 20, 6, 8, 5, 'rotateY(-18deg)') + box('gun', 21, 54, 26, 14, 4, 4, 'rotateY(-18deg)') +
+      prism('head', 0, 73.5, 2, 7.5, 9) + prism('head', 0, 80, 2, 6, 4) + prism('head', 0, 83.5, 2, 4, 3) +
+      box('snout', 0, 72, 10, 8, 6, 5) + box('crest trim', 0, 87, 1, 3, 6, 9) + '</div>';
   }
 };
 function spinHtml(f) { return `<div class="stage" aria-hidden="true"><div class="spin ${f.spin}" data-i="0">${SPIN[f.spin]()}</div>${f.spin === 'mini' ? '<div class="caption"><b class="t"></b><i class="a"></i></div>' : ''}</div>`; }
@@ -1992,14 +2002,16 @@ function updateMenu() {
     if (on && navEl.scrollWidth > navEl.clientWidth) navEl.scrollTo({ left: Math.max(0, a.offsetLeft - navEl.offsetLeft - 12), behavior: 'smooth' });   // the phone strip follows the current word
   }
 }
+let hintFocus = null;   // the hint-only object (the dog, the note) the camera glided up to; a click on nothing glides back, like closing a window
 function focusObject(insp) {
   if (insp.secret) foundSecret(insp.secret);
   if (insp.terminal) return enterTerminal();
   if (insp.explorer) return inspect(insp);
-  const view = viewFor(insp); if (view) tweenCamera(view);
+  const view = viewFor(insp); if (view) { hintFocus = insp; tweenCamera(view); }
 }
 function goZone(z, { push = true } = {}) {
   if (!ZONES[z]) return false;
+  hintFocus = null;
   if (explorer.open) { camTween.back = null; closeExplorer(true); }
   if (TERM.open) leaveTerminal({ tween: false, fromHistory: true });
   nav.zone = z;
@@ -2179,6 +2191,7 @@ canvas.addEventListener('pointerup', e => {
   let hit = null, best = Infinity;
   for (const tg of hover.targets) { const h = raycaster.intersectObjects(tg.meshes, false); if (h.length && h[0].distance < best) { best = h[0].distance; hit = tg; } }
   if (TERM.open) { if (!hit?.insp.terminal) leaveTerminal(); else { if (document.activeElement === shellIn) shellIn.blur(); shellIn.focus({ preventScroll: true }); } return; }   // a click off the screen glides back; on the screen, re-summons a dismissed keyboard
+  if (hintFocus && !hit) { setHover(null); goZone(nav.zone, { push: false }); return; }   // off the dog or the note: back to the zone's shot
   if (e.pointerType === 'touch') {   // no hover on glass: the first tap lights the object and holds its label (the dog's chip is the clue); the next tap on it opens
     if (hit && hover.current !== hit) { setHover(hit); return; }
     setHover(hit); chipEl.querySelector('.more')?.remove();
