@@ -125,10 +125,22 @@
   #explorer .box .cap { left: 0; right: 0; height: 34px; bottom: auto; background: var(--soil); }
   #explorer .box .cap.top { top: 0; transform: translateY(-17px) rotateX(90deg); }
   #explorer .box .cap.bottom { top: auto; bottom: 0; transform: translateY(17px) rotateX(-90deg); }
-  #explorer .pot { width: 28px; height: 72px; margin-top: 20px; }
-  #explorer .pot .f, #explorer .pot .lid { left: 0; width: 28px; transform: rotateY(calc(var(--i) * 45deg)) translateZ(34px); background: linear-gradient(var(--soil) 0 28%, var(--paper) 28% 72%, var(--soil) 72%); border-color: var(--moss); }
-  #explorer .pot .lid { top: -16px; bottom: auto; height: 16px; width: 31px; left: -1.5px; transform: rotateY(calc(var(--i) * 45deg)) translateZ(37px); background: var(--phosphor-dim); border-color: var(--phosphor); }
-  #explorer .pot .disc { top: -16px; bottom: auto; left: 50%; width: 76px; height: 76px; margin-left: -38px; transform: translateY(-38px) rotateX(-90deg); border-radius: 50%; background: var(--phosphor-dim); border-color: var(--phosphor); }
+  /* the miniature: 90 px of figure on a 70 px base; every box face takes its colour from the painting step on data-i */
+  #explorer .mini { width: 110px; height: 120px; margin-top: -40px; --mini-top: var(--paper); --mini-front: color-mix(in srgb, var(--paper) 70%, var(--soil)); --mini-side: color-mix(in srgb, var(--paper) 45%, var(--soil)); --mini-line: var(--soil); --mini-eye: transparent; }
+  #explorer .mini[data-i="1"] { --mini-top: var(--soil); --mini-front: var(--ink); --mini-side: var(--ink); --mini-line: var(--moss); }
+  #explorer .mini[data-i="2"] { --mini-top: var(--phosphor-dim); --mini-front: var(--moss); --mini-side: color-mix(in srgb, var(--moss) 70%, var(--ink)); --mini-line: var(--moss); --mini-eye: var(--phosphor-bloom); }
+  #explorer .mini[data-i="3"] { --mini-top: var(--phosphor-dim); --mini-front: color-mix(in srgb, var(--moss) 85%, var(--ink)); --mini-side: color-mix(in srgb, var(--moss) 60%, var(--ink)); --mini-line: var(--ink); --mini-eye: var(--phosphor-bloom); }
+  #explorer .mini[data-i="4"] { --mini-top: var(--phosphor-dim); --mini-front: var(--moss); --mini-side: color-mix(in srgb, var(--moss) 70%, var(--ink)); --mini-line: var(--phosphor); --mini-eye: var(--phosphor-bloom); }
+  #explorer .mini .fig { position: absolute; left: 50%; bottom: 0; width: 0; height: 0; transform-style: preserve-3d; transform: scale(1.5); }
+  #explorer .mini .bx { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-style: preserve-3d; }
+  #explorer .mini .fc { position: absolute; left: 50%; top: 50%; box-sizing: border-box; border: 1px solid var(--mini-line); backface-visibility: hidden; transition: background-color 600ms, border-color 600ms; }
+  #explorer .mini .front, #explorer .mini .back { background: var(--mini-front); }
+  #explorer .mini .l, #explorer .mini .r { background: var(--mini-side); }
+  #explorer .mini .top { background: var(--mini-top); }
+  #explorer .mini .bot { background: var(--ink); }
+  #explorer .mini .head .front { background: radial-gradient(circle at 32% 48%, var(--mini-eye) 1.5px, transparent 2.5px), radial-gradient(circle at 68% 48%, var(--mini-eye) 1.5px, transparent 2.5px), var(--mini-front); }
+  #explorer .mini .rim { background: var(--soil); border-color: var(--phosphor-dim); }
+  #explorer .mini .disc { border-radius: 50%; background: var(--soil); border: 2px solid var(--phosphor); }
   #explorer .cert { width: 130px; height: 170px; }
   #explorer .cert .front { transform: translateZ(4px); grid-template-rows: auto 1fr auto; align-content: start; justify-items: center; text-align: center; padding: 14px 12px; }
   #explorer .cert .front b { font-size: 9px; align-self: center; }
@@ -502,7 +514,7 @@ const CONFIG = {
         { name: 'now-reading.txt', title: 'Now reading', meta: 'bookmark at page 212', control: 'spin', spin: 'book', items: [['AI Engineering', 'Chip Huyen'], ['The Dark Forest', 'Cixin Liu'], ['Perdido Street Station', 'China Miéville']], bullets: ['AI Engineering — Chip Huyen. Third pass, this time with a notebook.', 'The Dark Forest — Cixin Liu. Rereading the trilogy, slower.', 'Perdido Street Station — China Miéville. The one I lend to people and never get back.'] },
         { name: 'favourites.txt', title: 'Read more than once', meta: 'the fiction row, eye level', bullets: ['The Lord of the Rings, every few years since school.', 'The Three-Body Problem and the two that follow.', 'Perdido Street Station, The Scar, The City & the City.', 'Dune, Neuromancer, Hyperion, Blindsight.'] },
         { name: 'table.txt', title: 'On the table', meta: 'top shelf, heaviest boxes first', control: 'spin', spin: 'box', items: [['Twilight Struggle', '2 players · 3 h'], ['Puerto Rico', '3–5 players · 90 min'], ['Terraforming Mars', '1–5 players · 2 h'], ['Brass: Birmingham', '2–4 players · 2 h'], ['Agricola', '1–4 players · 2 h']], bullets: ['Twilight Struggle — the one game I would keep if I could keep one.', 'Puerto Rico — twenty years old and still the tightest euro on the shelf.', 'Terraforming Mars, Brass: Birmingham, Agricola — for the long Sunday sessions.'] },
-        { name: 'paint-desk.txt', title: 'The paint desk', meta: 'Warhammer, one squad at a time', control: 'spin', spin: 'pot', items: [['Abaddon Black', 'base'], ['Mephiston Red', 'base'], ['Retributor Armour', 'base'], ['Nuln Oil', 'shade'], ['Agrax Earthshade', 'shade'], ['Screaming Skull', 'layer']], bullets: ['Miniatures are the slow hobby: assemble, prime, base coat, wash, edge highlight, repeat until the squad looks like a squad.', 'Mostly Warhammer. The backlog of grey plastic is a running joke at home.', 'A game now and then, whenever the table clears of board games.'] },
+        { name: 'paint-desk.txt', title: 'The paint desk', meta: 'Warhammer, one squad at a time', control: 'spin', spin: 'mini', items: [['grey plastic', 'assembled, mould lines scraped'], ['primed', 'black undercoat'], ['base coat', 'two thin coats'], ['wash', 'into the recesses'], ['edge highlights', 'done. next one.']], bullets: ['Miniatures are the slow hobby: assemble, prime, base coat, wash, edge highlight, repeat until the squad looks like a squad.', 'Mostly Warhammer. The backlog of grey plastic is a running joke at home.', 'A game now and then, whenever the table clears of board games.'] },
         { name: 'matinee.txt', title: 'Classic cinema', meta: 'lights off, no second screen', bullets: ['Old films watched the old way: one sitting, no phone in hand.', 'Noir, westerns, the studio-era greats. Pacing that trusts you to pay attention.', 'Rewatched more often than anything new.'] },
         { name: 'stack.log', title: 'The reference row', meta: 'academic, pale spines', text: 'Clean Code and The Pragmatic Programmer for how to write it, Designing Data-Intensive Applications for where it runs, Speech and Language Processing and Deep Learning for why the models do what they do. AI Engineering ties the row together.' },
         { name: 'off-shelf.txt', title: 'Off the shelf', meta: 'the rest of the room', bullets: ['Vinyl on the turntable, mostly jazz and Brazilian records from the 60s and 70s.', 'A telescope by the window for the rare clear night.', 'A French bulldog asleep on the rug, breathing slowly.'] }
@@ -1707,15 +1719,28 @@ function renderExplorer() {
   }
   exStatus.textContent = `${files.length} items | ${f.name}`;
 }
-// a thing turning on the dithered stage: a book (cover, spine, fore-edge, back), a game box (lid, spines, caps) or a paint pot (an eight-sided body under
-// a wider lid, named in a caption), built from faces in the room's palette. Every .t reads the item's title and every .a its line.
+// a thing turning on the dithered stage: a book (cover, spine, fore-edge, back), a game box (lid, spines, caps), a certificate plaque or a miniature
+// being painted (captioned with the step), built from faces in the room's palette. Every .t reads the item's title and every .a its line.
 const SPIN = {
   book: () => `<div class="face front"><b class="t"></b><i class="a"></i></div><div class="face back"></div><div class="face spine"><b class="t"></b></div><div class="face edge"></div>`,
   box: () => `<div class="face front"><b class="t"></b><i class="a"></i></div><div class="face back"></div><div class="face side l"><b class="t"></b></div><div class="face side r"><b class="t"></b></div><div class="face cap top"></div><div class="face cap bottom"></div>`,
   cert: () => `<div class="face front"><span class="ring"></span><b class="t"></b><i class="a"></i></div><div class="face back"></div><div class="face side l"></div><div class="face side r"></div>`,
-  pot: () => Array.from({ length: 8 }, (_, i) => `<div class="face f" style="--i:${i}"></div><div class="face lid" style="--i:${i}"></div>`).join('') + `<div class="face disc"></div>`
+  // a miniature on a round base: boxes (six faces each) for legs, torso, backpack, arms, shoulder pads, helmet and bolter over an
+  // eight-sided base with a disc. Its colours come from --mini-* on the .mini, which the painting step (data-i) sets.
+  mini: () => {
+    const fc = (cls, w, h, tf) => `<i class="fc ${cls}" style="width:${w}px;height:${h}px;margin:${-h / 2}px 0 0 ${-w / 2}px;transform:${tf}"></i>`;
+    const box = (cls, x, y, z, w, h, d) => `<div class="bx ${cls}" style="transform:translate3d(${x}px,${-y}px,${z}px)">` +
+      fc('front', w, h, `translateZ(${d / 2}px)`) + fc('back', w, h, `rotateY(180deg) translateZ(${d / 2}px)`) +
+      fc('l', d, h, `rotateY(-90deg) translateZ(${w / 2}px)`) + fc('r', d, h, `rotateY(90deg) translateZ(${w / 2}px)`) +
+      fc('top', w, d, `rotateX(90deg) translateZ(${h / 2}px)`) + fc('bot', w, d, `rotateX(-90deg) translateZ(${h / 2}px)`) + '</div>';
+    const base = Array.from({ length: 8 }, (_, i) => fc('rim', 29, 8, `rotateY(${i * 45}deg) translateZ(35px)`)).join('') + fc('disc', 70, 70, 'rotateX(90deg) translateZ(4px)');
+    return `<div class="fig"><div class="bx" style="transform:translateY(-4px)">${base}</div>` +
+      box('leg', -8, 21, 0, 12, 26, 14) + box('leg', 8, 21, 0, 12, 26, 14) + box('torso', 0, 47, 0, 30, 26, 18) + box('pack', 0, 49, -15, 24, 22, 10) +
+      box('arm', -21, 46, 2, 10, 20, 10) + box('arm', 21, 46, 2, 10, 20, 10) + box('pad', -22, 58, 0, 14, 12, 16) + box('pad', 22, 58, 0, 14, 12, 16) +
+      box('head', 0, 66, 0, 14, 12, 12) + box('gun', 16, 44, 12, 8, 6, 22) + '</div>';
+  }
 };
-function spinHtml(f) { return `<div class="stage" aria-hidden="true"><div class="spin ${f.spin}" data-i="0">${SPIN[f.spin]()}</div>${f.spin === 'pot' ? '<div class="caption"><b class="t"></b><i class="a"></i></div>' : ''}</div>`; }
+function spinHtml(f) { return `<div class="stage" aria-hidden="true"><div class="spin ${f.spin}" data-i="0">${SPIN[f.spin]()}</div>${f.spin === 'mini' ? '<div class="caption"><b class="t"></b><i class="a"></i></div>' : ''}</div>`; }
 function spinShow(root, [t, a]) { for (const el of root.querySelectorAll('.t')) el.textContent = t; for (const el of root.querySelectorAll('.a')) el.textContent = a; }
 // the stack as rack units: one 1U per entry, its name on the bezel, two link LEDs and an activity LED on their own clocks. The stage
 // grows to hold them all; the pane scrolls.
