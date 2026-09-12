@@ -7,7 +7,7 @@
 <meta name="ext-resource-dependency" content="audio/rain.mp3" data-resource-id="rainMp3" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500&family=Silkscreen&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500&family=Silkscreen&family=JetBrains+Mono:wght@400;500&family=Doto:ROND,wght@0,800&display=swap" rel="stylesheet">
 <style>
   :root { --ink: #060A07; --soil: #0E1610; --moss: #1B2A1F; --phosphor: #3BE77B; --phosphor-dim: #1F8A4A; --phosphor-bloom: #C8FFD6; --paper: #B9C9BC; --ex-w: 760px; --ex-h: 460px; --ex-fade: 250ms; --ex-slide: 12px; --ex-dim: 0.55; }
   html, body { margin: 0; height: 100%; background: var(--ink); overflow: hidden; }
@@ -199,9 +199,18 @@
   /* site chrome: a bar along the top with the name and one link per object in the room. Flat soil, 1px moss rule. */
   #top { position: fixed; left: 0; right: 0; top: 0; min-height: 52px; display: flex; align-items: center; gap: 20px; padding: 0 16px; background: var(--soil); border-bottom: 1px solid var(--moss); font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-dim); opacity: 0; transition: opacity 400ms linear; z-index: 1; }
   #top.on { opacity: 1; }
-  #top .who { display: flex; flex-direction: column; gap: 3px; white-space: nowrap; flex: 0 0 auto; padding: 8px 0; }
-  #top .who b { font: 26px/1 VT323, ui-monospace, monospace; color: var(--phosphor); font-weight: 400; }
-  #top .who span { color: var(--phosphor); font-size: 12px; letter-spacing: 0.02em; }
+  /* logo: the monitor-with-cursor mark (strokes in currentColor; the cursor block blinks) beside "theRoom" in Doto, a square dot-matrix face,
+     and "by Luiz Cordeiro" in small tracked mono under it. A click goes home. */
+  #top .logo { display: flex; align-items: center; gap: 11px; flex: 0 0 auto; padding: 7px 0; text-decoration: none; color: var(--phosphor); }
+  #top .logo svg { width: 38px; height: 38px; flex: 0 0 auto; display: block; }
+  #top .logo svg .c { animation: cur-blink 1s steps(1) infinite; }
+  #top .logo b { display: block; font: 800 26px/1 Doto, VT323, ui-monospace, monospace; font-variation-settings: "ROND" 0, "wght" 800; color: var(--phosphor-bloom); letter-spacing: 0.03em; text-shadow: 0 0 12px color-mix(in srgb, var(--phosphor) 50%, transparent); }
+  #top .logo small { display: block; margin-top: 5px; font: 500 10px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0.14em; color: var(--phosphor); opacity: 0.8; white-space: nowrap; }
+  #top .logo:hover b { text-shadow: 0 0 12px var(--phosphor); }
+  @keyframes cur-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+  /* desktop: no menu button, and the rail is transparent to layout so the nav sits in the bar as a row of words */
+  #top .menu-btn { display: none; }
+  #top .rail { display: contents; }
   /* menu words: Silkscreen, a 5×5 bitmap face in the terminal/mainframe family; all caps, tracked out. One row: scrolls sideways before it wraps. */
   #top nav { display: flex; gap: 2px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
   #top nav a { font: 15px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.04em; color: var(--phosphor); opacity: 0.85; text-decoration: none; padding: 17px 12px 15px; border-bottom: 2px solid transparent; white-space: nowrap; flex: 0 0 auto; }
@@ -219,31 +228,31 @@
   #toast.on { opacity: 1; }
   /* exit shell: touch screens have no Esc; sits under the bar, clear of the keyboard */
   #exit { position: fixed; right: 12px; top: calc(var(--top-h, 52px) + 12px); appearance: none; font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); padding: 12px 16px; cursor: pointer; border-radius: 0; white-space: nowrap; z-index: 2; }
-  @container (max-width: 1400px) { #top .who span { font-size: 11px; } }
-  @media (prefers-reduced-motion: reduce) { #top { transition: none; } }
-  /* phones and short frames: the menu words become one row that scrolls sideways (fading at the right edge) instead of wrapping */
+  @media (prefers-reduced-motion: reduce) { #top { transition: none; } #top .logo svg .c, #top nav a[aria-current="true"]::after { animation: none; } }
+  /* phones and short frames: a 48px bar (the logo left, the current word and a ">_" button right); the button drops the menu under
+     the bar as a column of prompt lines, "> word", the current one bright with a blinking block cursor. A tap on a word closes it. */
   @container (max-width: 767px) or (max-height: 500px) {
-    #top nav { margin-left: 0; justify-content: flex-start; flex-wrap: nowrap; overflow: auto hidden; scrollbar-width: none; padding: 0 4px; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent); }
-    #top nav::-webkit-scrollbar { display: none; }
-    #top nav a { display: flex; align-items: center; min-height: 44px; padding: 0 10px; font-size: 12px; }
+    #top { min-height: 48px; gap: 0; padding: 0 0 0 12px; }
+    #top .logo { gap: 8px; padding: 0; min-width: 0; }
+    #top .logo svg { width: 26px; height: 26px; }
+    #top .logo b { font-size: 17px; text-shadow: none; }
+    #top .logo small { font-size: 9px; margin-top: 3px; letter-spacing: 0.12em; }
+    #top .menu-btn { display: flex; align-items: center; gap: 10px; margin-left: auto; height: 48px; padding: 0 12px 0 10px; appearance: none; background: none; border: 0; border-left: 1px solid var(--moss); color: var(--phosphor); font: 500 12px/1 "JetBrains Mono", ui-monospace, monospace; cursor: pointer; min-width: 0; max-width: 62%; }
+    #top .menu-btn .now { color: var(--phosphor-bloom); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    #top .menu-btn .now::before { content: "> "; color: var(--phosphor-dim); }
+    #top .menu-btn .glyph { flex: 0 0 auto; display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--phosphor); font-size: 13px; }
+    #top .menu-btn[aria-expanded="true"] .glyph { background: var(--phosphor); color: var(--ink); }
+    #top .rail { display: none; position: absolute; left: 0; right: 0; top: 100%; padding: 4px 0 6px; background: color-mix(in srgb, var(--soil) 94%, transparent); border-bottom: 1px solid var(--moss); }
+    #top.open .rail { display: block; }
+    #top nav { flex-direction: column; margin-left: 0; flex-wrap: nowrap; justify-content: flex-start; gap: 0; }
+    #top nav a { display: flex; align-items: center; height: 44px; padding: 0 14px; font: 400 15px/1 "JetBrains Mono", ui-monospace, monospace; text-transform: none; letter-spacing: 0; border-bottom: 0; opacity: 0.82; text-shadow: none; }
+    #top nav a::before { content: ">"; display: inline-block; width: 2ch; color: var(--phosphor-dim); }
+    #top nav a:hover { text-shadow: none; }
+    #top nav a[aria-current="true"] { opacity: 1; color: var(--phosphor-bloom); text-shadow: none; }
+    #top nav a[aria-current="true"]::before { color: var(--phosphor-bloom); }
+    #top nav a[aria-current="true"]::after { content: ""; display: inline-block; width: 0.6em; height: 1.05em; margin-left: 2px; background: currentColor; animation: cur-blink 1s steps(1) infinite; }
     #accent { left: 12px; right: auto; }
     #chip { font-size: 13px; }
-  }
-  /* portrait phones: the name on its own row above the words */
-  @container (max-width: 767px) {
-    #top { flex-wrap: wrap; gap: 0; padding: 0; }
-    #top .who { padding: 8px 12px 2px; gap: 2px; }
-    #top .who b { font-size: 22px; }
-    #top .who span { font-size: 11px; }
-    #top nav { flex: 1 0 100%; }
-  }
-  /* short landscape frames: one 44px row, the role dropped */
-  @container (max-height: 500px) and (min-width: 768px) {
-    #top { gap: 0 8px; padding: 0 0 0 12px; min-height: 44px; }
-    #top .who { padding: 0; }
-    #top .who span { display: none; }
-    #top .who b { font-size: 20px; }
-    #top nav { flex: 1 1 auto; min-width: 0; }
   }
 </style>
 <template id="__bundler_thumbnail" data-bg-color="#060A07">
@@ -267,8 +276,12 @@
 <div id="dim"></div>
 <input id="shell-in" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" tabindex="-1" aria-label="Terminal input">
 <div id="top">
-  <div class="who"><b>Luiz Cordeiro</b><span>Artificial Intelligence Engineer</span></div>
-  <nav aria-label="Objects in the room"></nav>
+  <a class="logo" href="#/" aria-label="theRoom, home">
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" shape-rendering="crispEdges" aria-hidden="true"><path d="M3 5h26v18H3zM11 29h10M16 23v6"/><path d="M7 10l3 3-3 3"/><rect class="c" x="13" y="10" width="3" height="6" fill="currentColor" stroke="none"/></svg>
+    <span><b>theRoom</b><small>by Luiz Cordeiro</small></span>
+  </a>
+  <button type="button" class="menu-btn" aria-expanded="false" aria-controls="rail" aria-label="Menu"><span class="now">home</span><span class="glyph">&gt;_</span></button>
+  <div class="rail" id="rail"><nav aria-label="Objects in the room"></nav></div>
 </div>
 <section id="explorer" role="dialog" aria-modal="true" aria-labelledby="explorer-path" hidden>
   <header class="bar">
@@ -1999,9 +2012,16 @@ function updateMenu() {
     const id = a.dataset.insp, insp = id && CONFIG.inspectables.find(i => i.id === id);
     const on = id ? (explorer.open && explorer.insp?.id === id) || (TERM.open && !!insp?.terminal) : !explorer.open && !TERM.open && nav.zone === a.dataset.zone;
     a.setAttribute('aria-current', String(on));
-    if (on && navEl.scrollWidth > navEl.clientWidth) navEl.scrollTo({ left: Math.max(0, a.offsetLeft - navEl.offsetLeft - 12), behavior: 'smooth' });   // the phone strip follows the current word
+    if (on) nowEl.textContent = a.textContent;   // the phone bar's button names the current word
   }
 }
+// phones: the ">_" button drops the menu under the bar; a tap on a word, the logo or Escape closes it again (no-ops on desktop, where the rail is always in the bar)
+const menuBtn = topEl.querySelector('.menu-btn'), nowEl = menuBtn.querySelector('.now');
+function openMenu(open) { topEl.classList.toggle('open', open); menuBtn.setAttribute('aria-expanded', String(open)); }
+menuBtn.addEventListener('click', () => openMenu(!topEl.classList.contains('open')));
+navEl.addEventListener('click', () => openMenu(false));
+topEl.querySelector('.logo').addEventListener('click', e => { e.preventDefault(); openMenu(false); goZone('home'); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && topEl.classList.contains('open')) openMenu(false); });
 let hintFocus = null;   // the hint-only object (the dog, the note) the camera glided up to; a click on nothing glides back, like closing a window
 function focusObject(insp) {
   if (insp.secret) foundSecret(insp.secret);
@@ -2297,7 +2317,7 @@ accentEl.innerHTML = Object.keys(CONFIG.accent.presets).map(n =>
 // ───────────────────────────── init ─────────────────────────────
 async function init() {
   await Promise.race([
-    Promise.all([document.fonts.load('14px VT323'), document.fonts.load('12px "IBM Plex Mono"')]),
+    Promise.all([document.fonts.load('14px VT323'), document.fonts.load('12px "IBM Plex Mono"'), document.fonts.load('800 26px Doto'), document.fonts.load('500 10px "JetBrains Mono"'), document.fonts.load('15px "JetBrains Mono"')]),
     new Promise(r => setTimeout(r, 1500))
   ]);
   // accent from ?accent=, then last choice, then CONFIG
