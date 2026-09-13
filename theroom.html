@@ -207,6 +207,11 @@
   #top .logo b { display: block; font: 800 26px/1 Doto, VT323, ui-monospace, monospace; font-variation-settings: "ROND" 0, "wght" 800; color: var(--phosphor-bloom); letter-spacing: 0.03em; text-shadow: 0 0 12px color-mix(in srgb, var(--phosphor) 50%, transparent); }
   #top .logo small { display: block; margin-top: 5px; font: 500 10px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0.14em; color: var(--phosphor); opacity: 0.8; white-space: nowrap; }
   #top .logo:hover b { text-shadow: 0 0 12px var(--phosphor); }
+  /* secrets tally, right beside the logo: "n/3 secrets found", the count bright; lights up fully once all three are found */
+  #top .tally { flex: 0 0 auto; padding-left: 20px; border-left: 1px solid var(--moss); font: 500 10px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0.14em; color: var(--phosphor); opacity: 0.8; white-space: nowrap; }
+  #top .tally b { font-weight: 500; color: var(--phosphor-bloom); }
+  #top .tally i { font-style: normal; }
+  #top .tally.all { opacity: 1; color: var(--phosphor-bloom); text-shadow: 0 0 8px var(--phosphor-bloom); }
   @keyframes cur-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
   /* desktop: no menu button, and the rail is transparent to layout so the nav sits in the bar as a row of words */
   #top .menu-btn { display: none; }
@@ -237,6 +242,8 @@
     #top .logo svg { width: 26px; height: 26px; }
     #top .logo b { font-size: 17px; text-shadow: none; }
     #top .logo small { font-size: 9px; margin-top: 3px; letter-spacing: 0.12em; }
+    #top .tally { margin-left: 10px; padding-left: 10px; font-size: 9px; letter-spacing: 0.1em; }
+    #top .tally i { display: none; }
     #top .menu-btn { display: flex; align-items: center; gap: 10px; margin-left: auto; height: 48px; padding: 0 12px 0 10px; appearance: none; background: none; border: 0; border-left: 1px solid var(--moss); color: var(--phosphor); font: 500 12px/1 "JetBrains Mono", ui-monospace, monospace; cursor: pointer; min-width: 0; max-width: 62%; }
     #top .menu-btn .now { color: var(--phosphor-bloom); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
     #top .menu-btn .now::before { content: "> "; color: var(--phosphor-dim); }
@@ -280,6 +287,7 @@
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" shape-rendering="crispEdges" aria-hidden="true"><path d="M3 5h26v18H3zM11 29h10M16 23v6"/><path d="M7 10l3 3-3 3"/><rect class="c" x="13" y="10" width="3" height="6" fill="currentColor" stroke="none"/></svg>
     <span><b>theRoom</b><small>by Luiz Cordeiro</small></span>
   </a>
+  <span class="tally" id="tally" aria-live="polite"></span>
   <button type="button" class="menu-btn" aria-expanded="false" aria-controls="rail" aria-label="Menu"><span class="now">home</span><span class="glyph">&gt;_</span></button>
   <div class="rail" id="rail"><nav aria-label="Objects in the room"></nav></div>
 </div>
@@ -2056,10 +2064,19 @@ navEl.addEventListener('click', e => {
 // secrets: the note, the dog, and root. A click on either object or a root login toasts the tally; unique finds survive a reload.
 const SECRETS = ['note', 'dog', 'root'], toastEl = document.getElementById('toast'); let toastTimer = 0;
 function toast(text) { toastEl.textContent = text; toastEl.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('on'), 2600); }
+const tallyEl = document.getElementById('tally');
+function secretsFound() { try { return new Set(JSON.parse(localStorage.getItem('theroom.secrets') || '[]')); } catch { return new Set(); } }
+// the tally beside the logo: "n/3 secrets found" (phones drop the word); set on load from the saved finds, refreshed on each new one
+function updateTally(found = secretsFound()) {
+  const n = SECRETS.filter(k => found.has(k)).length;
+  tallyEl.innerHTML = `<b>${n}</b>/${SECRETS.length} secrets<i> found</i>`; tallyEl.classList.toggle('all', n === SECRETS.length);
+}
+updateTally();
 function foundSecret(id) {
-  let found; try { found = new Set(JSON.parse(localStorage.getItem('theroom.secrets') || '[]')); } catch { found = new Set(); }
+  const found = secretsFound();
   found.add(id); try { localStorage.setItem('theroom.secrets', JSON.stringify([...found])); } catch {}
   const n = SECRETS.filter(k => found.has(k)).length;
+  updateTally(found);
   toast(`${n}/${SECRETS.length} secrets found` + (n === SECRETS.length ? '. root has the lights.' : ''));
 }
 // reset view: shows once wheel/drag moved the camera off the zone preset; glides back to it
