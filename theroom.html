@@ -207,11 +207,23 @@
   #top .logo b { display: block; font: 800 26px/1 Doto, VT323, ui-monospace, monospace; font-variation-settings: "ROND" 0, "wght" 800; color: var(--phosphor-bloom); letter-spacing: 0.03em; text-shadow: 0 0 12px color-mix(in srgb, var(--phosphor) 50%, transparent); }
   #top .logo small { display: block; margin-top: 5px; font: 500 10px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0.14em; color: var(--phosphor); opacity: 0.8; white-space: nowrap; }
   #top .logo:hover b { text-shadow: 0 0 12px var(--phosphor); }
-  /* secrets tally, right beside the logo: "n/3 secrets found", the count bright; lights up fully once all three are found */
-  #top .tally { flex: 0 0 auto; padding-left: 20px; border-left: 1px solid var(--moss); font: 500 10px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0.14em; color: var(--phosphor); opacity: 0.8; white-space: nowrap; }
-  #top .tally b { font-weight: 500; color: var(--phosphor-bloom); }
-  #top .tally i { font-style: normal; }
-  #top .tally.all { opacity: 1; color: var(--phosphor-bloom); text-shadow: 0 0 8px var(--phosphor-bloom); }
+  /* secrets tally, right beside the logo: "n/3 secrets found", the count bright; lights up fully once all three are found.
+     Hover (a tap on glass) drops the found list under the bar: the ones found by name, the rest as ??? */
+  #top .tally { position: relative; align-self: stretch; display: flex; align-items: center; flex: 0 0 auto; padding-left: 20px; border-left: 1px solid var(--moss); font: 500 10px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0.14em; color: var(--phosphor); white-space: nowrap; }
+  #top .tally .count { appearance: none; background: none; border: 0; margin: 0; padding: 0; height: 100%; font: inherit; letter-spacing: inherit; color: inherit; opacity: 0.8; cursor: pointer; }
+  #top .tally .count b { font-weight: 500; color: var(--phosphor-bloom); }
+  #top .tally .count i { font-style: normal; }
+  #top .tally.all .count { opacity: 1; color: var(--phosphor-bloom); text-shadow: 0 0 8px var(--phosphor-bloom); }
+  #top .tally:hover .count, #top .tally.open .count { opacity: 1; }
+  #top .tally .found { display: none; position: absolute; left: 20px; top: 100%; margin: 1px 0 0; padding: 10px 16px 12px; list-style: none; background: var(--soil); border: 1px solid var(--moss); border-top: 0; font: 11px/1.8 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: 0.02em; white-space: nowrap; }
+  #top .tally .found::before { content: "found so far"; display: block; margin-bottom: 4px; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--phosphor-dim); }
+  #top .tally .found li { display: grid; grid-template-columns: 1.5ch auto; gap: 8px; }
+  #top .tally .found li i { font-style: normal; color: var(--phosphor-dim); }
+  #top .tally .found li.yes { color: var(--phosphor-bloom); }
+  #top .tally .found li.yes i { color: var(--phosphor); }
+  #top .tally .found li.no { color: var(--phosphor-dim); }
+  #top .tally.open .found { display: block; }
+  @media (hover: hover) and (pointer: fine) { #top .tally:hover .found, #top .tally:focus-within .found { display: block; } }
   @keyframes cur-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
   /* desktop: no menu button, and the rail is transparent to layout so the nav sits in the bar as a row of words */
   #top .menu-btn { display: none; }
@@ -243,7 +255,8 @@
     #top .logo b { font-size: 17px; text-shadow: none; }
     #top .logo small { font-size: 9px; margin-top: 3px; letter-spacing: 0.12em; }
     #top .tally { margin-left: 10px; padding-left: 10px; font-size: 9px; letter-spacing: 0.1em; }
-    #top .tally i { display: none; }
+    #top .tally .count i { display: none; }
+    #top .tally .found { position: fixed; left: 0; right: 0; top: var(--top-h, 48px); margin: 0; padding: 12px 16px 14px; border-left: 0; border-right: 0; font-size: 13px; }
     #top .menu-btn { display: flex; align-items: center; gap: 10px; margin-left: auto; height: 48px; padding: 0 12px 0 10px; appearance: none; background: none; border: 0; border-left: 1px solid var(--moss); color: var(--phosphor); font: 500 12px/1 "JetBrains Mono", ui-monospace, monospace; cursor: pointer; min-width: 0; max-width: 62%; }
     #top .menu-btn .now { color: var(--phosphor-bloom); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
     #top .menu-btn .now::before { content: "> "; color: var(--phosphor-dim); }
@@ -287,7 +300,10 @@
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" shape-rendering="crispEdges" aria-hidden="true"><path d="M3 5h26v18H3zM11 29h10M16 23v6"/><path d="M7 10l3 3-3 3"/><rect class="c" x="13" y="10" width="3" height="6" fill="currentColor" stroke="none"/></svg>
     <span><b>theRoom</b><small>by Luiz Cordeiro</small></span>
   </a>
-  <span class="tally" id="tally" aria-live="polite"></span>
+  <div class="tally" id="tally">
+    <button type="button" class="count" aria-expanded="false" aria-controls="tally-list" aria-label="Secrets found"></button>
+    <ul class="found" id="tally-list"></ul>
+  </div>
   <button type="button" class="menu-btn" aria-expanded="false" aria-controls="rail" aria-label="Menu"><span class="now">home</span><span class="glyph">&gt;_</span></button>
   <div class="rail" id="rail"><nav aria-label="Objects in the room"></nav></div>
 </div>
@@ -2064,14 +2080,21 @@ navEl.addEventListener('click', e => {
 // secrets: the note, the dog, and root. A click on either object or a root login toasts the tally; unique finds survive a reload.
 const SECRETS = ['note', 'dog', 'root'], toastEl = document.getElementById('toast'); let toastTimer = 0;
 function toast(text) { toastEl.textContent = text; toastEl.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('on'), 2600); }
-const tallyEl = document.getElementById('tally');
+const tallyEl = document.getElementById('tally'), tallyBtn = tallyEl.querySelector('.count'), tallyList = tallyEl.querySelector('.found');
+const SECRET_NAMES = { note: 'the post-it', dog: 'Tito, the key', root: 'root' };   // how a found secret is named in the list; the rest stay ???
 function secretsFound() { try { return new Set(JSON.parse(localStorage.getItem('theroom.secrets') || '[]')); } catch { return new Set(); } }
-// the tally beside the logo: "n/3 secrets found" (phones drop the word); set on load from the saved finds, refreshed on each new one
+// the tally beside the logo: "n/3 secrets found" (phones drop the word) and, under it, the list; set on load from the saved finds, refreshed on each new one
 function updateTally(found = secretsFound()) {
   const n = SECRETS.filter(k => found.has(k)).length;
-  tallyEl.innerHTML = `<b>${n}</b>/${SECRETS.length} secrets<i> found</i>`; tallyEl.classList.toggle('all', n === SECRETS.length);
+  tallyBtn.innerHTML = `<b>${n}</b>/${SECRETS.length} secrets<i> found</i>`; tallyEl.classList.toggle('all', n === SECRETS.length);
+  tallyList.innerHTML = SECRETS.map(k => found.has(k) ? `<li class="yes"><i>&#10003;</i>${SECRET_NAMES[k]}</li>` : `<li class="no"><i>&middot;</i>???</li>`).join('');
 }
 updateTally();
+// on glass there is no hover: a tap on the count drops the list, a tap anywhere else (or Escape) folds it. Mice get it on hover from the CSS.
+function openTally(open) { tallyEl.classList.toggle('open', open); tallyBtn.setAttribute('aria-expanded', String(open)); if (open) openMenu(false); }
+tallyBtn.addEventListener('click', () => { if (!matchMedia('(hover: hover) and (pointer: fine)').matches) openTally(!tallyEl.classList.contains('open')); });
+addEventListener('pointerdown', e => { if (tallyEl.classList.contains('open') && !tallyEl.contains(e.target)) openTally(false); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && tallyEl.classList.contains('open')) openTally(false); });
 function foundSecret(id) {
   const found = secretsFound();
   found.add(id); try { localStorage.setItem('theroom.secrets', JSON.stringify([...found])); } catch {}
