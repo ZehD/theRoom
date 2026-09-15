@@ -1680,7 +1680,7 @@ function dollyAt(ndc, k) {
     const next = Math.min(1, Math.max(0, freeGoal.wide - k * CONFIG.portrait.wideRate));
     if (next === freeGoal.wide) return;
     const [p0, t0] = at(freeGoal.wide), [p1, t1] = at(next), pos = freeGoal.position.clone().add(p1.sub(p0));
-    if (!inRoom(pos)) return;
+    clampRoom(pos);   // a wall slides the camera, it does not cancel the zoom: pulling back along the left wall still opens the room up
     freeGoal.wide = next; freeGoal.position.copy(pos); freeGoal.target.add(t1.sub(t0)); applyWideFov();
     return;
   }
@@ -1690,13 +1690,25 @@ function dollyAt(ndc, k) {
   const toAim = aim.clone().sub(freeGoal.position), dist = toAim.length();
   let f = k > 0 ? Math.min(k, Math.max(0, 1 - W.minDist / dist)) : k;
   const delta = toAim.multiplyScalar(f);
-  const pos = freeGoal.position.clone().add(delta), tgt = freeGoal.target.clone().add(delta);
-  // zoom-out cap: `out` is the metres dollied back from the preset (dolly keeps pos→target constant, so measure travel, not distance);
-  // and the camera never leaves the room box (the open +z side allows up to the home preset)
-  if (k < 0 && freeGoal.out - f * dist > freeGoal.dist0 * (((VP.portrait && CONFIG.portrait.maxOut) || W.maxOut) - 1)) return;   // tall frames: the portrait shot starts inside the room, so it may back out to the open side
-  if (!inRoom(pos)) return;
-  freeGoal.out -= f * dist;
-  freeGoal.position.copy(pos); freeGoal.target.copy(tgt);
+  // the camera never leaves the room box (the open +z side allows up to the home preset), but a wall clamps the step
+  // rather than cancelling it, so a dolly that grazes a wall still travels the part of itself that fits
+  const pos = freeGoal.position.clone().add(delta);
+  clampRoom(pos);
+  const moved = pos.clone().sub(freeGoal.position), len = delta.length();
+  const fit = len > 1e-6 ? moved.length() / len : 0;
+  if (fit < 1e-3) return;   // flat against a wall, with nowhere left to go
+  // zoom-out cap: `out` is the metres dollied back from the preset (dolly keeps pos→target constant, so measure travel, not distance)
+  if (k < 0 && freeGoal.out - f * fit * dist > freeGoal.dist0 * (((VP.portrait && CONFIG.portrait.maxOut) || W.maxOut) - 1)) return;   // tall frames: the portrait shot starts inside the room, so it may back out to the open side
+  freeGoal.out -= f * fit * dist;
+  freeGoal.target.add(moved); freeGoal.position.copy(pos);
+}
+// clamp a camera position into the room box, in place. The walls bound the camera; they are not a veto on the gesture.
+function clampRoom(p) {
+  const R = CONFIG.room;
+  p.x = Math.min(R.width / 2 - 0.2, Math.max(-R.width / 2 + 0.2, p.x));
+  p.y = Math.min(R.height - 0.2, Math.max(0.2, p.y));
+  p.z = Math.min(9.6, Math.max(-R.depth / 2 + 0.2, p.z));
+  return p;
 }
 function inRoom(p) { const R = CONFIG.room; return !(p.x < -R.width / 2 + 0.2 || p.x > R.width / 2 - 0.2 || p.y < 0.2 || p.y > R.height - 0.2 || p.z < -R.depth / 2 + 0.2 || p.z > 9.6); }
 canvas.addEventListener('wheel', e => {
