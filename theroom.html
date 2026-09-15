@@ -258,11 +258,14 @@
      the bar as a column of prompt lines, "> word", the current one bright with a blinking block cursor. A tap on a word closes it. */
   @container (max-width: 767px) or (max-height: 500px) {
     #top { min-height: 48px; gap: 0; padding: 0 0 0 12px; }
-    #top .logo { gap: 8px; padding: 0; min-width: 0; }
+    /* the byline keeps its own room; nothing crowds it */
+    #top .logo { gap: 8px; padding: 0 14px 0 0; flex: 0 0 auto; }
     #top .logo svg { width: 26px; height: 26px; }
     #top .logo b { font-size: 17px; text-shadow: none; }
     #top .logo small { font-size: 9px; margin-top: 3px; letter-spacing: 0.12em; }
-    #top .tally { margin-left: 0; padding-left: 10px; font-size: 12px; letter-spacing: 0.08em; }
+    /* no rule of its own and no stretching: the count just sits in what is left between the logo and the button */
+    #top .tally { margin-left: 0; padding-left: 0; border-left: 0; flex: 1 1 auto; min-width: 0; font-size: 12px; letter-spacing: 0.08em; }
+    #top .tally .count { overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     #top .tally .count i { display: none; }
     #top .tally .found { position: fixed; left: 0; right: 0; transform: none; top: var(--top-h, 48px); margin: 0; padding: 12px 16px 14px; border-left: 0; border-right: 0; font-size: 13px; }
     #top .menu-btn { display: flex; align-items: center; gap: 10px; margin-left: auto; height: 48px; padding: 0 12px 0 10px; appearance: none; background: none; border: 0; border-left: 1px solid var(--moss); color: var(--phosphor); font: 500 12px/1 "JetBrains Mono", ui-monospace, monospace; cursor: pointer; min-width: 0; max-width: 62%; }
@@ -397,7 +400,7 @@ const CONFIG = {
   // left- or right-drag orbits the look target, limited to ±yaw rad from the preset and a pitch band (polar angle, rad). ease = per-second rate.
   // middle-drag trucks camera + target across the view plane, 1:1 with the cursor at the look distance, at most limit m from the preset.
   wheel: { minDist: 0.35, maxOut: 1.4, sensitivity: 0.0012, ease: 8 },
-  drag: { speed: 0.004, yaw: 0.9, pitch: [0.55, 1.6] },
+  drag: { speed: 0.004, yaw: 0.9, pitch: [0.55, 1.6], touch: { yaw: 1.8 } },   // touch: wide enough that the room's own walls end the sweep, not the number (past ~1.8 nothing further opens up)
   pan: { limit: 1.5 },
   shading: {
     key: { dir: [0.25, 0.85, 0.45], min: 0.78 },                 // soft top-front key, baked per vertex
@@ -1485,11 +1488,11 @@ let composer, post, controls = null;
 const debug = { on: false, fps: false };
 let internal = { w: 1, h: 1 };
 // where wheel and drag want the camera; camState eases toward it whenever no glide is running
-const freeGoal = { position: camState.position.clone(), target: camState.target.clone(), theta0: 0, dist0: 1, pan: new THREE.Vector3(), out: 0, wide: 0 };
+const freeGoal = { position: camState.position.clone(), target: camState.target.clone(), theta0: 0, dist0: 1, orbR: 1, pan: new THREE.Vector3(), out: 0, wide: 0 };
 function applyWideFov() { camera.fov = (VP.fov || CONFIG.camera.fov) * (1 + CONFIG.portrait.wideFov * freeGoal.wide); camera.updateProjectionMatrix(); }   // the frame fov, opened along the wide path
 function setFreeHome(pos, tgt) {
   freeGoal.position.copy(pos); freeGoal.target.copy(tgt); freeGoal.pan.set(0, 0, 0); freeGoal.out = 0; if (freeGoal.wide) { freeGoal.wide = 0; applyWideFov(); }
-  const off = _v.copy(pos).sub(tgt); freeGoal.theta0 = Math.atan2(off.x, off.z); freeGoal.dist0 = off.length();
+  const off = _v.copy(pos).sub(tgt); freeGoal.theta0 = Math.atan2(off.x, off.z); freeGoal.dist0 = freeGoal.orbR = off.length();
 }
 
 // VP is the frame everything is measured against: the window, or the phone-sized #root a ?vp=390x844 preview shrinks it to.
@@ -1682,6 +1685,7 @@ function dollyAt(ndc, k) {
     const [p0, t0] = at(freeGoal.wide), [p1, t1] = at(next), pos = freeGoal.position.clone().add(p1.sub(p0));
     clampRoom(pos);   // a wall slides the camera, it does not cancel the zoom: pulling back along the left wall still opens the room up
     freeGoal.wide = next; freeGoal.position.copy(pos); freeGoal.target.add(t1.sub(t0)); applyWideFov();
+    freeGoal.orbR = freeGoal.position.distanceTo(freeGoal.target);   // the wide path changes how far off the camera sits; that becomes the orbit's new reach
     return;
   }
   raycaster.setFromCamera(ndc, camera);
@@ -1749,14 +1753,21 @@ const _sph = new THREE.Spherical(), _orb = new THREE.Vector3();
 function orbitBy(dx, dy) {
   const G = CONFIG.drag;
   _sph.setFromVector3(_orb.copy(freeGoal.position).sub(freeGoal.target));
-  const r = _sph.radius, th0 = _sph.theta, ph0 = _sph.phi;
-  const th = Math.min(freeGoal.theta0 + G.yaw, Math.max(freeGoal.theta0 - G.yaw, th0 - dx * G.speed));
+  const th0 = _sph.theta, ph0 = _sph.phi, yaw = (TOUCH && G.touch?.yaw) || G.yaw;
+  const th = Math.min(freeGoal.theta0 + yaw, Math.max(freeGoal.theta0 - yaw, th0 - dx * G.speed));
   const ph = Math.min(G.pitch[1], Math.max(G.pitch[0], ph0 - dy * G.speed));
-  const fits = (t, p) => {
-    const pos = _v.copy(freeGoal.target).add(_orb.setFromSpherical(_sph.set(r, p, t)));
-    return (pos.z >= CONFIG.room.depth / 2 || inRoom(pos)) ? pos : null;
+  // Rounding a corner used to end the turn: at full reach the camera met a wall and every further step was refused.
+  // It now draws in toward what it is looking at until it clears the wall, and swings back out to `orbR` once past it,
+  // so a finger can keep turning the whole way instead of hitting a block.
+  const want = Math.max(_sph.radius, freeGoal.orbR);
+  const place = (t, p) => {
+    for (let k = 1; k >= 0.44; k -= 0.04) {
+      const pos = _v.copy(freeGoal.target).add(_orb.setFromSpherical(_sph.set(want * k, p, t)));
+      if (pos.z >= CONFIG.room.depth / 2 || inRoom(pos)) return pos;
+    }
+    return null;
   };
-  const pos = fits(th, ph) || fits(th, ph0) || fits(th0, ph);   // both, then turn only, then tilt only
+  const pos = place(th, ph) || place(th, ph0) || place(th0, ph);   // both, then turn only, then tilt only
   if (pos) freeGoal.position.copy(pos);
 }
 canvas.addEventListener('pointermove', e => {
