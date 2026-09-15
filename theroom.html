@@ -243,6 +243,9 @@
   /* secrets toast: under the top bar, centred; fades in for a moment on each find */
   #toast { position: fixed; left: 50%; top: calc(var(--top-h, 52px) + 12px); transform: translateX(-50%); font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-bloom); background: var(--soil); border: 1px solid var(--phosphor); padding: 9px 14px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 200ms linear; z-index: 3; }
   #toast.on { opacity: 1; }
+  /* first-touch hint: on glass, how to move the room; sits above the accent picker and fades on the first touch or after a few seconds */
+  #hint { position: fixed; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom)); transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); font: 12px/1.7 "IBM Plex Mono", ui-monospace, monospace; color: var(--paper); text-align: center; background: var(--soil); border: 1px solid var(--moss); padding: 10px 16px; pointer-events: none; opacity: 0; transition: opacity 300ms linear; z-index: 3; }
+  #hint.on { opacity: 1; }
   /* exit shell: touch screens have no Esc; sits under the bar, clear of the keyboard */
   #exit { position: fixed; right: 12px; top: calc(var(--top-h, 52px) + 12px); appearance: none; font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); padding: 12px 16px; cursor: pointer; border-radius: 0; white-space: nowrap; z-index: 2; }
   @media (prefers-reduced-motion: reduce) { #top { transition: none; } #top .logo svg .c, #top nav a[aria-current="true"]::after { animation: none; } }
@@ -258,8 +261,6 @@
     #top .tally .count i { display: none; }
     #top .tally .found { position: fixed; left: 0; right: 0; top: var(--top-h, 48px); margin: 0; padding: 12px 16px 14px; border-left: 0; border-right: 0; font-size: 13px; }
     #top .menu-btn { display: flex; align-items: center; gap: 10px; margin-left: auto; height: 48px; padding: 0 12px 0 10px; appearance: none; background: none; border: 0; border-left: 1px solid var(--moss); color: var(--phosphor); font: 500 12px/1 "JetBrains Mono", ui-monospace, monospace; cursor: pointer; min-width: 0; max-width: 62%; }
-    #top .menu-btn .now { color: var(--phosphor-bloom); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-    #top .menu-btn .now::before { content: "> "; color: var(--phosphor-dim); }
     #top .menu-btn .glyph { flex: 0 0 auto; display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--phosphor); font-size: 13px; }
     #top .menu-btn[aria-expanded="true"] .glyph { background: var(--phosphor); color: var(--ink); }
     #top .rail { display: none; position: absolute; left: 0; right: 0; top: 100%; padding: 4px 0 6px; background: color-mix(in srgb, var(--soil) 94%, transparent); border-bottom: 1px solid var(--moss); }
@@ -304,7 +305,7 @@
     <button type="button" class="count" aria-expanded="false" aria-controls="tally-list" aria-label="Secrets found"></button>
     <ul class="found" id="tally-list"></ul>
   </div>
-  <button type="button" class="menu-btn" aria-expanded="false" aria-controls="rail" aria-label="Menu"><span class="now">home</span><span class="glyph">&gt;_</span></button>
+  <button type="button" class="menu-btn" aria-expanded="false" aria-controls="rail" aria-label="Menu"><span class="glyph">&gt;_</span></button>
   <div class="rail" id="rail"><nav aria-label="Objects in the room"></nav></div>
 </div>
 <section id="explorer" role="dialog" aria-modal="true" aria-labelledby="explorer-path" hidden>
@@ -320,6 +321,7 @@
 </section>
 <button type="button" id="reset" hidden>reset view</button>
 <div id="toast" role="status" aria-live="polite"></div>
+<div id="hint" role="status" hidden>one finger turns the room<br>two fingers slide it, pinch to zoom<br>tap something twice to open it</div>
 <button type="button" id="exit" hidden>exit shell</button>
 <ul id="accent" aria-label="Accent colour" hidden></ul>
 </div>
@@ -571,7 +573,7 @@ const CONFIG = {
         { name: 'on-the-deck.txt', title: 'On the deck', meta: 'side B, 33⅓', bullets: ['Getz/Gilberto — Stan Getz, João Gilberto (1964)', 'Clube da Esquina — Milton Nascimento, Lô Borges (1972)', 'Kind of Blue — Miles Davis (1959)', 'Elis & Tom — Elis Regina, Tom Jobim (1974)', 'A Love Supreme — John Coltrane (1965)'] },
         { name: 'receiver.txt', title: 'The receiver', meta: '1970s silver face', text: 'Belt-drive deck on a walnut plinth, a second-hand receiver with the one warm display in the room. The records are on the shelf below, the ones that get played on top.' }
       ] } },
-    { id: 'frenchie',      label: "this is Tito, he's the key", hint: true, phase: 1, secret: 'dog' },   // hover only: no menu word, no shell place; the chip is the clue to the sudo password
+    { id: 'frenchie',      label: "this is Tito, he's the key", touchLabel: 'a dog', hint: true, phase: 1, secret: 'dog' },   // hover only: no menu word, no shell place; the chip is the clue to the sudo password. On glass the first tap only says "a dog"; the second earns the clue
     { id: 'post-it',       label: 'a post-it. of course.', hint: true, phase: 1, secret: 'note', view: { distance: 0.5 } }   // hover only; a click glides close enough to read it
   ],
   content: {}
@@ -1623,7 +1625,7 @@ function setHover(target) {
   if (hover.current === target) return;
   hover.current = target;
   canvas.classList.toggle('hot', !!target);
-  if (target) { chipEl.textContent = target.insp.label; if (TOUCH) chipEl.insertAdjacentHTML('beforeend', '<span class="more"> · tap again</span>'); chipEl.classList.add('on'); } else chipEl.classList.remove('on');   // on glass the chip also says how to open
+  if (target) { chipEl.textContent = (TOUCH && target.insp.touchLabel) || target.insp.label; if (TOUCH) chipEl.insertAdjacentHTML('beforeend', '<span class="more"> · tap again</span>'); chipEl.classList.add('on'); } else chipEl.classList.remove('on');   // on glass the chip also says how to open
 }
 function placeChip(target) {
   _box.makeEmpty();
@@ -2036,11 +2038,10 @@ function updateMenu() {
     const id = a.dataset.insp, insp = id && CONFIG.inspectables.find(i => i.id === id);
     const on = id ? (explorer.open && explorer.insp?.id === id) || (TERM.open && !!insp?.terminal) : !explorer.open && !TERM.open && nav.zone === a.dataset.zone;
     a.setAttribute('aria-current', String(on));
-    if (on) nowEl.textContent = a.textContent;   // the phone bar's button names the current word
   }
 }
 // phones: the ">_" button drops the menu under the bar; a tap on a word, the logo or Escape closes it again (no-ops on desktop, where the rail is always in the bar)
-const menuBtn = topEl.querySelector('.menu-btn'), nowEl = menuBtn.querySelector('.now');
+const menuBtn = topEl.querySelector('.menu-btn');
 function openMenu(open) { topEl.classList.toggle('open', open); menuBtn.setAttribute('aria-expanded', String(open)); }
 menuBtn.addEventListener('click', () => openMenu(!topEl.classList.contains('open')));
 navEl.addEventListener('click', () => openMenu(false));
@@ -2115,7 +2116,14 @@ addEventListener('popstate', () => {
   const z = zoneOfUrl(); if (z !== nav.zone) goZone(z, { push: false });
 });
 // entry: the top bar fades in over the room once the wireframe cut is done
-function showIntro() { topEl.classList.add('on'); }
+function showIntro() { topEl.classList.add('on'); if (TOUCH) showHint(); }
+// on glass, a line on how to move the room comes up with the bar and goes on the first touch of the room, or after nine seconds
+const hintEl = document.getElementById('hint'); let hintTimer = 0;
+function showHint() {
+  hintEl.hidden = false; requestAnimationFrame(() => hintEl.classList.add('on'));
+  const hide = () => { clearTimeout(hintTimer); hintEl.classList.remove('on'); canvas.removeEventListener('pointerdown', hide); };
+  canvas.addEventListener('pointerdown', hide); hintTimer = setTimeout(hide, 9000);
+}
 exEl.addEventListener('click', e => {
   if (e.target.closest('[data-close]')) return closeExplorer();
   const rainBtn = e.target.closest('[data-rain]'); if (rainBtn) { rain.toggle().then(renderExplorer); return; }
@@ -2255,6 +2263,7 @@ canvas.addEventListener('pointerup', e => {
   if (e.pointerType === 'touch') {   // no hover on glass: the first tap lights the object and holds its label (the dog's chip is the clue); the next tap on it opens
     if (hit && hover.current !== hit) { setHover(hit); return; }
     setHover(hit); chipEl.querySelector('.more')?.remove();
+    if (hit?.insp.touchLabel) chipEl.textContent = hit.insp.label;   // the second tap earns the real label (the dog's is the clue)
   }
   if (hit) focusObject(hit.insp);   // shell, window, or (the dog) just a glide up close
 });
