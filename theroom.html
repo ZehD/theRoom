@@ -1729,16 +1729,27 @@ function panBy(dx, dy) {
   delta.copy(next).sub(freeGoal.pan); freeGoal.pan.copy(next);
   freeGoal.position.add(delta); freeGoal.target.add(delta);
 }
+// Yaw is held within ±yaw rad of the zone's shot, pitch within the band. Inside the room the walls also veto a camera
+// position — but they veto a POSITION, not a gesture: turning and tilting at once used to be all or nothing, so a thumb's
+// diagonal swipe froze the spin the moment its tilt reached the ceiling. Now whichever half still fits is kept and the
+// camera slides along the wall. Outside the open side it swings free.
+const _sph = new THREE.Spherical(), _orb = new THREE.Vector3();
 function orbitBy(dx, dy) {
-  const G = CONFIG.drag, off = freeGoal.position.clone().sub(freeGoal.target), sph = new THREE.Spherical().setFromVector3(off);
-  let th = sph.theta - dx * G.speed; th = Math.min(freeGoal.theta0 + G.yaw, Math.max(freeGoal.theta0 - G.yaw, th));
-  sph.theta = th; sph.phi = Math.min(G.pitch[1], Math.max(G.pitch[0], sph.phi - dy * G.speed));
-  const pos = freeGoal.target.clone().add(off.setFromSpherical(sph));
-  if (pos.z >= CONFIG.room.depth / 2 || inRoom(pos)) freeGoal.position.copy(pos);   // inside the room the orbit stops at the walls; outside the open side it swings free
+  const G = CONFIG.drag;
+  _sph.setFromVector3(_orb.copy(freeGoal.position).sub(freeGoal.target));
+  const r = _sph.radius, th0 = _sph.theta, ph0 = _sph.phi;
+  const th = Math.min(freeGoal.theta0 + G.yaw, Math.max(freeGoal.theta0 - G.yaw, th0 - dx * G.speed));
+  const ph = Math.min(G.pitch[1], Math.max(G.pitch[0], ph0 - dy * G.speed));
+  const fits = (t, p) => {
+    const pos = _v.copy(freeGoal.target).add(_orb.setFromSpherical(_sph.set(r, p, t)));
+    return (pos.z >= CONFIG.room.depth / 2 || inRoom(pos)) ? pos : null;
+  };
+  const pos = fits(th, ph) || fits(th, ph0) || fits(th0, ph);   // both, then turn only, then tilt only
+  if (pos) freeGoal.position.copy(pos);
 }
 canvas.addEventListener('pointermove', e => {
   const p = pointers.get(e.pointerId); if (p) { p.x = e.clientX; p.y = e.clientY; }
-  if (camTween.active) return;
+  if (camTween.active) { drag.x = e.clientX; drag.y = e.clientY; if (pinch && pointers.size >= 2) pinch = midOf(); return; }   // a glide owns the camera: hold the anchor level with the finger so the drag picks up where it is, not where it started
   if (pinch && pointers.size >= 2) {
     const m = midOf(); canvas.classList.add('drag');
     if (pinch.dist > 0 && m.dist > 0) dollyAt(ndcOf({ clientX: m.x, clientY: m.y }), 1 - pinch.dist / m.dist);   // spread by a ratio = move in by that ratio
@@ -1752,6 +1763,8 @@ canvas.addEventListener('pointermove', e => {
 const endDrag = e => {
   if (e) pointers.delete(e.pointerId);
   if (pointers.size < 2) pinch = null;
+  // one finger lifted out of a pinch: the finger still down takes the orbit over from where it is, instead of going dead
+  if (pointers.size === 1) { const [p] = [...pointers.values()]; drag.on = true; drag.pan = false; drag.x = p.x; drag.y = p.y; }
   if (pointers.size === 0) { drag.on = false; canvas.classList.remove('drag', 'pan'); }
 };
 canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
