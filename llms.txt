@@ -1,0 +1,7 @@
+# Luiz Cordeiro · theRoom
+
+> An AI engineer's portfolio, built as a 3D room in Curitiba, Brazil. The room as text lives in one markdown file; the same content is served over MCP.
+
+- [The whole room as one document](https://theroom-seven-theta.vercel.app/room.md): experience, stack, certifications, the paper, the shelf.
+- MCP server (Streamable HTTP, no auth): https://theroom-seven-theta.vercel.app/mcp — tools: whoami, visitors, leave_message.
+- Source: https://github.com/ZehD/theRoom

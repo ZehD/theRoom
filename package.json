@@ -3,12 +3,26 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=18"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "node scripts/serve.mjs",
+    "dev:mcp": "node scripts/mcp-serve.mjs",
     "dev:vercel": "vercel dev",
-    "test": "node scripts/smoke.mjs",
+    "room:md": "node scripts/room-md.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/room-md.mjs --check && node scripts/smoke.mjs",
     "test:prod": "node scripts/smoke.mjs https://theroom-seven-theta.vercel.app"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "@upstash/ratelimit": "^2.1.0",
+    "@upstash/redis": "^1.38.4",
+    "mcp-handler": "^2.2.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "typescript": "^5.9.3"
   }
 }

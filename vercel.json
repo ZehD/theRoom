@@ -1,5 +1,9 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/theroom.html" }
-  ]
+    { "source": "/", "destination": "/theroom.html" },
+    { "source": "/mcp", "destination": "/api/mcp" }
+  ],
+  "functions": {
+    "api/mcp.ts": { "includeFiles": "room.md" }
+  }
 }

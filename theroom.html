@@ -577,7 +577,12 @@ const CONFIG = {
         { name: 'stack.log', title: 'The reference row', meta: 'academic, pale spines', text: 'Clean Code and The Pragmatic Programmer for how to write it, Designing Data-Intensive Applications for where it runs, Speech and Language Processing and Deep Learning for why the models do what they do. AI Engineering ties the row together.' },
         { name: 'off-shelf.txt', title: 'Off the shelf', meta: 'the rest of the room', bullets: ['Vinyl on the turntable, mostly jazz and Brazilian records from the 60s and 70s.', 'A telescope by the window for the rare clear night.', 'A French bulldog asleep on the rug, breathing slowly.'] }
       ] } },
-    { id: 'mug',           label: "let's talk", title: 'Curitiba coffee', line: '—', phase: 1 },
+    { id: 'mug',           label: "let's talk", cmd: 'talk', title: 'Curitiba coffee', line: 'a note on the desk, and who came by', phase: 1,
+      explorer: { path: '~/desk', files: [
+        { name: 'visitors.log', title: 'Who came by', meta: 'agents that connected to the room over MCP, newest first', control: 'visitors', bullets: ['asking the desk...'] },
+        { name: 'mcp.txt', title: 'The room, for agents', meta: 'one URL, no auth, nothing to click', text: 'The whole room is one document over MCP: an agent calls whoami and gets the desk, the rack, the wall and the shelf in one read. It can leave a note (leave_message) and see who came by before it (visitors).', bullets: ['https://theroom-seven-theta.vercel.app/mcp', 'claude mcp add --transport http theroom https://theroom-seven-theta.vercel.app/mcp', 'claude.ai: Settings, Connectors, Add custom connector, paste the URL', 'the same room as plain text: /room.md'] },
+        { name: 'leave-a-message.txt', title: 'Leave a message', meta: 'the tray on the desk', text: 'Ask your agent to leave a message in theRoom: who you are, how Luiz can answer, what it is about. It lands on this desk and nowhere public. Three a day per visitor; the dog needs his sleep.' }
+      ] } },
     { id: 'turntable',     label: 'sound', title: 'Turntable', line: 'rain on the window, records on the deck', phase: 1, view: { distance: 1.7, lift: 0.5 },
       explorer: { path: '~/sound', files: [
         { name: 'rain', title: 'Rain', meta: 'ambient · loops with a soft crossfade', text: 'Curitiba rain against the window.', control: 'rain' },
@@ -1804,6 +1809,7 @@ function renderExplorer() {
   exPath.innerHTML = `<b>luiz@theroom:</b>${esc(ex.path)}`;
   exList.innerHTML = files.map((file, i) => { const m = file.name.match(/^(.*?)(\.[^.]+)?$/); return `<button type="button" class="row" role="option" data-i="${i}" aria-selected="${i === explorer.index}" tabindex="${i === explorer.index ? 0 : -1}"><span class="perm">-rw-r--r--</span><span class="name">${esc(m[1])}<span class="ext">${esc(m[2] || '')}</span></span></button>`; }).join('');
   exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.control === 'spin' ? spinHtml(f) : ''}${f.control === 'rack' ? rackHtml(f) : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets && f.control !== 'rack' ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}${f.control === 'graph' ? graphHtml() : ''}`;
+  if (f.control === 'visitors') loadVisitors(exPreview.querySelector('ul'));
   if (f.control === 'spin') {   // each turn starts with the back to the viewer: swap to the next item then, unseen
     const stage = exPreview.querySelector('.stage'), el = stage.querySelector('.spin'); spinShow(stage, f.items[0]);
     el.addEventListener('animationiteration', () => { el.dataset.i = (+el.dataset.i + 1) % f.items.length; spinShow(stage, f.items[+el.dataset.i]); });
@@ -1860,6 +1866,22 @@ function rackHtml(f) {
   const seed = seeded(f.bullets.length * 7), r = (a, b) => (a + (b - a) * seed()).toFixed(2);
   const unit = name => `<div class="unit"><span class="leds"><i style="--p:${r(2, 5)}s;--d:-${r(0, 4)}s"></i><i style="--p:${r(2, 5)}s;--d:-${r(0, 4)}s"></i><i class="act" style="--p:${r(0.25, 0.6)}s;--d:-${r(0, 1)}s"></i></span><b>${esc(name.replace(/\s*\(.*\)$/, ''))}</b></div>`;
   return `<div class="stage rack" aria-hidden="true"><div class="units">${f.bullets.map(unit).join('')}</div></div>`;
+}
+// the visitor book: the last agents that connected over MCP, from the desk's own function. Kept a short while so the arrow keys and `who` do not re-ask.
+const MCP_URL = 'https://theroom-seven-theta.vercel.app/mcp';
+const API = { visitors: '/api/visitors' };
+const VISITORS = { at: 0, data: null };
+function fetchVisitors() {
+  if (VISITORS.data && performance.now() - VISITORS.at < 30000) return Promise.resolve(VISITORS.data);
+  return fetch(API.visitors).then(r => r.ok ? r.json() : Promise.reject(r.status)).then(d => { VISITORS.data = d; VISITORS.at = performance.now(); return d; });
+}
+const visitorLines = d => !d.open ? ['the visitor book is not open yet. nobody is counting.']
+  : !d.visits.length ? ['nobody yet. the book is open; be the first (type mcp).']
+  : [`${d.total} ${d.total === 1 ? 'agent has' : 'agents have'} come by. the latest:`].concat(d.visits.map(v => `${String(v.t).replace('T', ' ').slice(0, 16)}  ${v.client}  ·  ${v.tool}`));
+function loadVisitors(ul) {
+  if (!ul) return;
+  fetchVisitors().then(d => { if (ul.isConnected) ul.innerHTML = visitorLines(d).map(l => `<li>${esc(l)}</li>`).join(''); })
+    .catch(() => { if (ul.isConnected) ul.innerHTML = '<li>the visitor book did not answer.</li>'; });
 }
 function selectFile(i, focus = true) {
   const n = explorer.insp.explorer.files.length; explorer.index = (i + n) % n; renderExplorer();
@@ -1978,8 +2000,13 @@ function shellRun(raw) {
     words.shift();
   }
   const [cmd, arg] = words;
-  if (cmd === 'help' || cmd === '?') shellPrint('cd <place>  ls  clear  exit');
+  if (cmd === 'help' || cmd === '?') shellPrint('cd <place>  ls  who  mcp  clear  exit');
   else if (cmd === 'ls') shellPrint(PLACES.join('  '));
+  else if (cmd === 'mcp') { shellPrint('the room, for agents. one URL, no auth:'); shellPrint(MCP_URL); shellPrint('claude mcp add --transport http theroom ' + MCP_URL); }
+  else if (cmd === 'who' || cmd === 'w') {   // the visitor book, async: the answer lands on the screen when the desk replies
+    shellPrint('who: asking the desk...');
+    fetchVisitors().then(d => { for (const l of visitorLines(d).slice(0, 6)) shellPrint(l); shellDraw(); }).catch(() => { shellPrint('who: the visitor book did not answer'); shellDraw(); });
+  }
   else if (cmd === 'clear') SHELL.lines.length = 0;
   else if (cmd === 'exit' || cmd === 'logout') { if (SHELL.root) { SHELL.root = false; shellPrint('logout'); } else leaveTerminal(); }
   else if (cmd === 'cd' || cmd === 'go' || cmd === 'open') { if (!shellGo(arg || 'home')) shellPrint('cd: ' + arg + ': no such place'); }
