@@ -4,6 +4,22 @@ Static site: `theroom.html` (imported from Claude Design) plus `audio/rain.mp3`,
 functions that make the room reachable by agents.
 Live at https://theroom-seven-theta.vercel.app
 
+## Human / Agent
+
+A pill at the bottom edge of the page. **Human** is the room. **Agent** leaves it: the render loop parks, the
+chrome hides, and the same content (the page's `inspectables`, the one source of truth) comes back as text in one
+of two dresses, switchable from inside either:
+
+- **index** (`#/agent`): the plain-text mirror. Dotted keys, sections under rules, the whole room in one scroll,
+  the visitor book and the machine endpoints at the end.
+- **bios** (`#/agent/bios`): the setup utility. A POST screen the first time, then tabs (Main, Experience, Stack,
+  Certs, Studies, Shelf, Sound, Desk, Exit), an item pane with item-specific help, and a key legend. Keys work
+  like the real thing: arrows, Enter opens a ▶ item, +/- changes a value (Phosphor and Rain are live settings
+  of the room), Esc jumps to Exit, F9 loads defaults, F10 asks before it lets you out. Everything is also
+  tappable.
+
+The last choice is kept in `localStorage`, so a reload lands where you left; the URL is shareable either way.
+
 ## The room, for agents (MCP)
 
 The same room, without the clicking. `room.md` is the whole room as one markdown document (experience,

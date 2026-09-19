@@ -283,6 +283,93 @@
     #accent { left: 12px; right: auto; }
     #chip { font-size: 13px; }
   }
+  /* ── human / agent ─────────────────────────────────────────────────────────────────────────────────────────────────
+     A pill at the bottom edge. AGENT leaves the room: the canvas stops drawing, the chrome goes, and the same content comes
+     back as text in one of two dresses. `index` is the plain-text mirror (dotted keys, sections under rules, one scroll).
+     `bios` is the setup utility: a VGA screen in navy and grey, tabs, an item pane with item-specific help, a key legend. */
+  #mode { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; padding: 3px; margin: 0; background: var(--ink); border: 1px solid var(--moss); border-radius: 999px; z-index: 4; opacity: 0; transition: opacity 400ms linear; }
+  #mode.on { opacity: 1; }
+  #mode button { appearance: none; font: 11px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.06em; color: var(--phosphor-dim); background: transparent; border: 0; border-radius: 999px; padding: 9px 16px 8px; cursor: pointer; }
+  #mode button:hover { color: var(--phosphor); }
+  #mode button[aria-pressed="true"] { background: var(--phosphor); color: var(--ink); }
+  #mode button:focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: 2px; }
+  #reset { bottom: calc(66px + env(safe-area-inset-bottom)); }
+  #root[data-mode="agent"] :is(#room, #top, #explorer, #dim, #chip, #reset, #hint, #exit, #accent, #toast, #boot, #fade, #fps, #hud) { display: none !important; }
+  #agent { position: fixed; inset: 0; overflow: auto; -webkit-overflow-scrolling: touch; background: var(--ink); color: var(--phosphor); z-index: 3; }
+  /* the index */
+  #agent .index { max-width: 1100px; margin: 0 auto; padding: 44px 32px calc(96px + env(safe-area-inset-bottom)); font: 14px/1.6 "IBM Plex Mono", ui-monospace, monospace; }
+  #agent .index .mark { margin: 0; font: 800 clamp(64px, 12vw, 132px)/0.9 Doto, VT323, ui-monospace, monospace; font-variation-settings: "ROND" 0, "wght" 800; color: var(--phosphor); letter-spacing: 0.01em; text-shadow: 0 0 22px color-mix(in srgb, var(--phosphor) 40%, transparent); }
+  #agent .index .mark small { display: block; margin-top: 12px; font: 13px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.14em; color: var(--phosphor-dim); text-shadow: none; }
+  #agent .index nav { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 30px 0 24px; }
+  #agent .index nav a { font: 15px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; color: var(--phosphor); text-decoration: none; padding: 5px 3px 3px; border-bottom: 2px solid var(--phosphor-dim); }
+  #agent .index nav a:hover { background: var(--phosphor); color: var(--ink); border-color: var(--phosphor); }
+  #agent .index .head { font: 500 15px/1.4 "IBM Plex Mono", ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.06em; color: var(--phosphor-bloom); }
+  #agent .index .lede { margin: 10px 0 8px; max-width: 66ch; color: var(--phosphor-dim); text-transform: uppercase; letter-spacing: 0.04em; text-wrap: pretty; }
+  #agent .index h2 { display: flex; align-items: center; gap: 12px; margin: 44px 0 14px; font: 500 14px/1 "IBM Plex Mono", ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.14em; color: var(--phosphor-bloom); }
+  #agent .index h2::before { content: ""; width: 22px; height: 1px; background: var(--phosphor-dim); }
+  #agent .index h2::after { content: ""; flex: 1; height: 1px; background: var(--phosphor-dim); }
+  #agent .index h2 span { font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--phosphor-dim); }
+  #agent .index dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 7px 14px; margin: 0; }
+  #agent .index dt { color: var(--phosphor-dim); text-transform: uppercase; letter-spacing: 0.04em; white-space: pre; }
+  #agent .index dd { margin: 0; text-wrap: pretty; overflow-wrap: anywhere; }
+  #agent .index dd.up { text-transform: uppercase; }
+  #agent .index dd.up code { text-transform: none; }
+  #agent .index dd i, #agent .index .file i { font-style: normal; color: var(--phosphor-dim); }
+  #agent .index ul { margin: 6px 0 0; padding: 0; list-style: none; }
+  #agent .index li { padding-left: 16px; text-indent: -16px; text-wrap: pretty; }
+  #agent .index li::before { content: "- "; color: var(--phosphor-dim); }
+  #agent .index p { margin: 12px 0 0; max-width: 84ch; text-wrap: pretty; }
+  #agent .index .file { margin: 16px 0 0; }
+  #agent .index .file b { font-weight: 500; letter-spacing: 0.04em; color: var(--phosphor-bloom); }
+  #agent .index code { font: inherit; color: var(--phosphor-bloom); background: var(--soil); padding: 1px 6px; overflow-wrap: anywhere; }
+  #agent .index a { color: var(--phosphor); text-decoration: none; border-bottom: 1px solid var(--phosphor-dim); }
+  #agent .index .end { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 52px; padding-top: 14px; border-top: 1px solid var(--moss); font-size: 12px; color: var(--phosphor-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+  #agent .index .end a[aria-current="true"] { color: var(--phosphor-bloom); border-color: var(--phosphor-bloom); }
+  @container (max-width: 767px) {
+    #agent .index { padding: 28px 16px calc(96px + env(safe-area-inset-bottom)); font-size: 13px; }
+    #agent .index dl { grid-template-columns: 1fr; gap: 2px; }
+    #agent .index dd { margin-bottom: 10px; }
+    #agent .index nav { gap: 4px 12px; } #agent .index nav a { font-size: 13px; }
+  }
+  /* the setup utility: a VGA text screen, navy and grey, white for values, yellow for the one thing that matters */
+  #agent .bios { --b-bg: #0000a8; --b-fg: #a8a8a8; --b-hi: #ffffff; --b-yel: #ffff55; position: absolute; inset: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; background: var(--b-bg); color: var(--b-fg); font: 20px/1.3 VT323, ui-monospace, monospace; padding-bottom: calc(60px + env(safe-area-inset-bottom)); box-sizing: border-box; -webkit-font-smoothing: none; user-select: none; }
+  #agent .bios.posting { background: #000; }
+  #agent .bios .post { grid-row: 1 / -1; margin: 0; padding: 26px 28px; color: var(--b-fg); font: 22px/1.35 VT323, ui-monospace, monospace; white-space: pre-wrap; overflow: auto; }
+  #agent .bios .post::after { content: "\2588"; animation: boot-blink 1s steps(1) infinite; }
+  #agent .bios .title { text-align: center; color: var(--b-hi); padding: 9px 0 5px; letter-spacing: 0.04em; }
+  #agent .bios .tabs { display: flex; margin: 0 8px; background: var(--b-fg); color: var(--b-bg); padding: 0; overflow-x: auto; scrollbar-width: none; }
+  #agent .bios .tabs::-webkit-scrollbar { display: none; }
+  #agent .bios .tabs button { appearance: none; border: 0; border-radius: 0; background: transparent; font: inherit; color: inherit; padding: 3px 14px 1px; cursor: pointer; white-space: nowrap; }
+  #agent .bios .tabs button[aria-current="true"] { background: var(--b-bg); color: var(--b-hi); }
+  #agent .bios .frame { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 36%; margin: 0 8px; border: 3px double var(--b-fg); border-top: 0; min-height: 0; }
+  #agent .bios .pane { padding: 12px 10px; overflow: auto; border-right: 3px double var(--b-fg); }
+  #agent .bios .row { display: grid; grid-template-columns: 1.3em 24ch minmax(0, 1fr); gap: 0 8px; padding: 1px 6px; cursor: pointer; }
+  #agent .bios .row .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #agent .bios .row .mark { color: var(--b-hi); }
+  #agent .bios .row .value { color: var(--b-hi); }
+  #agent .bios .row.sel { background: var(--b-fg); color: var(--b-bg); }
+  #agent .bios .row.sel .value, #agent .bios .row.sel .mark { color: var(--b-bg); }
+  #agent .bios .row.back { color: var(--b-hi); margin-bottom: 8px; grid-template-columns: minmax(0, 1fr); }
+  #agent .bios .subtitle { color: var(--b-yel); margin: 0 6px 8px; }
+  #agent .bios .line { margin: 0 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #agent .bios .help { padding: 12px 12px; overflow: auto; }
+  #agent .bios .hh { color: var(--b-hi); text-align: center; border-bottom: 3px double var(--b-fg); margin-bottom: 10px; padding-bottom: 6px; }
+  #agent .bios .ht { color: var(--b-hi); }
+  #agent .bios .keys { display: grid; grid-template-columns: repeat(4, auto); justify-content: start; gap: 2px 26px; margin: 0 8px; padding: 6px 16px 8px; border: 3px double var(--b-fg); border-top: 0; color: var(--b-fg); white-space: nowrap; }
+  #agent .bios .keys b { color: var(--b-hi); font-weight: 400; margin-right: 8px; }
+  #agent .bios .dialog { position: absolute; inset: 0; display: grid; place-items: center; }
+  #agent .bios .box { min-width: min(360px, 90%); padding: 16px 26px 14px; background: var(--b-bg); border: 3px double var(--b-hi); color: var(--b-hi); text-align: center; box-shadow: 10px 10px 0 #000; }
+  #agent .bios .btns { display: flex; justify-content: center; gap: 28px; margin-top: 14px; }
+  #agent .bios .btn { padding: 0 6px; cursor: pointer; }
+  #agent .bios .btn.sel { background: var(--b-fg); color: var(--b-bg); }
+  @container (max-width: 767px) {
+    #agent .bios { font-size: 18px; }
+    #agent .bios .frame { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(118px, 30%); }
+    #agent .bios .pane { border-right: 0; border-bottom: 3px double var(--b-fg); }
+    #agent .bios .row { grid-template-columns: 1.3em minmax(0, 1fr); } #agent .bios .row .value { grid-column: 2; white-space: normal; }
+    #agent .bios .keys { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { #agent .bios .post::after { animation: none; } }
 </style>
 <template id="__bundler_thumbnail" data-bg-color="#060A07">
   <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#3BE77B" stroke-width="6">
@@ -334,6 +421,8 @@
   <ul><li>one finger turns the room</li><li>two fingers slide it, pinch to zoom</li><li>tap a thing twice to open it</li></ul>
 </div>
 <button type="button" id="exit" hidden>exit shell</button>
+<section id="agent" aria-label="The room as text" hidden><div class="index" hidden></div><div class="bios" hidden></div></section>
+<div id="mode" role="group" aria-label="View"><button type="button" data-mode="human" aria-pressed="true">human</button><button type="button" data-mode="agent" aria-pressed="false">agent</button></div>
 <ul id="accent" aria-label="Accent colour" hidden></ul>
 </div>
 <script>
@@ -1579,7 +1668,7 @@ function animate(t, dt) {
     const v = (inDip ? F.dip : 1) * (1 + 0.5 * (L.boost || 0)); L.mat.color.setScalar(v); L.glow.material.opacity = (0.3 + 0.2 * (L.boost || 0)) * (inDip ? F.dip : 1);
   }
 }
-function tick() { requestAnimationFrame(tick); frame(); }
+function tick() { if (MODE.agent) { MODE.paused = true; return; } requestAnimationFrame(tick); frame(); }   // agent mode parks the loop; setMode restarts it
 function frame() {   // one frame: load reveal, motion, glide, render, hover. Exposed on window.__theroom so a throttled tab can still be stepped
   const dt = Math.min(0.1, clock.getDelta()), t = clock.elapsedTime;
   if (!loaded) {   // wireframe build-up: the reveal height sweeps floor to ceiling, eased in and out
@@ -2182,12 +2271,15 @@ function updateReset() {
   if (resetEl.hidden === moved) resetEl.hidden = !moved;
 }
 addEventListener('popstate', () => {
+  const a = agentOfUrl();   // #/agent or #/agent/bios: the text views own the URL
+  if (a) { setMode(true, a, { push: false }); return; }
+  if (MODE.agent) setMode(false, undefined, { push: false });
   if (TERM.open) { leaveTerminal({ fromHistory: true }); return; }
   if (explorer.open) { closeExplorer(true); return; }
   const z = zoneOfUrl(); if (z !== nav.zone) goZone(z, { push: false });
 });
 // entry: the top bar fades in over the room once the wireframe cut is done
-function showIntro() { topEl.classList.add('on'); if (TOUCH) showHint(); }
+function showIntro() { topEl.classList.add('on'); modeEl.classList.add('on'); if (TOUCH) showHint(); }
 // on glass, a line on how to move the room comes up with the bar and goes on the first touch of the room, or after nine seconds
 const hintEl = document.getElementById('hint'); let hintTimer = 0;
 function hideHint() { clearTimeout(hintTimer); hintEl.classList.remove('on'); canvas.removeEventListener('pointerdown', hideHint); }
@@ -2514,8 +2606,260 @@ async function init() {
     setTimeout(showIntro, CONFIG.intro.delay);
   }, MOTION ? CONFIG.loading.rise + CONFIG.loading.hold : CONFIG.loading.hold);
 }
+// ───────────────────────────── human / agent ─────────────────────────────
+// The pill at the bottom edge. AGENT leaves the room: the loop parks, the chrome hides, and the same content
+// (CONFIG.inspectables, the one source of truth) comes back as text in one of two dresses. `index` is the plain-text
+// mirror: dotted keys, sections under rules, the whole room in one scroll. `bios` is the setup utility: a POST screen,
+// then tabs, an item pane, item-specific help, a key legend and the dialogs a BIOS asks before it lets you go.
+// The URL follows (#/agent, #/agent/bios) and the last choice is kept, so a reload lands where you left.
+const MODE = { agent: false, style: 'index', paused: false, posted: false };
+const agentEl = document.getElementById('agent'), indexEl = agentEl.querySelector('.index'), biosEl = agentEl.querySelector('.bios'), modeEl = document.getElementById('mode');
+const SITE_URL = MCP_URL.replace(/\/mcp$/, ''), INSTALL_LINE = 'claude mcp add --transport http theroom ' + MCP_URL;
+const ABOUT = {
+  name: 'Luiz Aurio Cordeiro Junior', aka: 'Luiz Cordeiro, ZehD', role: 'AI Engineer', location: 'Curitiba, Paraná, Brazil (BR)', served: 'worldwide, remote',
+  years: '11 years in IT, 4 building software and AI systems',
+  works_on: 'agents, RAG pipelines and automations that have to survive production',
+  knows_about: 'RAG, agentic architectures with MCP, prompt and context engineering, real-time speech-to-text, local models for private and low-latency work'
+};
+const MACHINE = [
+  ['room.md', SITE_URL + '/room.md', 'the whole room as one markdown document'],
+  ['llms.txt', SITE_URL + '/llms.txt', 'the pointer file for crawlers'],
+  ['mcp', MCP_URL, 'Streamable HTTP, no auth. tools: whoami, visitors, leave_message'],
+  ['install', INSTALL_LINE, 'Claude Code; claude.ai takes the URL as a custom connector'],
+  ['visitors', SITE_URL + '/api/visitors', 'the visitor book as JSON'],
+  ['source', 'https://github.com/ZehD/theRoom', 'this page, the functions, the generator']
+];
+const SECTION_KEY = { 'monitor-left': 'experience', rack: 'stack', 'cert-frame': 'certifications', whiteboard: 'studies', shelf: 'shelf', turntable: 'sound' };
+const roomSections = () => CONFIG.inspectables.filter(i => i.explorer && !i.hint && !i.terminal && SECTION_KEY[i.id]).map(i => ({ key: SECTION_KEY[i.id], title: i.title, line: i.line, path: i.explorer.path, files: i.explorer.files }));
+const secretsCount = () => { const f = secretsFound(); return SECRETS.filter(k => f.has(k)).length; };
+const agentOfUrl = () => { const m = /^#\/agent(?:\/(bios|index))?\/?$/.exec(location.hash); return m ? (m[1] || 'index') : null; };
+const fmtDate = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', month: '2-digit', day: '2-digit', year: 'numeric' });
+
+function setMode(agent, style = MODE.style, { push = true, replace = false } = {}) {
+  style = style === 'bios' ? 'bios' : 'index';
+  const was = MODE.agent, wasStyle = MODE.style;
+  if (agent && !was) {   // leaving the room: fold whatever is open
+    if (TERM.open) leaveTerminal({ tween: false, fromHistory: true });
+    if (explorer.open) { camTween.back = null; closeExplorer(true); }
+    openTally(false); openMenu(false); hideHint();
+  }
+  MODE.agent = agent; MODE.style = style;
+  rootEl.dataset.mode = agent ? 'agent' : 'human';
+  agentEl.hidden = !agent; modeEl.classList.add('on');
+  for (const b of modeEl.querySelectorAll('button')) b.setAttribute('aria-pressed', String((b.dataset.mode === 'agent') === agent));
+  try { localStorage.setItem('theroom.mode', agent ? 'agent' : 'human'); localStorage.setItem('theroom.agent', style); } catch {}
+  const href = agent ? (style === 'bios' ? '#/agent/bios' : '#/agent') : hrefOf(nav.zone), state = agent ? { agent: style } : { zone: nav.zone };
+  if (replace) history.replaceState(state, '', href);
+  else if (push && (location.hash || '#/') !== href) history.pushState(state, '', href);
+  document.title = agent ? `Luiz Cordeiro · theRoom · ${style === 'bios' ? 'setup' : 'index'}` : (nav.zone === 'home' ? 'Luiz Cordeiro · theRoom' : `Luiz Cordeiro · ${ZONES[nav.zone].label}`);
+  if (agent) { if (was && wasStyle !== style) teardownBios(); showStyle(!was || wasStyle !== style); }
+  else { teardownBios(); if (MODE.paused) { MODE.paused = false; clock.getDelta(); tick(); } }
+}
+function showStyle(fresh) {
+  indexEl.hidden = MODE.style !== 'index'; biosEl.hidden = MODE.style !== 'bios';
+  if (MODE.style === 'index') { renderIndex(); agentEl.scrollTop = 0; }
+  else { if (fresh) { B.accent0 = CONFIG.accent.name; B.tab = 0; B.item = 0; B.sub = null; B.dialog = null; } if (fresh && !MODE.posted && MOTION) runPost(); else renderBios(); }
+}
+modeEl.addEventListener('click', e => { const b = e.target.closest('button[data-mode]'); if (b) setMode(b.dataset.mode === 'agent'); });
+agentEl.addEventListener('click', e => {
+  const jump = e.target.closest('[data-jump]'); if (jump) { e.preventDefault(); indexEl.querySelector('#ix-' + jump.dataset.jump)?.scrollIntoView({ behavior: MOTION ? 'smooth' : 'auto', block: 'start' }); return; }
+  const st = e.target.closest('[data-style]'); if (st) { e.preventDefault(); setMode(true, st.dataset.style); }
+});
+function bootMode() {   // the URL first, then the last choice
+  let stored = null, style = null; try { stored = localStorage.getItem('theroom.mode'); style = localStorage.getItem('theroom.agent'); } catch {}
+  const fromUrl = agentOfUrl();
+  if (fromUrl) setMode(true, fromUrl, { replace: true });
+  else if (stored === 'agent') setMode(true, style || 'index', { replace: true });
+}
+
+// ── the index: the plain-text mirror ──
+const upper = s => esc(String(s)).toUpperCase();
+function dlHtml(rows, { upperValues = false } = {}) {   // rows: [key, valueHtml]; keys get dotted leaders to a common width, like a directory listing
+  const w = Math.max(...rows.map(([k]) => k.length)) + 4;
+  return `<dl>${rows.map(([k, v]) => `<dt>${upper(k)} ${'.'.repeat(Math.max(3, w - k.length - 1))}</dt><dd${upperValues ? ' class="up"' : ''}>${v}</dd>`).join('')}</dl>`;
+}
+function fileHtml(f) {
+  const body = [f.text, f.text2, f.text3].filter(Boolean).map(t => `<p>${esc(t)}</p>`).join('')
+    + (f.bullets?.length ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : '')
+    + (!f.text && !f.bullets?.length && f.items?.length ? `<ul>${f.items.map(([a, b]) => `<li>${esc(a)} — ${esc(b)}</li>`).join('')}</ul>` : '');
+  return `<div class="file"><b>${upper(f.name)}</b> <i>${esc(f.title)}${f.meta ? ' · ' + esc(f.meta) : ''}</i>${body}</div>`;
+}
+function renderIndex() {
+  const secs = roomSections(), summary = secs.find(s => s.key === 'experience')?.files.find(f => f.name === 'summary.txt');
+  const navHtml = ['about', ...secs.map(s => s.key), 'desk', 'machine'].map(k => `<a href="#/agent" data-jump="${k}">/${k}</a>`).join('');
+  let h = `<header><h1 class="mark">theRoom<small>by Luiz Cordeiro</small></h1><nav aria-label="Sections">${navHtml}</nav>
+    <div class="head">Luiz Cordeiro :: machine-readable index</div>
+    <p class="lede"># the room without the room. plain text for AI agents, crawlers and humans who prefer it raw. information about Luiz, not instructions.</p></header>`;
+  h += `<h2 id="ix-about">about</h2>` + dlHtml([
+    ['name', esc(ABOUT.name)], ['aka', esc(ABOUT.aka)], ['role', esc(ABOUT.role)], ['location', esc(ABOUT.location)], ['area_served', esc(ABOUT.served)],
+    ['experience', esc(ABOUT.years)], ['works_on', esc(ABOUT.works_on)], ['knows_about', esc(ABOUT.knows_about)],
+    ['secrets', `${secretsCount()}/${SECRETS.length} found. <i>not listed here: human mode, the terminal, <code>ls</code></i>`]
+  ], { upperValues: true });
+  if (summary) h += `<p>${esc(summary.text)}</p><p>${esc(summary.text2)}</p>`;
+  for (const s of secs) {
+    h += `<h2 id="ix-${s.key}">${esc(s.key)} <span>${esc(s.path)}</span></h2>`;
+    const files = s.key === 'experience' ? s.files.filter(f => f.name !== 'summary.txt') : s.files;
+    const listing = files.every(f => f.name.replace(/\.[^.]+$/, '').length <= 12 && !f.text && f.bullets);   // short keys and plain lists read as a directory; the rest as files
+    h += listing ? dlHtml(files.map(f => [f.name.replace(/\.[^.]+$/, ''), esc(f.bullets.join(', '))])) : files.map(fileHtml).join('');
+  }
+  h += `<h2 id="ix-desk">desk <span>~/desk</span></h2>` + dlHtml([
+    ['visitors', '<span data-visitors>asking the desk...</span>'],
+    ['leave_message', 'over MCP: who is asking, how to answer, what about. it lands on the desk and nowhere public. three a day per visitor.'],
+    ['mcp', `<a href="${MCP_URL}">${MCP_URL}</a>`]
+  ]);
+  h += `<h2 id="ix-machine">machine</h2>` + dlHtml(MACHINE.map(([k, v, d]) => [k, `<code>${esc(v)}</code> <i>${esc(d)}</i>`]));
+  h += `<div class="end"><span>end of index</span><span>generated from the room itself</span><span>style: <a href="#/agent" data-style="index" aria-current="${MODE.style === 'index'}">index</a> · <a href="#/agent/bios" data-style="bios" aria-current="${MODE.style === 'bios'}">bios</a></span><span><a href="${SITE_URL}/room.md">room.md</a></span></div>`;
+  indexEl.innerHTML = h;
+  const v = indexEl.querySelector('[data-visitors]');
+  fetchVisitors().then(d => { v.innerHTML = visitorLines(d).map(esc).join('<br>'); }).catch(() => { v.textContent = 'the visitor book did not answer.'; });
+}
+
+// ── the setup utility ──
+const B = { tab: 0, item: 0, sub: null, dialog: null, post: false, postTimer: 0, clock: 0, note: null, accent0: 'blue', visitors: null };
+function biosTabs() {
+  const secs = roomSections(), by = k => secs.find(s => s.key === k);
+  const fileSub = f => ({ title: f.title + (f.meta ? '  ·  ' + f.meta : ''), lines: [...[f.text, f.text2, f.text3].filter(Boolean).flatMap(t => [t, '']), ...(f.bullets || []).map(b => '  ' + b), ...(!f.text && !f.bullets?.length && f.items ? f.items.map(([a, b]) => `  ${a}  -  ${b}`) : [])] });
+  const fileItems = files => files.map(f => ({ label: f.title, value: f.meta || '', sub: () => fileSub(f), help: (f.meta ? f.meta + '. ' : '') + 'Enter opens it.' }));
+  const ex = by('experience'), summary = ex.files.find(f => f.name === 'summary.txt'), accents = Object.keys(CONFIG.accent.presets);
+  const rainItem = { label: 'Rain', value: () => rain.on ? 'On' : 'Off', adjust: () => { rain.toggle(); }, help: 'Curitiba rain against the window. + or - turns it; it loops with a soft crossfade.' };
+  return [
+    { name: 'Main', help: 'The owner of this machine. ← → walk the menus, ↑ ↓ pick an item, Enter opens one marked ▶.', items: [
+      { label: 'System Owner', value: ABOUT.name, help: 'AI engineer. Days go to agents, RAG pipelines and automations; nights go to the shelf.' },
+      { label: 'Role', value: ABOUT.role, help: ABOUT.years + '.' },
+      { label: 'Location', value: ABOUT.location, help: 'The real room. It rains most afternoons. The dog is real too.' },
+      { label: 'System Time', value: () => stamp(), help: 'America/Sao_Paulo. The clocks in the room run on it as well.' },
+      { label: 'System Date', value: () => fmtDate.format(new Date()), help: 'Today, in Curitiba.' },
+      { label: 'Uptime in IT', value: '11 years', help: 'Four of them building software and AI systems.' },
+      { label: 'AI Runtime', value: '4 years', help: 'Dozens of AI products shipped to production in the last two: chatbots, multi-agent systems, pipelines, extraction at scale.' },
+      { label: 'Secrets Found', value: () => `${secretsCount()}/${SECRETS.length}`, help: 'Three secrets in the room. None of them is in this utility. Human mode, the terminal, ls.' },
+      { label: 'Phosphor', value: () => CONFIG.accent.name, adjust: d => { const i = accents.indexOf(CONFIG.accent.name); setAccent(accents[(i + d + accents.length) % accents.length]); }, help: '+ or - changes the phosphor of the room. The one setting this BIOS keeps; Exit Discarding Changes puts it back.' },
+      rainItem,
+      { label: 'Summary', sub: () => ({ title: 'Personal summary', lines: [summary.text, '', summary.text2] }), help: 'Who Luiz is, in two paragraphs.' },
+      { label: 'Machine Endpoints', sub: () => ({ title: 'For agents and crawlers', lines: MACHINE.flatMap(([k, v, d]) => [`${k.toUpperCase().padEnd(10)} ${v}`, `${''.padEnd(10)} ${d}`, '']) }), help: 'The room as text: room.md, llms.txt, the MCP server and how to install it.' }
+    ] },
+    { name: 'Experience', help: ex.line + '.', items: fileItems(ex.files.filter(f => f.name !== 'summary.txt')) },
+    { name: 'Stack', help: by('stack').line + '.', items: fileItems(by('stack').files) },
+    { name: 'Certs', help: by('certifications').line + '.', items: fileItems(by('certifications').files) },
+    { name: 'Studies', help: by('studies').line + '.', items: [{ label: 'Paper', value: 'in progress', help: by('studies').title + '.' }, ...fileItems(by('studies').files)] },
+    { name: 'Shelf', help: by('shelf').line + '.', items: fileItems(by('shelf').files) },
+    { name: 'Sound', help: by('sound').line + '.', items: [rainItem, ...fileItems(by('sound').files.filter(f => f.control !== 'rain'))] },
+    { name: 'Desk', help: 'A note on the desk, and who came by.', items: [
+      { label: 'Visitors', sub: () => ({ title: 'Who came by', lines: B.visitors || ['asking the desk...'], onOpen: loadBiosVisitors }), help: 'Agents that connected over MCP, newest first. Client and time only.' },
+      { label: 'Leave a Message', sub: () => ({ title: 'The tray on the desk', lines: ['Ask your agent to leave a message in theRoom: who is asking, how Luiz can answer, what it is about.', '', 'It lands on the desk and nowhere public. Three a day per visitor; the dog needs his sleep.', '', 'Tool: leave_message  (name, contact, message)', 'Server: ' + MCP_URL] }), help: 'Over MCP, the leave_message tool. Private; three a day.' },
+      { label: 'MCP Server', value: MCP_URL, action: () => copyLine(MCP_URL), help: 'Enter copies the URL. Streamable HTTP, no auth. Tools: whoami, visitors, leave_message.' },
+      { label: 'Install', value: INSTALL_LINE, action: () => copyLine(INSTALL_LINE), help: 'Enter copies the line for Claude Code. claude.ai takes the URL as a custom connector.' }
+    ] },
+    { name: 'Exit', help: 'Leave the setup utility.', items: [
+      { label: 'Exit Saving Changes', action: () => askDialog('Save configuration changes and exit now?', () => setMode(false)), help: 'Back to the room, phosphor as set here. F10 does the same from anywhere.' },
+      { label: 'Exit Discarding Changes', action: () => askDialog('Configuration has not been saved! Exit anyway?', () => { setAccent(B.accent0); setMode(false); }), help: 'Back to the room, phosphor as it was when you came in.' },
+      { label: 'Load Setup Defaults', action: () => askDialog('Load default configuration now?', () => { setAccent('blue'); if (rain.on) rain.toggle(); }), help: 'Blue phosphor, rain off. F9 does the same.' },
+      { label: 'Switch to Index View', action: () => setMode(true, 'index'), help: 'The same room as a plain-text index, in one scroll.' },
+      { label: 'Human Mode', action: () => setMode(false), help: 'The room itself: three.js, a shell, a dog on the rug.' }
+    ] }
+  ];
+}
+const valueOf = x => typeof x === 'function' ? x() : x;
+function renderBios() {
+  const tabs = biosTabs(), T = tabs[B.tab]; B.item = Math.max(0, Math.min(B.item, T.items.length - 1));
+  const it = T.items[B.item];
+  const tabsHtml = tabs.map((t, i) => `<button type="button" data-tab="${i}" aria-current="${i === B.tab}">${esc(t.name)}</button>`).join('');
+  const pane = B.sub
+    ? `<div class="row back" data-back>◄ ${esc(T.name)}</div><div class="subtitle">${esc(B.sub.title)}</div>${B.sub.lines.map(l => `<div class="line">${esc(l) || '&nbsp;'}</div>`).join('')}`
+    : T.items.map((x, i) => `<div class="row${i === B.item ? ' sel' : ''}" data-item="${i}"><span class="mark">${x.sub ? '▶' : ''}</span><span class="label">${esc(x.label)}</span>${x.value !== undefined ? `<span class="value">[${esc(valueOf(x.value))}]</span>` : ''}</div>`).join('');
+  const help = B.note || (B.sub ? 'Esc, ◄ or Backspace goes back.' : (it?.help || T.help));
+  biosEl.className = 'bios';
+  biosEl.innerHTML = `<div class="title">theRoom Setup Utility</div><div class="tabs">${tabsHtml}</div>
+    <div class="frame"><div class="pane">${pane}</div><div class="help"><div class="hh">Item Specific Help</div><div class="ht">${esc(help)}</div></div>${B.dialog ? `<div class="dialog"><div class="box"><div class="msg">${esc(B.dialog.msg)}</div><div class="btns"><span class="btn${B.dialog.yes ? ' sel' : ''}" data-yes>[Yes]</span><span class="btn${B.dialog.yes ? '' : ' sel'}" data-no>[No]</span></div></div></div>` : ''}</div>
+    <div class="keys"><span><b>F1</b>Help</span><span><b>↑↓</b>Select Item</span><span><b>-/+</b>Change Values</span><span><b>F9</b>Setup Defaults</span><span><b>Esc</b>Exit</span><span><b>←→</b>Select Menu</span><span><b>Enter</b>Select ▶ Sub-Menu</span><span><b>F10</b>Save and Exit</span></div>`;
+  biosEl.querySelector('.row.sel')?.scrollIntoView({ block: 'nearest' });
+  const tabBtn = biosEl.querySelector('.tabs [aria-current="true"]'), tabBar = biosEl.querySelector('.tabs');   // a phone's tab strip scrolls: keep the open menu in view
+  if (tabBtn && tabBar.scrollWidth > tabBar.clientWidth) tabBar.scrollLeft = tabBtn.offsetLeft - (tabBar.clientWidth - tabBtn.offsetWidth) / 2;
+  if (!B.clock) B.clock = setInterval(() => {   // live values (the clock) without a full redraw
+    if (biosEl.hidden || B.sub) return;
+    const items = biosTabs()[B.tab].items;
+    for (const el of biosEl.querySelectorAll('.row[data-item] .value')) { const x = items[+el.parentElement.dataset.item]; if (typeof x?.value === 'function') el.textContent = '[' + valueOf(x.value) + ']'; }
+  }, 1000);
+}
+function teardownBios() { clearTimeout(B.postTimer); clearInterval(B.clock); B.clock = 0; B.post = false; B.sub = null; B.dialog = null; B.note = null; }
+function askDialog(msg, ok) { B.dialog = { msg, ok, yes: true }; renderBios(); }
+function copyLine(s) { const done = ok => { B.note = ok ? 'Copied to the clipboard.' : 'The clipboard said no; select it from the index instead.'; renderBios(); setTimeout(() => { B.note = null; if (!biosEl.hidden) renderBios(); }, 1600); }; (navigator.clipboard?.writeText(s) || Promise.reject()).then(() => done(true), () => done(false)); }
+function loadBiosVisitors() { fetchVisitors().then(d => { B.visitors = visitorLines(d); if (B.sub?.title === 'Who came by') { B.sub.lines = B.visitors; renderBios(); } }).catch(() => { B.visitors = ['the visitor book did not answer.']; if (B.sub?.title === 'Who came by') { B.sub.lines = B.visitors; renderBios(); } }); }
+function activate(x) { if (!x) return; if (x.sub) { B.sub = x.sub(); B.sub.onOpen?.(); } else if (x.action) x.action(); else if (x.adjust) x.adjust(1); }
+function biosKey(e) {
+  if (!(MODE.agent && MODE.style === 'bios') || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key, tabs = biosTabs(), T = tabs[B.tab], it = T.items[B.item]; let handled = true;
+  if (B.post) endPost();
+  else if (B.dialog) {
+    const d = B.dialog;
+    if (k === 'ArrowLeft' || k === 'ArrowRight' || k === 'Tab') d.yes = !d.yes;
+    else if (k === 'Enter' || k === ' ') { B.dialog = null; if (d.yes) d.ok(); }
+    else if (k === 'Escape' || k === 'n' || k === 'N') B.dialog = null;
+    else if (k === 'y' || k === 'Y') { B.dialog = null; d.ok(); }
+    else handled = false;
+  }
+  else if (B.sub) { if (k === 'Escape' || k === 'Backspace' || k === 'ArrowLeft') B.sub = null; else if (k === 'F10') askDialog('Save configuration changes and exit now?', () => setMode(false)); else handled = false; }
+  else {
+    if (k === 'ArrowRight' || k === 'Tab') { B.tab = (B.tab + 1) % tabs.length; B.item = 0; }
+    else if (k === 'ArrowLeft') { B.tab = (B.tab - 1 + tabs.length) % tabs.length; B.item = 0; }
+    else if (k === 'ArrowDown') B.item = (B.item + 1) % T.items.length;
+    else if (k === 'ArrowUp') B.item = (B.item - 1 + T.items.length) % T.items.length;
+    else if (k === 'Home' || k === 'PageUp') B.item = 0;
+    else if (k === 'End' || k === 'PageDown') B.item = T.items.length - 1;
+    else if (k === 'Enter' || k === ' ') activate(it);
+    else if ((k === '+' || k === '=') && it?.adjust) it.adjust(1);
+    else if (k === '-' && it?.adjust) it.adjust(-1);
+    else if (k === 'Escape') { B.tab = tabs.length - 1; B.item = 0; }   // Esc on a menu jumps to Exit, like the real thing
+    else if (k === 'F10') askDialog('Save configuration changes and exit now?', () => setMode(false));
+    else if (k === 'F9') askDialog('Load default configuration now?', () => { setAccent('blue'); if (rain.on) rain.toggle(); });
+    else if (k === 'F1') B.sub = { title: 'Help', lines: ['← → picks a menu, ↑ ↓ an item.', 'Enter opens an item marked ▶; Esc closes it.', '+ and - change a value in [brackets].', 'F10 saves and returns to the room. Esc on a menu jumps to Exit.', 'The pill at the bottom does the same with a click.'] };
+    else handled = false;
+  }
+  if (!handled) return;
+  e.preventDefault(); e.stopPropagation();
+  if (MODE.agent && MODE.style === 'bios' && !B.post) renderBios();
+}
+addEventListener('keydown', biosKey, true);
+biosEl.addEventListener('click', e => {
+  if (B.post) return endPost();
+  const t = e.target;
+  if (t.closest('[data-yes]')) { const d = B.dialog; B.dialog = null; d?.ok(); }
+  else if (t.closest('[data-no]')) B.dialog = null;
+  else if (B.dialog) return;
+  else if (t.closest('[data-tab]')) { B.tab = +t.closest('[data-tab]').dataset.tab; B.item = 0; B.sub = null; }
+  else if (t.closest('[data-back]')) B.sub = null;
+  else if (t.closest('[data-item]')) { B.item = +t.closest('[data-item]').dataset.item; activate(biosTabs()[B.tab].items[B.item]); }
+  else return;
+  if (MODE.agent && MODE.style === 'bios') renderBios();
+});
+// POST: the screen a machine shows while it counts what it has. Any key or tap skips it.
+function runPost() {
+  B.post = true; biosEl.className = 'bios posting'; biosEl.innerHTML = '<pre class="post"></pre>';
+  const pre = biosEl.querySelector('.post');
+  const lines = [
+    'theRoom BIOS v1.0 (C) 2026 Luiz Cordeiro, Curitiba', '',
+    'CPU : AI Engineer, 11 years in IT, 4 on AI systems',
+    'Memory Test : 5000000 citizens served ........ OK', '',
+    'Detecting devices ...',
+    '  Monitor L ........ agent log, live',
+    '  Monitor R ........ shell, luiz@theroom',
+    '  Rack ............. 12 units, link OK',
+    '  Whiteboard ....... 1 paper, in progress',
+    '  Shelf ............ books, boxes, one squad of grey plastic',
+    '  Turntable ........ 33 1/3 rpm',
+    '  Window ........... rain',
+    '  Rug .............. 1 dog, asleep', '',
+    'MCP ' + MCP_URL, '',
+    'Press DEL to enter SETUP, any key to skip'
+  ];
+  let i = 0;
+  const step = () => { if (!B.post) return; pre.textContent += lines[i++] + '\n'; if (i < lines.length) B.postTimer = setTimeout(step, lines[i - 1] === '' ? 90 : 70 + Math.random() * 110); else B.postTimer = setTimeout(endPost, 1100); };
+  step();
+}
+function endPost() { clearTimeout(B.postTimer); B.post = false; MODE.posted = true; renderBios(); }
+
 init();
-window.__theroom = { CONFIG, scene, camera, camState, renderer, rain, setDebug, setPhosphor, setAccent, paletteFor, frame };
+bootMode();
+window.__theroom = { CONFIG, scene, camera, camState, renderer, rain, setDebug, setPhosphor, setAccent, paletteFor, frame, setMode };
 </script>
 </body>
 </html>
