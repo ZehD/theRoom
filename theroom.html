@@ -236,9 +236,12 @@
   #top nav a:hover { opacity: 1; text-shadow: 0 0 8px var(--phosphor-bloom); }
   #top nav a[aria-current="true"] { opacity: 1; color: var(--phosphor-bloom); border-bottom-color: var(--phosphor-bloom); text-shadow: 0 0 8px var(--phosphor-bloom); }
   #top :focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: -2px; }
-  /* reset view: floats over the room at the bottom edge, solid phosphor so it can't be missed */
-  #reset { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); appearance: none; font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); padding: 10px 16px; cursor: pointer; border-radius: 0; white-space: nowrap; z-index: 2; }
-  #reset:hover { background: var(--phosphor-bloom); border-color: var(--phosphor-bloom); }
+  /* reset view: floats over the room above the human/agent pill, in the same dress: a rounded pill, ink with a moss edge, that
+     fills with phosphor under the pointer. The glyph is a small return arrow. */
+  #reset { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); appearance: none; display: inline-flex; align-items: center; gap: 9px; font: 11px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.06em; color: var(--phosphor); background: var(--ink); border: 1px solid var(--moss); border-radius: 999px; padding: 12px 19px 11px 15px; cursor: pointer; white-space: nowrap; z-index: 2; box-shadow: 0 0 0 3px var(--ink); }
+  #reset::before { content: "\21BA"; font: 15px/1 VT323, ui-monospace, monospace; color: var(--phosphor-bloom); }
+  #reset:hover { background: var(--phosphor); color: var(--ink); border-color: var(--phosphor); }
+  #reset:hover::before { color: var(--ink); }
   #reset:focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: 2px; }
   /* secrets toast: under the top bar, centred; fades in for a moment on each find */
   #toast { position: fixed; left: 50%; top: calc(var(--top-h, 52px) + 12px); transform: translateX(-50%); font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-bloom); background: var(--soil); border: 1px solid var(--phosphor); padding: 9px 14px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 200ms linear; z-index: 3; }
@@ -313,18 +316,25 @@
   @keyframes crt-line-out { from { transform: scaleX(1); opacity: 1; } to { transform: scaleX(0); opacity: 0.7; } }
   @keyframes crt-line-back { from { transform: scaleX(0); opacity: 1; } to { transform: scaleX(1); opacity: 1; } }
   @keyframes crt-line-fade { to { opacity: 0; } }
-  /* the gate: the first thing on screen, before three.js has even downloaded. Black, one question, two answers. `no` starts the
-     room's reveal; `yes` powers the agent view on. A URL that names a view or a place skips it. Neutral colours on purpose:
-     the accent is not known until the module runs. */
-  #gate { position: absolute; inset: 0; z-index: 10; display: grid; place-content: center; gap: 30px; padding: 24px; background: #000; color: #d8d8d8; text-align: center; transition: opacity 240ms linear; }
+  /* the gate: the first thing on screen, before three.js has even downloaded. A terminal session typed out in the room's own
+     accent: a prompt wakes you, asks who you are, then the one question with a blinking block. `no` starts the room's reveal;
+     `yes` powers the agent view on. A URL that names a view or a place skips it. Scanlines and a vignette, like the screen it is. */
+  #gate { --g-phosphor: #5FB0FF; --g-dim: #085FA6; --g-bloom: #B6D8FF; position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: #000; color: var(--g-phosphor); overflow: hidden; transition: opacity 260ms linear; }
   #gate.off { opacity: 0; pointer-events: none; }
-  #gate .q { margin: 0; font: 400 clamp(26px, 3.6vw, 40px)/1.2 VT323, ui-monospace, monospace; letter-spacing: 0.03em; color: #f2f2f2; }
-  #gate .q i { display: inline-block; width: 0.5em; height: 0.95em; margin-right: 0.45em; vertical-align: -0.12em; background: #f2f2f2; animation: boot-blink 1s steps(1) infinite; }
-  #gate .a { display: flex; justify-content: center; gap: 16px; }
-  #gate button { appearance: none; min-width: 128px; padding: 14px 24px 12px; font: 14px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.1em; color: #d8d8d8; background: transparent; border: 1px solid #6a6a6a; border-radius: 0; cursor: pointer; }
-  #gate button:hover, #gate button[data-sel="true"], #gate button:focus-visible { background: #f2f2f2; color: #000; border-color: #f2f2f2; outline: none; }
-  #gate .k { margin: 0; font: 12px/1.5 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: 0.1em; text-transform: uppercase; color: #6a6a6a; }
-  @media (prefers-reduced-motion: reduce) { #gate { transition: none; } #gate .q i { animation: none; } }
+  #gate .scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 3px), radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.6) 100%); }
+  #gate .term { position: relative; width: min(760px, 100%); font: 24px/1.5 VT323, ui-monospace, monospace; text-shadow: 0 0 7px color-mix(in srgb, var(--g-phosphor) 60%, transparent); }
+  #gate .hdr { margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid color-mix(in srgb, var(--g-dim) 70%, transparent); color: var(--g-dim); letter-spacing: 0.04em; text-shadow: none; }
+  #gate .out { margin: 0; min-height: 7.5em; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #gate .out .p { color: var(--g-dim); }
+  #gate .out .r { color: var(--g-bloom); }
+  #gate .out .c { display: inline-block; width: 0.55em; height: 1em; vertical-align: -0.15em; background: var(--g-bloom); animation: boot-blink 1s steps(1) infinite; }
+  #gate .a { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 18px; }
+  #gate .a button { appearance: none; display: inline-flex; align-items: center; gap: 10px; font: 22px/1 VT323, ui-monospace, monospace; letter-spacing: 0.04em; color: var(--g-phosphor); background: transparent; border: 1px solid var(--g-dim); border-radius: 0; padding: 7px 16px 5px 7px; cursor: pointer; text-shadow: none; }
+  #gate .a button b { font-weight: 400; padding: 2px 8px 0; background: var(--g-phosphor); color: #000; }
+  #gate .a button:hover, #gate .a button[data-sel="true"], #gate .a button:focus-visible { background: var(--g-phosphor); color: #000; border-color: var(--g-phosphor); outline: none; }
+  #gate .a button:hover b, #gate .a button[data-sel="true"] b, #gate .a button:focus-visible b { background: #000; color: var(--g-phosphor); }
+  @container (max-width: 767px) { #gate .term { font-size: 20px; } #gate .out { min-height: 9em; } #gate .a button { font-size: 19px; } }
+  @media (prefers-reduced-motion: reduce) { #gate { transition: none; } #gate .out .c { animation: none; } }
   #agent .index .copy { display: inline-block; margin: 14px 0 0; appearance: none; font: 12px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); border-radius: 0; padding: 10px 14px 9px; cursor: pointer; }
   #agent .index .copy:hover { background: var(--phosphor-bloom); border-color: var(--phosphor-bloom); }
   #agent .index .copy[data-done="true"] { background: transparent; color: var(--phosphor); }
@@ -417,10 +427,13 @@
 </head>
 <body>
 <div id="root">
-<div id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-q">
-  <p class="q" id="gate-q"><i></i>Are you an AI Agent?</p>
-  <div class="a"><button type="button" data-answer="agent">yes</button><button type="button" data-answer="human">no</button></div>
-  <p class="k">y / n &middot; the pill at the bottom switches later</p>
+<div id="gate" role="dialog" aria-modal="true" aria-label="Are you an AI agent?">
+  <div class="scan" aria-hidden="true"></div>
+  <div class="term">
+    <div class="hdr" id="gate-hdr"></div>
+    <pre class="out" id="gate-out" aria-live="polite"></pre>
+    <div class="a" id="gate-a" hidden><button type="button" data-answer="agent"><b>y</b>yes</button><button type="button" data-answer="human"><b>n</b>no</button></div>
+  </div>
 </div>
 <div id="boot" aria-hidden="true">booting theRoom<i></i></div>
 <canvas id="room" tabindex="-1"></canvas>
@@ -471,17 +484,49 @@
   if (vp) { root.className = 'vp'; root.style.width = vp[1] + 'px'; root.style.height = vp[2] + 'px'; var s = Math.min(1, (innerWidth - 16) / vp[1], (innerHeight - 16) / vp[2]); if (s < 1) root.style.transform = 'translate(-50%, -50%) scale(' + s + ')'; }   // ?vp=390x844: phone-sized preview frame, scaled down to fit
   if (q.has('touch') || matchMedia('(pointer: coarse)').matches) root.dataset.touch = '';                 // ?touch: preview the touch UI with a mouse
   setTimeout(function () { if (!window.__theroom) document.getElementById('boot').textContent = 'the room did not load. it needs WebGL and a current browser.'; }, 15000);
-  // the gate: on the bare URL only; a hash that names a view or a place goes straight in. The answer is handed to the module,
-  // which may not have arrived yet, so the buttons and keys work from here.
+  // the gate: on the bare URL only; a hash that names a view or a place goes straight in. A terminal session typed out in the
+  // room's own accent (chosen the way the room chooses it: ?accent=, then the last one, then blue; the module derives the
+  // palette later, so the phosphor of each accent is written down here). The answer is handed to the module, which may not have
+  // arrived yet, so the keys and buttons work from here; y or n at any moment skips the rest of the typing.
   var gate = document.getElementById('gate'), G = window.__gate = { answer: null, on: null };
   if (location.hash && location.hash !== '#/') { gate.hidden = true; G.answer = 'skip'; }
   else {
-    var btns = Array.prototype.slice.call(gate.querySelectorAll('button')), sel = -1;
-    var pick = function (a) { if (G.answer) return; G.answer = a; gate.classList.add('off'); setTimeout(function () { gate.hidden = true; }, 260); if (G.on) G.on(a); };
+    var PH = { blue: ['#5FB0FF', '#085FA6', '#B6D8FF'], cyan: ['#00CFDF', '#007782', '#A2F1FC'], green: ['#3BE77B', '#1F8A4A', '#C8FFD6'], amber: ['#EB9F00', '#855900', '#F9D5A1'], orange: ['#F68000', '#864400', '#F7C29D'], red: ['#FF635E', '#8E2A27', '#F7B5AD'], pink: ['#FC64B6', '#8C3061', '#F7BAD4'], purple: ['#B687FF', '#664196', '#D7C3FA'] };
+    var acc = q.get('accent'); if (!acc) { try { acc = localStorage.getItem('theroom.accent'); } catch (e) {} }
+    var ph = PH[acc] || PH.blue;
+    gate.style.setProperty('--g-phosphor', ph[0]); gate.style.setProperty('--g-dim', ph[1]); gate.style.setProperty('--g-bloom', ph[2]);
+    var out = document.getElementById('gate-out'), ans = document.getElementById('gate-a'), btns = Array.prototype.slice.call(ans.querySelectorAll('button')), sel = -1;
+    var clock = ''; try { clock = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }).format(new Date()) + ' BRT'; } catch (e) {}
+    document.getElementById('gate-hdr').textContent = 'theRoom · Curitiba' + (clock ? ' · ' + clock : '');
+    var FAST = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var PROMPT = 'luiz@theroom:~$ ', ASK = 'are you an AI agent? [y/n] ';
+    var LINES = [{ cmd: 'wake' }, { say: '> wake up. the room has you.' }, { say: '> knock, knock.' }, { cmd: 'whoami' }, { say: '> that is the question.' }, { cmd: ASK, ask: true }];
+    var cur = document.createElement('span'); cur.className = 'c'; out.appendChild(cur);
+    var put = function (text, cls) { var s = document.createElement('span'); if (cls) s.className = cls; s.textContent = text; out.insertBefore(s, cur); return s; };
+    var timer = 0, done = false, asked = false;
+    var type = function (span, text, ms, then) {   // one character at a time, a little uneven, like a hand on a keyboard
+      var i = 0;
+      var step = function () { span.textContent = text.slice(0, ++i); if (i < text.length) timer = setTimeout(step, ms + Math.random() * ms * 0.8); else then(); };
+      if (FAST) { span.textContent = text; then(); } else step();
+    };
+    var run = function (i) {
+      if (done || i >= LINES.length) return;
+      var L = LINES[i];
+      if (L.cmd) { put(PROMPT, 'p'); type(put('', 'k'), L.cmd, 34, function () { if (L.ask) { asked = true; ans.hidden = false; } else { put('\n'); timer = setTimeout(function () { run(i + 1); }, 320); } }); }
+      else type(put('', 'r'), L.say, 13, function () { put('\n'); timer = setTimeout(function () { run(i + 1); }, 240); });
+    };
+    var pick = function (a) {
+      if (done) return; done = true; clearTimeout(timer); ans.hidden = true;
+      if (!asked) { out.textContent = ''; out.appendChild(cur); put(PROMPT, 'p'); put(ASK, 'k'); }   // an early answer skips to the question
+      put(a === 'agent' ? 'y' : 'n', 'k'); put('\n');
+      type(put('', 'r'), a === 'agent' ? '> agent. the room, as text.' : '> human. lights on.', 13, function () {
+        setTimeout(function () { G.answer = a; gate.classList.add('off'); setTimeout(function () { gate.hidden = true; }, 280); if (G.on) G.on(a); }, FAST ? 0 : 520);
+      });
+    };
     var select = function (i) { sel = i; btns.forEach(function (b, j) { b.dataset.sel = String(i === j); }); };
-    gate.addEventListener('click', function (e) { var b = e.target.closest('button[data-answer]'); if (b) pick(b.dataset.answer); });
+    ans.addEventListener('click', function (e) { var b = e.target.closest('button[data-answer]'); if (b) pick(b.dataset.answer); });
     document.addEventListener('keydown', function (e) {
-      if (G.answer || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (done || e.metaKey || e.ctrlKey || e.altKey) return;
       var k = e.key;
       if (k === 'y' || k === 'Y') pick('agent'); else if (k === 'n' || k === 'N') pick('human');
       else if (k === 'ArrowLeft' || k === 'ArrowUp') select(sel <= 0 ? 0 : sel - 1);
@@ -490,6 +535,7 @@
       else return;
       e.preventDefault();
     }, true);
+    timer = setTimeout(function () { run(0); }, FAST ? 0 : 500);
   }
 })();
 </script>
