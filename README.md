@@ -18,7 +18,11 @@ of two dresses, switchable from inside either:
   of the room), Esc jumps to Exit, F9 loads defaults, F10 asks before it lets you out. Everything is also
   tappable.
 
-The last choice is kept in `localStorage`, so a reload lands where you left; the URL is shareable either way.
+Both open on the MCP: the index starts with a "connect your agent" box (URL, install line, tools, room.md), and
+the BIOS Main tab's first row is the server. A switch made by hand goes through a CRT power-off and power-on
+(two black panels close to a phosphor line, the line collapses, the view swaps, and it plays backwards);
+history and reload go straight to the view. The last choice is kept in `localStorage`, so a reload lands
+where you left; the URL is shareable either way.
 
 ## The room, for agents (MCP)
 

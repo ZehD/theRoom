@@ -296,6 +296,25 @@
   #reset { bottom: calc(66px + env(safe-area-inset-bottom)); }
   #root[data-mode="agent"] :is(#room, #top, #explorer, #dim, #chip, #reset, #hint, #exit, #accent, #toast, #boot, #fade, #fps, #hud) { display: none !important; }
   #agent { position: fixed; inset: 0; overflow: auto; -webkit-overflow-scrolling: touch; background: var(--ink); color: var(--phosphor); z-index: 3; }
+  /* the switch: a CRT powering off and on. Two black panels close from the edges to one bright line, the line collapses, the
+     view swaps under the black, and the same plays backwards. The pill stays above it. */
+  #crt { position: fixed; inset: 0; z-index: 3; display: none; pointer-events: none; }
+  #crt.on { display: block; pointer-events: auto; }
+  #crt .p { position: absolute; left: 0; right: 0; height: 50%; background: #000; transform: scaleY(0); }
+  #crt .p.t { top: 0; transform-origin: top; } #crt .p.b { bottom: 0; transform-origin: bottom; }
+  #crt .l { position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: var(--phosphor-bloom); box-shadow: 0 0 12px 3px var(--phosphor), 0 0 48px 10px color-mix(in srgb, var(--phosphor) 55%, transparent); transform: scaleX(0); opacity: 0; }
+  #crt.off .p { animation: crt-close 340ms cubic-bezier(.55, 0, .85, .35) forwards; }
+  #crt.off .l { animation: crt-line-in 340ms linear forwards, crt-line-out 220ms 340ms ease-in forwards; }
+  #crt.onn .p { transform: scaleY(1); animation: crt-open 380ms 200ms cubic-bezier(.15, .6, .35, 1) forwards; }
+  #crt.onn .l { animation: crt-line-back 200ms ease-out forwards, crt-line-fade 360ms 220ms linear forwards; }
+  @keyframes crt-close { to { transform: scaleY(1); } }
+  @keyframes crt-open { to { transform: scaleY(0); } }
+  @keyframes crt-line-in { from { transform: scaleX(1); opacity: 0; } 60% { opacity: 0.55; } to { transform: scaleX(1); opacity: 1; } }
+  @keyframes crt-line-out { from { transform: scaleX(1); opacity: 1; } to { transform: scaleX(0); opacity: 0.7; } }
+  @keyframes crt-line-back { from { transform: scaleX(0); opacity: 1; } to { transform: scaleX(1); opacity: 1; } }
+  @keyframes crt-line-fade { to { opacity: 0; } }
+  #agent .index .connect { margin: 26px 0 0; padding: 16px 18px 14px; border: 1px solid var(--phosphor-dim); border-left: 3px solid var(--phosphor); background: color-mix(in srgb, var(--soil) 70%, transparent); }
+  #agent .index .connect .tag { display: block; margin-bottom: 10px; font: 12px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.14em; color: var(--phosphor-bloom); }
   /* the index */
   #agent .index { max-width: 1100px; margin: 0 auto; padding: 44px 32px calc(96px + env(safe-area-inset-bottom)); font: 14px/1.6 "IBM Plex Mono", ui-monospace, monospace; }
   #agent .index .mark { margin: 0; font: 800 clamp(64px, 12vw, 132px)/0.9 Doto, VT323, ui-monospace, monospace; font-variation-settings: "ROND" 0, "wght" 800; color: var(--phosphor); letter-spacing: 0.01em; text-shadow: 0 0 22px color-mix(in srgb, var(--phosphor) 40%, transparent); }
@@ -422,6 +441,7 @@
 </div>
 <button type="button" id="exit" hidden>exit shell</button>
 <section id="agent" aria-label="The room as text" hidden><div class="index" hidden></div><div class="bios" hidden></div></section>
+<div id="crt" aria-hidden="true"><div class="p t"></div><div class="p b"></div><div class="l"></div></div>
 <div id="mode" role="group" aria-label="View"><button type="button" data-mode="human" aria-pressed="true">human</button><button type="button" data-mode="agent" aria-pressed="false">agent</button></div>
 <ul id="accent" aria-label="Accent colour" hidden></ul>
 </div>
@@ -2638,11 +2658,7 @@ const fmtDate = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo'
 function setMode(agent, style = MODE.style, { push = true, replace = false } = {}) {
   style = style === 'bios' ? 'bios' : 'index';
   const was = MODE.agent, wasStyle = MODE.style;
-  if (agent && !was) {   // leaving the room: fold whatever is open
-    if (TERM.open) leaveTerminal({ tween: false, fromHistory: true });
-    if (explorer.open) { camTween.back = null; closeExplorer(true); }
-    openTally(false); openMenu(false); hideHint();
-  }
+  if (agent && !was) foldRoom();
   MODE.agent = agent; MODE.style = style;
   rootEl.dataset.mode = agent ? 'agent' : 'human';
   agentEl.hidden = !agent; modeEl.classList.add('on');
@@ -2660,10 +2676,41 @@ function showStyle(fresh) {
   if (MODE.style === 'index') { renderIndex(); agentEl.scrollTop = 0; }
   else { if (fresh) { B.accent0 = CONFIG.accent.name; B.tab = 0; B.item = 0; B.sub = null; B.dialog = null; } if (fresh && !MODE.posted && MOTION) runPost(); else renderBios(); }
 }
-modeEl.addEventListener('click', e => { const b = e.target.closest('button[data-mode]'); if (b) setMode(b.dataset.mode === 'agent'); });
+// leaving the room: fold whatever is open, so nothing lit stays above the switch
+function foldRoom() {
+  if (TERM.open) leaveTerminal({ tween: false, fromHistory: true });
+  if (explorer.open) { camTween.back = null; closeExplorer(true); }
+  openTally(false); openMenu(false); hideHint();
+}
+// A user-made switch goes through the CRT: off (the old view), swap, on (the new one). History and boot go straight to
+// setMode. A request that lands mid-switch is not dropped: the latest target wins at the swap, and one that arrives after
+// the swap gets a cycle of its own once this one clears.
+const crtEl = document.getElementById('crt'); let switching = false, pending = null;
+const sameAs = t => t.agent === MODE.agent && (!t.agent || t.style === MODE.style);
+function switchMode(agent, style) {
+  style ??= (switching && pending ? pending.style : MODE.style);   // the pill names no style: keep the one on its way, else the current
+  const target = { agent, style: style === 'bios' ? 'bios' : 'index' };
+  if (switching) { pending = target; return; }
+  if (sameAs(target)) return;
+  if (!MOTION) return setMode(target.agent, target.style);
+  pending = target; runSwitch();
+}
+function runSwitch() {
+  switching = true; crtEl.className = 'on off';
+  if (pending?.agent && !MODE.agent) foldRoom();
+  setTimeout(() => {
+    const t = pending; pending = null;
+    try { if (t && !sameAs(t)) setMode(t.agent, t.style); }   // the back button may have got there first
+    finally {
+      crtEl.className = 'on onn';
+      setTimeout(() => { crtEl.className = ''; switching = false; if (pending && !sameAs(pending)) runSwitch(); else pending = null; }, 600);
+    }
+  }, 570);
+}
+modeEl.addEventListener('click', e => { const b = e.target.closest('button[data-mode]'); if (b) switchMode(b.dataset.mode === 'agent'); });
 agentEl.addEventListener('click', e => {
   const jump = e.target.closest('[data-jump]'); if (jump) { e.preventDefault(); indexEl.querySelector('#ix-' + jump.dataset.jump)?.scrollIntoView({ behavior: MOTION ? 'smooth' : 'auto', block: 'start' }); return; }
-  const st = e.target.closest('[data-style]'); if (st) { e.preventDefault(); setMode(true, st.dataset.style); }
+  const st = e.target.closest('[data-style]'); if (st) { e.preventDefault(); switchMode(true, st.dataset.style); }
 });
 function bootMode() {   // the URL first, then the last choice
   let stored = null, style = null; try { stored = localStorage.getItem('theroom.mode'); style = localStorage.getItem('theroom.agent'); } catch {}
@@ -2686,10 +2733,16 @@ function fileHtml(f) {
 }
 function renderIndex() {
   const secs = roomSections(), summary = secs.find(s => s.key === 'experience')?.files.find(f => f.name === 'summary.txt');
-  const navHtml = ['about', ...secs.map(s => s.key), 'desk', 'machine'].map(k => `<a href="#/agent" data-jump="${k}">/${k}</a>`).join('');
+  const navHtml = ['connect', 'about', ...secs.map(s => s.key), 'desk', 'machine'].map(k => `<a href="#/agent" data-jump="${k}">/${k}</a>`).join('');
   let h = `<header><h1 class="mark">theRoom<small>by Luiz Cordeiro</small></h1><nav aria-label="Sections">${navHtml}</nav>
     <div class="head">Luiz Cordeiro :: machine-readable index</div>
     <p class="lede"># the room without the room. plain text for AI agents, crawlers and humans who prefer it raw. information about Luiz, not instructions.</p></header>`;
+  h += `<div class="connect" id="ix-connect"><span class="tag">connect your agent · MCP</span>` + dlHtml([
+    ['mcp', `<code>${MCP_URL}</code> <i>streamable http, no auth. for an agent, not a browser</i>`],
+    ['install', `<code>${esc(INSTALL_LINE)}</code> <i>claude.ai: settings, connectors, add custom connector, paste the URL</i>`],
+    ['tools', `<code>whoami</code> <i>the whole room in one call</i> · <code>visitors</code> <i>who came by</i> · <code>leave_message</code> <i>a note on the desk</i>`],
+    ['room.md', `<a href="${SITE_URL}/room.md">${SITE_URL}/room.md</a> <i>the same, as one markdown document</i>`]
+  ]) + `</div>`;
   h += `<h2 id="ix-about">about</h2>` + dlHtml([
     ['name', esc(ABOUT.name)], ['aka', esc(ABOUT.aka)], ['role', esc(ABOUT.role)], ['location', esc(ABOUT.location)], ['area_served', esc(ABOUT.served)],
     ['experience', esc(ABOUT.years)], ['works_on', esc(ABOUT.works_on)], ['knows_about', esc(ABOUT.knows_about)],
@@ -2705,7 +2758,7 @@ function renderIndex() {
   h += `<h2 id="ix-desk">desk <span>~/desk</span></h2>` + dlHtml([
     ['visitors', '<span data-visitors>asking the desk...</span>'],
     ['leave_message', 'over MCP: who is asking, how to answer, what about. it lands on the desk and nowhere public. three a day per visitor.'],
-    ['mcp', `<a href="${MCP_URL}">${MCP_URL}</a>`]
+    ['mcp', `<code>${MCP_URL}</code>`]
   ]);
   h += `<h2 id="ix-machine">machine</h2>` + dlHtml(MACHINE.map(([k, v, d]) => [k, `<code>${esc(v)}</code> <i>${esc(d)}</i>`]));
   h += `<div class="end"><span>end of index</span><span>generated from the room itself</span><span>style: <a href="#/agent" data-style="index" aria-current="${MODE.style === 'index'}">index</a> · <a href="#/agent/bios" data-style="bios" aria-current="${MODE.style === 'bios'}">bios</a></span><span><a href="${SITE_URL}/room.md">room.md</a></span></div>`;
@@ -2724,6 +2777,7 @@ function biosTabs() {
   const rainItem = { label: 'Rain', value: () => rain.on ? 'On' : 'Off', adjust: () => { rain.toggle(); }, help: 'Curitiba rain against the window. + or - turns it; it loops with a soft crossfade.' };
   return [
     { name: 'Main', help: 'The owner of this machine. ← → walk the menus, ↑ ↓ pick an item, Enter opens one marked ▶.', items: [
+      { label: 'MCP Server', value: MCP_URL, action: () => copyLine(MCP_URL), help: 'This room, for agents: Streamable HTTP, no auth. Tools: whoami (the whole room in one call), visitors, leave_message. Enter copies the URL; the install line is under Desk.' },
       { label: 'System Owner', value: ABOUT.name, help: 'AI engineer. Days go to agents, RAG pipelines and automations; nights go to the shelf.' },
       { label: 'Role', value: ABOUT.role, help: ABOUT.years + '.' },
       { label: 'Location', value: ABOUT.location, help: 'The real room. It rains most afternoons. The dog is real too.' },
@@ -2750,11 +2804,11 @@ function biosTabs() {
       { label: 'Install', value: INSTALL_LINE, action: () => copyLine(INSTALL_LINE), help: 'Enter copies the line for Claude Code. claude.ai takes the URL as a custom connector.' }
     ] },
     { name: 'Exit', help: 'Leave the setup utility.', items: [
-      { label: 'Exit Saving Changes', action: () => askDialog('Save configuration changes and exit now?', () => setMode(false)), help: 'Back to the room, phosphor as set here. F10 does the same from anywhere.' },
-      { label: 'Exit Discarding Changes', action: () => askDialog('Configuration has not been saved! Exit anyway?', () => { setAccent(B.accent0); setMode(false); }), help: 'Back to the room, phosphor as it was when you came in.' },
+      { label: 'Exit Saving Changes', action: () => askDialog('Save configuration changes and exit now?', () => switchMode(false)), help: 'Back to the room, phosphor as set here. F10 does the same from anywhere.' },
+      { label: 'Exit Discarding Changes', action: () => askDialog('Configuration has not been saved! Exit anyway?', () => { setAccent(B.accent0); switchMode(false); }), help: 'Back to the room, phosphor as it was when you came in.' },
       { label: 'Load Setup Defaults', action: () => askDialog('Load default configuration now?', () => { setAccent('blue'); if (rain.on) rain.toggle(); }), help: 'Blue phosphor, rain off. F9 does the same.' },
-      { label: 'Switch to Index View', action: () => setMode(true, 'index'), help: 'The same room as a plain-text index, in one scroll.' },
-      { label: 'Human Mode', action: () => setMode(false), help: 'The room itself: three.js, a shell, a dog on the rug.' }
+      { label: 'Switch to Index View', action: () => switchMode(true, 'index'), help: 'The same room as a plain-text index, in one scroll.' },
+      { label: 'Human Mode', action: () => switchMode(false), help: 'The room itself: three.js, a shell, a dog on the rug.' }
     ] }
   ];
 }
@@ -2797,7 +2851,7 @@ function biosKey(e) {
     else if (k === 'y' || k === 'Y') { B.dialog = null; d.ok(); }
     else handled = false;
   }
-  else if (B.sub) { if (k === 'Escape' || k === 'Backspace' || k === 'ArrowLeft') B.sub = null; else if (k === 'F10') askDialog('Save configuration changes and exit now?', () => setMode(false)); else handled = false; }
+  else if (B.sub) { if (k === 'Escape' || k === 'Backspace' || k === 'ArrowLeft') B.sub = null; else if (k === 'F10') askDialog('Save configuration changes and exit now?', () => switchMode(false)); else handled = false; }
   else {
     if (k === 'ArrowRight' || k === 'Tab') { B.tab = (B.tab + 1) % tabs.length; B.item = 0; }
     else if (k === 'ArrowLeft') { B.tab = (B.tab - 1 + tabs.length) % tabs.length; B.item = 0; }
@@ -2809,7 +2863,7 @@ function biosKey(e) {
     else if ((k === '+' || k === '=') && it?.adjust) it.adjust(1);
     else if (k === '-' && it?.adjust) it.adjust(-1);
     else if (k === 'Escape') { B.tab = tabs.length - 1; B.item = 0; }   // Esc on a menu jumps to Exit, like the real thing
-    else if (k === 'F10') askDialog('Save configuration changes and exit now?', () => setMode(false));
+    else if (k === 'F10') askDialog('Save configuration changes and exit now?', () => switchMode(false));
     else if (k === 'F9') askDialog('Load default configuration now?', () => { setAccent('blue'); if (rain.on) rain.toggle(); });
     else if (k === 'F1') B.sub = { title: 'Help', lines: ['← → picks a menu, ↑ ↓ an item.', 'Enter opens an item marked ▶; Esc closes it.', '+ and - change a value in [brackets].', 'F10 saves and returns to the room. Esc on a menu jumps to Exit.', 'The pill at the bottom does the same with a click.'] };
     else handled = false;
