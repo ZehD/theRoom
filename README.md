@@ -6,7 +6,12 @@ Live at https://theroom-seven-theta.vercel.app
 
 ## Human / Agent
 
-A pill at the bottom edge of the page. **Human** is the room. **Agent** leaves it: the render loop parks, the
+The page opens on a black screen with one question, "Are you an AI Agent?", yes or no (also `y` / `n`, or the
+arrow keys and Enter). It is answerable before Three.js has downloaded. **No** starts the room's wireframe
+reveal; **yes** powers the agent view on through the CRT. A URL that names a view (`#/agent`) or a place
+(`#/work`) skips the question.
+
+Below that, a pill at the bottom edge of the page. **Human** is the room. **Agent** leaves it: the render loop parks, the
 chrome hides, and the same content (the page's `inspectables`, the one source of truth) comes back as text in one
 of two dresses, switchable from inside either:
 
@@ -18,8 +23,9 @@ of two dresses, switchable from inside either:
   of the room), Esc jumps to Exit, F9 loads defaults, F10 asks before it lets you out. Everything is also
   tappable.
 
-Both open on the MCP: the index starts with a "connect your agent" box (URL, install line, tools, room.md), and
-the BIOS Main tab's first row is the server. A switch made by hand goes through a CRT power-off and power-on
+Both open on the MCP: the index starts with a "connect your agent" box (URL, install line, tools, room.md and a
+button that copies the whole `room.md` to the clipboard), and the BIOS Main tab's first rows are the server and
+the same copy action. A switch made by hand goes through a CRT power-off and power-on
 (two black panels close to a phosphor line, the line collapses, the view swaps, and it plays backwards);
 history and reload go straight to the view. The last choice is kept in `localStorage`, so a reload lands
 where you left; the URL is shareable either way.

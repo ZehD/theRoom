@@ -313,6 +313,21 @@
   @keyframes crt-line-out { from { transform: scaleX(1); opacity: 1; } to { transform: scaleX(0); opacity: 0.7; } }
   @keyframes crt-line-back { from { transform: scaleX(0); opacity: 1; } to { transform: scaleX(1); opacity: 1; } }
   @keyframes crt-line-fade { to { opacity: 0; } }
+  /* the gate: the first thing on screen, before three.js has even downloaded. Black, one question, two answers. `no` starts the
+     room's reveal; `yes` powers the agent view on. A URL that names a view or a place skips it. Neutral colours on purpose:
+     the accent is not known until the module runs. */
+  #gate { position: absolute; inset: 0; z-index: 10; display: grid; place-content: center; gap: 30px; padding: 24px; background: #000; color: #d8d8d8; text-align: center; transition: opacity 240ms linear; }
+  #gate.off { opacity: 0; pointer-events: none; }
+  #gate .q { margin: 0; font: 400 clamp(26px, 3.6vw, 40px)/1.2 VT323, ui-monospace, monospace; letter-spacing: 0.03em; color: #f2f2f2; }
+  #gate .q i { display: inline-block; width: 0.5em; height: 0.95em; margin-right: 0.45em; vertical-align: -0.12em; background: #f2f2f2; animation: boot-blink 1s steps(1) infinite; }
+  #gate .a { display: flex; justify-content: center; gap: 16px; }
+  #gate button { appearance: none; min-width: 128px; padding: 14px 24px 12px; font: 14px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.1em; color: #d8d8d8; background: transparent; border: 1px solid #6a6a6a; border-radius: 0; cursor: pointer; }
+  #gate button:hover, #gate button[data-sel="true"], #gate button:focus-visible { background: #f2f2f2; color: #000; border-color: #f2f2f2; outline: none; }
+  #gate .k { margin: 0; font: 12px/1.5 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: 0.1em; text-transform: uppercase; color: #6a6a6a; }
+  @media (prefers-reduced-motion: reduce) { #gate { transition: none; } #gate .q i { animation: none; } }
+  #agent .index .copy { display: inline-block; margin: 14px 0 0; appearance: none; font: 12px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); border-radius: 0; padding: 10px 14px 9px; cursor: pointer; }
+  #agent .index .copy:hover { background: var(--phosphor-bloom); border-color: var(--phosphor-bloom); }
+  #agent .index .copy[data-done="true"] { background: transparent; color: var(--phosphor); }
   #agent .index .connect { margin: 26px 0 0; padding: 16px 18px 14px; border: 1px solid var(--phosphor-dim); border-left: 3px solid var(--phosphor); background: color-mix(in srgb, var(--soil) 70%, transparent); }
   #agent .index .connect .tag { display: block; margin-bottom: 10px; font: 12px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.14em; color: var(--phosphor-bloom); }
   /* the index */
@@ -402,6 +417,11 @@
 </head>
 <body>
 <div id="root">
+<div id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-q">
+  <p class="q" id="gate-q"><i></i>Are you an AI Agent?</p>
+  <div class="a"><button type="button" data-answer="agent">yes</button><button type="button" data-answer="human">no</button></div>
+  <p class="k">y / n &middot; the pill at the bottom switches later</p>
+</div>
 <div id="boot" aria-hidden="true">booting theRoom<i></i></div>
 <canvas id="room" tabindex="-1"></canvas>
 <div id="fade"></div>
@@ -451,6 +471,26 @@
   if (vp) { root.className = 'vp'; root.style.width = vp[1] + 'px'; root.style.height = vp[2] + 'px'; var s = Math.min(1, (innerWidth - 16) / vp[1], (innerHeight - 16) / vp[2]); if (s < 1) root.style.transform = 'translate(-50%, -50%) scale(' + s + ')'; }   // ?vp=390x844: phone-sized preview frame, scaled down to fit
   if (q.has('touch') || matchMedia('(pointer: coarse)').matches) root.dataset.touch = '';                 // ?touch: preview the touch UI with a mouse
   setTimeout(function () { if (!window.__theroom) document.getElementById('boot').textContent = 'the room did not load. it needs WebGL and a current browser.'; }, 15000);
+  // the gate: on the bare URL only; a hash that names a view or a place goes straight in. The answer is handed to the module,
+  // which may not have arrived yet, so the buttons and keys work from here.
+  var gate = document.getElementById('gate'), G = window.__gate = { answer: null, on: null };
+  if (location.hash && location.hash !== '#/') { gate.hidden = true; G.answer = 'skip'; }
+  else {
+    var btns = Array.prototype.slice.call(gate.querySelectorAll('button')), sel = -1;
+    var pick = function (a) { if (G.answer) return; G.answer = a; gate.classList.add('off'); setTimeout(function () { gate.hidden = true; }, 260); if (G.on) G.on(a); };
+    var select = function (i) { sel = i; btns.forEach(function (b, j) { b.dataset.sel = String(i === j); }); };
+    gate.addEventListener('click', function (e) { var b = e.target.closest('button[data-answer]'); if (b) pick(b.dataset.answer); });
+    document.addEventListener('keydown', function (e) {
+      if (G.answer || e.metaKey || e.ctrlKey || e.altKey) return;
+      var k = e.key;
+      if (k === 'y' || k === 'Y') pick('agent'); else if (k === 'n' || k === 'N') pick('human');
+      else if (k === 'ArrowLeft' || k === 'ArrowUp') select(sel <= 0 ? 0 : sel - 1);
+      else if (k === 'ArrowRight' || k === 'ArrowDown') select(sel < 0 ? 1 : Math.min(1, sel + 1));
+      else if ((k === 'Enter' || k === ' ') && sel >= 0 && document.activeElement !== btns[sel]) pick(btns[sel].dataset.answer);
+      else return;
+      e.preventDefault();
+    }, true);
+  }
 })();
 </script>
 
@@ -2611,9 +2651,14 @@ async function init() {
   const topH = () => document.documentElement.style.setProperty('--top-h', topEl.offsetHeight + 'px');
   topH(); new ResizeObserver(topH).observe(topEl);
 
-  // loading: wireframe builds up for rise ms, holds hold ms, then a cut to ink that fades out over fade ms
+  // loading: wireframe builds up for rise ms, holds hold ms, then a cut to ink that fades out over fade ms. It waits for the
+  // gate's answer: `no` starts it; `yes` leaves the room dark until the pill brings a human in.
   scene.overrideMaterial = MAT.wire;
   SPRITES.forEach(s => s.visible = false);
+}
+let revealStarted = false;
+function startReveal() {
+  if (revealStarted) return; revealStarted = true;
   loadT0 = performance.now(); tick();
   setTimeout(() => {
     loaded = true;
@@ -2669,12 +2714,12 @@ function setMode(agent, style = MODE.style, { push = true, replace = false } = {
   else if (push && (location.hash || '#/') !== href) history.pushState(state, '', href);
   document.title = agent ? `Luiz Cordeiro · theRoom · ${style === 'bios' ? 'setup' : 'index'}` : (nav.zone === 'home' ? 'Luiz Cordeiro · theRoom' : `Luiz Cordeiro · ${ZONES[nav.zone].label}`);
   if (agent) { if (was && wasStyle !== style) teardownBios(); showStyle(!was || wasStyle !== style); }
-  else { teardownBios(); if (MODE.paused) { MODE.paused = false; clock.getDelta(); tick(); } }
+  else { teardownBios(); if (!revealStarted) startReveal(); else if (MODE.paused) { MODE.paused = false; clock.getDelta(); tick(); } }   // a first human gets the reveal
 }
 function showStyle(fresh) {
   indexEl.hidden = MODE.style !== 'index'; biosEl.hidden = MODE.style !== 'bios';
   if (MODE.style === 'index') { renderIndex(); agentEl.scrollTop = 0; }
-  else { if (fresh) { B.accent0 = CONFIG.accent.name; B.tab = 0; B.item = 0; B.sub = null; B.dialog = null; } if (fresh && !MODE.posted && MOTION) runPost(); else renderBios(); }
+  else { if (fresh) { B.accent0 = CONFIG.accent.name; B.tab = 0; B.item = 0; B.sub = null; B.dialog = null; } roomMdFetch().catch(() => {}); if (fresh && !MODE.posted && MOTION) runPost(); else renderBios(); }
 }
 // leaving the room: fold whatever is open, so nothing lit stays above the switch
 function foldRoom() {
@@ -2710,13 +2755,30 @@ function runSwitch() {
 modeEl.addEventListener('click', e => { const b = e.target.closest('button[data-mode]'); if (b) switchMode(b.dataset.mode === 'agent'); });
 agentEl.addEventListener('click', e => {
   const jump = e.target.closest('[data-jump]'); if (jump) { e.preventDefault(); indexEl.querySelector('#ix-' + jump.dataset.jump)?.scrollIntoView({ behavior: MOTION ? 'smooth' : 'auto', block: 'start' }); return; }
-  const st = e.target.closest('[data-style]'); if (st) { e.preventDefault(); switchMode(true, st.dataset.style); }
+  const st = e.target.closest('[data-style]'); if (st) { e.preventDefault(); switchMode(true, st.dataset.style); return; }
+  const cp = e.target.closest('[data-copy-md]'); if (cp) copyMd(cp);
 });
-function bootMode() {   // the URL first, then the last choice
-  let stored = null, style = null; try { stored = localStorage.getItem('theroom.mode'); style = localStorage.getItem('theroom.agent'); } catch {}
+function bootMode() {   // the URL first; then the gate's answer, or a wait for it; a hash link into the room goes straight in
   const fromUrl = agentOfUrl();
-  if (fromUrl) setMode(true, fromUrl, { replace: true });
-  else if (stored === 'agent') setMode(true, style || 'index', { replace: true });
+  if (fromUrl) { setMode(true, fromUrl, { replace: true }); return; }   // no reveal until a human comes in
+  const G = window.__gate;
+  const onGate = a => {
+    if (a !== 'agent') return startReveal();
+    let style = null; try { style = localStorage.getItem('theroom.agent'); } catch {}
+    setMode(true, style || 'index', { replace: true });
+    if (MOTION) { crtEl.className = 'on onn'; setTimeout(() => { crtEl.className = ''; }, 600); }   // the gate is black already: power the view on
+  };
+  if (!G || G.answer === 'skip') startReveal();
+  else if (G.answer) onGate(G.answer);
+  else G.on = onGate;
+}
+// room.md, for the copy buttons: fetched once the index or the setup screen is up, so a click can write it in one go
+const MD_PATH = '/room.md'; let roomMdText = null;
+const roomMdFetch = () => roomMdText ? Promise.resolve(roomMdText) : fetch(MD_PATH).then(r => r.ok ? r.text() : Promise.reject(r.status)).then(t => (roomMdText = t));
+function copyMd(btn) {
+  const done = ok => { btn.dataset.done = 'true'; btn.textContent = ok ? 'copied: room.md is on the clipboard' : 'could not copy; open room.md instead'; setTimeout(() => { btn.dataset.done = 'false'; btn.textContent = 'copy room.md'; }, 2200); };
+  const write = t => (navigator.clipboard?.writeText(t) || Promise.reject()).then(() => done(true), () => done(false));
+  if (roomMdText) write(roomMdText); else roomMdFetch().then(write, () => done(false));
 }
 
 // ── the index: the plain-text mirror ──
@@ -2742,7 +2804,7 @@ function renderIndex() {
     ['install', `<code>${esc(INSTALL_LINE)}</code> <i>claude.ai: settings, connectors, add custom connector, paste the URL</i>`],
     ['tools', `<code>whoami</code> <i>the whole room in one call</i> · <code>visitors</code> <i>who came by</i> · <code>leave_message</code> <i>a note on the desk</i>`],
     ['room.md', `<a href="${SITE_URL}/room.md">${SITE_URL}/room.md</a> <i>the same, as one markdown document</i>`]
-  ]) + `</div>`;
+  ]) + `<button type="button" class="copy" data-copy-md>copy room.md</button></div>`;
   h += `<h2 id="ix-about">about</h2>` + dlHtml([
     ['name', esc(ABOUT.name)], ['aka', esc(ABOUT.aka)], ['role', esc(ABOUT.role)], ['location', esc(ABOUT.location)], ['area_served', esc(ABOUT.served)],
     ['experience', esc(ABOUT.years)], ['works_on', esc(ABOUT.works_on)], ['knows_about', esc(ABOUT.knows_about)],
@@ -2763,6 +2825,7 @@ function renderIndex() {
   h += `<h2 id="ix-machine">machine</h2>` + dlHtml(MACHINE.map(([k, v, d]) => [k, `<code>${esc(v)}</code> <i>${esc(d)}</i>`]));
   h += `<div class="end"><span>end of index</span><span>generated from the room itself</span><span>style: <a href="#/agent" data-style="index" aria-current="${MODE.style === 'index'}">index</a> · <a href="#/agent/bios" data-style="bios" aria-current="${MODE.style === 'bios'}">bios</a></span><span><a href="${SITE_URL}/room.md">room.md</a></span></div>`;
   indexEl.innerHTML = h;
+  roomMdFetch().catch(() => {});
   const v = indexEl.querySelector('[data-visitors]');
   fetchVisitors().then(d => { v.innerHTML = visitorLines(d).map(esc).join('<br>'); }).catch(() => { v.textContent = 'the visitor book did not answer.'; });
 }
@@ -2778,6 +2841,7 @@ function biosTabs() {
   return [
     { name: 'Main', help: 'The owner of this machine. ← → walk the menus, ↑ ↓ pick an item, Enter opens one marked ▶.', items: [
       { label: 'MCP Server', value: MCP_URL, action: () => copyLine(MCP_URL), help: 'This room, for agents: Streamable HTTP, no auth. Tools: whoami (the whole room in one call), visitors, leave_message. Enter copies the URL; the install line is under Desk.' },
+      { label: 'Copy room.md', action: () => roomMdFetch().then(copyLine, () => { B.note = 'room.md did not answer.'; renderBios(); }), help: 'Enter copies the whole room as one markdown document to the clipboard.' },
       { label: 'System Owner', value: ABOUT.name, help: 'AI engineer. Days go to agents, RAG pipelines and automations; nights go to the shelf.' },
       { label: 'Role', value: ABOUT.role, help: ABOUT.years + '.' },
       { label: 'Location', value: ABOUT.location, help: 'The real room. It rains most afternoons. The dog is real too.' },
@@ -2911,8 +2975,7 @@ function runPost() {
 }
 function endPost() { clearTimeout(B.postTimer); B.post = false; MODE.posted = true; renderBios(); }
 
-init();
-bootMode();
+Promise.resolve(init()).then(bootMode);   // init awaits the fonts before it builds: the loop must not start before the room exists
 window.__theroom = { CONFIG, scene, camera, camState, renderer, rain, setDebug, setPhosphor, setAccent, paletteFor, frame, setMode };
 </script>
 </body>
