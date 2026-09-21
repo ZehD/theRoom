@@ -4,6 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual">
 <title>Luiz Cordeiro · theRoom</title>
+<meta name="description" content="theRoom: an AI engineer's portfolio as a room in Curitiba. Luiz Cordeiro builds agents, RAG pipelines and automations. The whole room is also plain text and an MCP server for agents.">
+<!-- the mark: the monitor with a cursor in it, the same logo the top bar wears. setAccent repaints it in the room's phosphor. -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23060A07'/><g fill='none' stroke='%235FB0FF' stroke-width='2' shape-rendering='crispEdges'><path d='M3 5h26v18H3zM11 29h10M16 23v6M7 10l3 3-3 3'/></g><rect x='13' y='10' width='3' height='6' fill='%23B6D8FF'/></svg>">
+<link rel="apple-touch-icon" href="/icon.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://theroom-seven-theta.vercel.app/">
+<meta property="og:title" content="theRoom · Luiz Cordeiro">
+<meta property="og:description" content="An AI engineer's portfolio as a room in Curitiba. Also plain text, and an MCP server, for agents.">
+<meta property="og:image" content="https://theroom-seven-theta.vercel.app/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="ext-resource-dependency" content="audio/rain.mp3" data-resource-id="rainMp3" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -320,18 +330,103 @@
      question and takes a typed answer: yes or y is a human (the room reveals), no or n is an agent (the text view powers on),
      anything else is an error and the prompt again. No buttons; on glass a tap raises the keyboard. A URL that names a view or
      a place skips it. Scanlines and a vignette, like the screen it is. */
-  #gate { --g-phosphor: #5FB0FF; --g-dim: #085FA6; --g-bloom: #B6D8FF; position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: #000; color: var(--g-phosphor); overflow: hidden; transition: opacity 260ms linear; cursor: text; }
+  /* Shared: pure black, the accent's three phosphors, and the texture of a tube — dark scanlines that cut the glow into rows
+     (lightening bars only grey the black), a faint bed of light where the text is, an off-centre vignette, and a slow roll.
+     The prompt is three brightnesses: the shell prefix is furniture (dim), the question is live (phosphor), what you type and
+     the cursor are the hottest thing on screen (bloom). Three dresses on top of that, chosen with ?gate=. */
+  #gate { --g-phosphor: #5FB0FF; --g-dim: #085FA6; --g-bloom: #B6D8FF; --g-ember: #FF5A4A;
+    --g-rule: color-mix(in srgb, var(--g-dim) 62%, transparent);
+    --g-glow: 0 0 2px color-mix(in srgb, var(--g-phosphor) 85%, transparent), 0 0 11px color-mix(in srgb, var(--g-phosphor) 40%, transparent), 0 0 32px color-mix(in srgb, var(--g-phosphor) 15%, transparent);
+    position: absolute; inset: 0; z-index: 10; display: grid; background: #000; color: var(--g-phosphor); overflow: hidden; transition: opacity 260ms linear; cursor: text; }
   #gate.off { opacity: 0; pointer-events: none; }
-  #gate .scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 3px), radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.6) 100%); }
-  #gate .term { position: relative; width: min(760px, 100%); font: 26px/1.5 VT323, ui-monospace, monospace; text-shadow: 0 0 7px color-mix(in srgb, var(--g-phosphor) 60%, transparent); }
+  #gate::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(60ch 34ch at var(--bed-x, 38%) var(--bed-y, 40%), color-mix(in srgb, var(--g-phosphor) 7%, transparent), transparent 72%); }
+  #gate .glass { position: absolute; inset: 0; z-index: 5; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.38) 0 1px, transparent 1px 3px), radial-gradient(128% 106% at var(--bed-x, 38%) var(--bed-y, 40%), transparent 0 44%, rgba(0, 0, 0, 0.5) 80%, rgba(0, 0, 0, 0.93) 100%); }
+  #gate .roll { position: absolute; left: 0; right: 0; top: -30vh; height: 26vh; z-index: 4; pointer-events: none; background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--g-bloom) 4%, transparent), transparent); animation: gate-roll 8s linear 1.6s infinite; }
+  #gate .flash { position: absolute; inset: 0; z-index: 6; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, color-mix(in srgb, var(--g-ember) 20%, transparent), transparent 70%); }
+  #gate.err .flash { animation: gate-err 260ms ease-out; }
+  #gate .tube { position: relative; z-index: 1; }
+  #gate .screen { position: relative; font: 26px/1.5 VT323, ui-monospace, monospace; text-shadow: var(--g-glow); }
   #gate .out { margin: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
-  #gate .out .p { color: var(--g-dim); }
-  #gate .out .r { color: var(--g-bloom); }
-  #gate .out .e { color: #FF5A4A; text-shadow: 0 0 7px rgba(255, 90, 74, 0.5); }
-  #gate .out .c { display: inline-block; width: 0.55em; height: 1em; vertical-align: -0.15em; background: var(--g-bloom); animation: boot-blink 1s steps(1) infinite; }
+  #gate .out .p { color: var(--g-dim); text-shadow: none; }
+  #gate .out .q { color: var(--g-phosphor); }
+  #gate .out .k, #gate .out .r { color: var(--g-bloom); }
+  #gate .out .e { color: var(--g-ember); text-shadow: 0 0 2px color-mix(in srgb, var(--g-ember) 80%, transparent), 0 0 14px color-mix(in srgb, var(--g-ember) 35%, transparent); }
+  #gate .out .c { display: inline-block; width: 0.58em; height: 1.02em; vertical-align: -0.16em; background: var(--g-bloom); box-shadow: 0 0 9px color-mix(in srgb, var(--g-bloom) 65%, transparent); animation: boot-blink 1s steps(1) infinite; }
+  #gate ::selection { background: var(--g-phosphor); color: #000; text-shadow: none; }
   #gate input { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; margin: 0; pointer-events: none; }
-  @container (max-width: 767px) { #gate .term { font-size: 21px; } }
-  @media (prefers-reduced-motion: reduce) { #gate { transition: none; } #gate .out .c { animation: none; } }
+  #gate .id { display: none; align-items: center; gap: 10px; color: var(--g-dim); text-shadow: none; }
+  #gate .id svg { color: var(--g-phosphor); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--g-phosphor) 55%, transparent)); flex: 0 0 auto; }
+  #gate .id b { font-family: Doto, Silkscreen, VT323, ui-monospace, monospace; font-variation-settings: "ROND" 0, "wght" 800; font-weight: 800; }
+  #gate .id small, #gate .id em { font-family: Silkscreen, VT323, ui-monospace, monospace; font-style: normal; text-transform: uppercase; }
+  #gate .bar, #gate .led { display: none; }
+  #gate .beam { display: none; position: absolute; left: 8%; right: 8%; top: 50%; height: 2px; margin-top: -1px; background: var(--g-bloom); box-shadow: 0 0 16px 3px color-mix(in srgb, var(--g-bloom) 70%, transparent); }
+  @keyframes gate-err { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes gate-roll { to { top: 105%; } }
+  @keyframes gate-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes gate-step { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes gate-rule { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes gate-unfurl { 0% { transform: scaleY(0.004) scaleX(0.86); opacity: 0; filter: brightness(3.2); } 9% { transform: scaleY(0.004) scaleX(1); opacity: 1; filter: brightness(3); } 34% { transform: scaleY(1); filter: brightness(2.2); } 100% { transform: none; filter: none; } }
+  @keyframes gate-jolt { 0% { transform: translateX(-3px); filter: brightness(1.35); } 50% { transform: translateX(2px); } 100% { transform: none; filter: none; } }
+  #gate.err .tube { animation: gate-jolt 170ms steps(3) 1; }
+
+  /* ── tty: a console, text where a console starts. A banner under a hairline, three blank rows, the prompt, a status line
+     welded to the foot. Nothing centred; the two rules give the black a top and a bottom. ── */
+  #gate[data-v="tty"] { --bed-x: 30%; --bed-y: 32%; grid-template-rows: auto minmax(0, 1fr) auto; padding: clamp(24px, 4.5vh, 46px) clamp(20px, 5vw, 72px) 0; }
+  #gate[data-v="tty"] .tube { display: contents; }
+  #gate[data-v="tty"] .id { display: flex; grid-row: 1; padding-bottom: 9px; border-bottom: 1px solid var(--g-rule); animation: gate-fade 90ms 560ms linear both; }
+  #gate[data-v="tty"] .id svg { width: 18px; height: 18px; }
+  #gate[data-v="tty"] .id b { font-size: 15px; letter-spacing: 0.05em; color: var(--g-phosphor); }
+  #gate[data-v="tty"] .id small { display: none; }
+  #gate[data-v="tty"] .id em { margin-left: auto; font-size: 10px; letter-spacing: 0.14em; }
+  #gate[data-v="tty"] .screen { grid-row: 2; align-self: start; width: min(74ch, 100%); padding-top: 4.5em; font-size: clamp(21px, 2.1vw, 28px); letter-spacing: 0.02em; animation: gate-fade 90ms 760ms linear both; }
+  #gate[data-v="tty"] .bar { display: flex; grid-row: 3; justify-content: space-between; gap: 16px; margin-top: 12px; padding: 9px 0 calc(9px + env(safe-area-inset-bottom)); border-top: 1px solid var(--g-rule); font: 10px/1 Silkscreen, VT323, ui-monospace, monospace; letter-spacing: 0.12em; text-transform: uppercase; color: var(--g-dim); animation: gate-fade 90ms 900ms linear both; }
+
+  /* ── nameplate: the machine names itself, a rule declares the measure, the prompt hangs under it. ── */
+  #gate[data-v="boot"] { --bed-y: 44%; --bed-x: 50%; place-items: center; padding: 40px 32px calc(64px + env(safe-area-inset-bottom)); }
+  #gate[data-v="boot"] .tube { position: static; width: min(620px, 100%); animation: gate-fade 260ms 40ms linear both; }   /* opacity only: a transform here would trap the status line inside the column */
+  #gate[data-v="boot"] .id { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 18px; padding-bottom: 30px; }
+  #gate[data-v="boot"] .id svg { grid-row: 1 / 3; width: 64px; height: 64px; }
+  #gate[data-v="boot"] .id b { align-self: end; font-size: clamp(38px, 6vw, 54px); line-height: 1; letter-spacing: 0.04em; color: var(--g-bloom); text-shadow: 0 0 2px color-mix(in srgb, var(--g-phosphor) 85%, transparent), 0 0 22px color-mix(in srgb, var(--g-phosphor) 45%, transparent); animation: gate-fade 90ms 560ms linear both; }
+  #gate[data-v="boot"] .id small { align-self: start; font-size: 10px; letter-spacing: 0.2em; color: color-mix(in srgb, var(--g-phosphor) 78%, #000); animation: gate-fade 90ms 660ms linear both; }
+  #gate[data-v="boot"] .id em { display: none; }
+  #gate[data-v="boot"] .id::after { content: ""; grid-column: 1 / -1; height: 1px; margin-top: 30px; background: var(--g-dim); transform-origin: left center; animation: gate-rule 300ms cubic-bezier(.2, .8, .2, 1) 740ms both; }
+  #gate[data-v="boot"] .screen { font-size: clamp(20px, 2vw, 26px); animation: gate-fade 90ms 1000ms linear both; }
+  #gate[data-v="boot"] .bar { display: flex; justify-content: space-between; gap: 16px; position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 9px clamp(16px, 4vw, 32px) calc(9px + env(safe-area-inset-bottom)); border-top: 1px solid var(--g-rule); font: 10px/1 Silkscreen, VT323, ui-monospace, monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--g-dim); animation: gate-fade 90ms 1120ms linear both; }
+
+  /* ── tube: the prompt is printed inside a lit CRT with a bezel, and the tube powers on out of a line. ── */
+  #gate[data-v="crt"] { --bed-x: 50%; --bed-y: 46%; place-items: center; padding: clamp(10px, 3vw, 28px); }
+  #gate[data-v="crt"]::before { display: none; }
+  #gate[data-v="crt"] .glass { z-index: 0; background: none; }
+  #gate[data-v="crt"] .tube { width: min(980px, 100%); aspect-ratio: 4 / 3; max-height: calc(100dvh - 56px); box-sizing: border-box; padding: clamp(18px, 2.6vw, 30px) clamp(18px, 2.8vw, 38px) 0; border-radius: 26px / 32px; overflow: hidden; background: radial-gradient(118% 118% at 50% 44%, #071019 0%, #03070B 58%, #000 100%); box-shadow: 0 0 0 9px #0A0C0E, 0 0 0 10px #171C20, inset 0 0 0 1px color-mix(in srgb, var(--g-bloom) 7%, transparent), inset 0 0 70px 26px rgba(0, 0, 0, 0.92), 0 26px 70px -18px #000, 0 0 130px 8px color-mix(in srgb, var(--g-phosphor) 8%, transparent); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; animation: gate-unfurl 520ms cubic-bezier(.15, .6, .35, 1) both; }
+  #gate[data-v="crt"] .tube::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.34) 0 1px, transparent 1px 3px), radial-gradient(112% 112% at 50% 50%, transparent 52%, rgba(0, 0, 0, 0.55) 86%, rgba(0, 0, 0, 0.85) 100%); }
+  #gate[data-v="crt"] .beam { display: block; animation: gate-beam 300ms ease-out both; }
+  #gate[data-v="crt"] .id { display: flex; padding-bottom: 9px; border-bottom: 1px solid var(--g-rule); animation: gate-fade 90ms 420ms linear both; }
+  #gate[data-v="crt"] .id svg { width: 16px; height: 16px; }
+  #gate[data-v="crt"] .id b { font-size: 15px; letter-spacing: 0.04em; }
+  #gate[data-v="crt"] .id small { display: none; }
+  #gate[data-v="crt"] .id em { margin-left: auto; font-size: 10px; letter-spacing: 0.14em; }
+  #gate[data-v="crt"] .screen { align-self: start; padding-top: 1.6em; font-size: clamp(20px, 2vw, 28px); animation: gate-fade 90ms 560ms linear both; }
+  #gate[data-v="crt"] .bar { display: flex; justify-content: space-between; gap: 16px; margin: 0 clamp(-38px, -2.8vw, -18px); padding: 4px clamp(18px, 2.8vw, 38px) 3px; background: var(--g-phosphor); color: #000; font: 10px/1.6 Silkscreen, VT323, ui-monospace, monospace; letter-spacing: 0.14em; text-transform: uppercase; text-shadow: none; opacity: 0.92; animation: gate-fade 90ms 480ms linear both; }
+  #gate[data-v="crt"] .led { display: block; position: absolute; left: calc(50% + 120px); bottom: 12px; width: 5px; height: 5px; border-radius: 50%; background: var(--g-phosphor); box-shadow: 0 0 8px 2px color-mix(in srgb, var(--g-phosphor) 70%, transparent); animation: gate-fade 200ms 320ms linear both; }
+  @keyframes gate-beam { 0% { transform: scaleX(0); opacity: 1; } 43% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
+
+  @container (max-width: 767px) {
+    #gate[data-v="tty"] { padding: 24px 20px 0; }
+    #gate[data-v="tty"] .screen { padding-top: 3em; font-size: 20px; max-width: none; }
+    #gate[data-v="boot"] { padding: 24px 20px calc(58px + env(safe-area-inset-bottom)); }
+    #gate[data-v="boot"] .id svg { width: 32px; height: 32px; }
+    #gate[data-v="boot"] .id b { font-size: 30px; }
+    #gate[data-v="boot"] .screen { font-size: 20px; }
+    #gate[data-v="crt"] .tube { aspect-ratio: auto; height: calc(100dvh - 20px); border-radius: 16px / 20px; box-shadow: 0 0 0 6px #0A0C0E, 0 0 0 7px #171C20, inset 0 0 0 1px color-mix(in srgb, var(--g-bloom) 7%, transparent), inset 0 0 50px 18px rgba(0, 0, 0, 0.92), 0 0 90px 6px color-mix(in srgb, var(--g-phosphor) 8%, transparent); }
+    #gate[data-v="crt"] .screen { font-size: 20px; }
+    #gate .id em { display: none; }
+  }
+  @container (max-height: 560px) { #gate[data-v="boot"] .id small { display: none; } #gate[data-v="boot"] .id b { font-size: 26px; } #gate[data-v="boot"] .id svg { width: 40px; height: 40px; } }
+  @media (prefers-reduced-motion: reduce) {
+    #gate, #gate * { animation: none !important; transition: none !important; }
+    #gate .out .c { animation: boot-blink 1s steps(1) infinite !important; }
+    #gate .roll, #gate .beam { display: none; }
+  }
   #agent .index .copy { display: inline-block; margin: 14px 0 0; appearance: none; font: 12px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); border-radius: 0; padding: 10px 14px 9px; cursor: pointer; }
   #agent .index .copy:hover { background: var(--phosphor-bloom); border-color: var(--phosphor-bloom); }
   #agent .index .copy[data-done="true"] { background: transparent; color: var(--phosphor); }
@@ -413,23 +508,36 @@
   @media (prefers-reduced-motion: reduce) { #agent .bios .post::after { animation: none; } }
 </style>
 <template id="__bundler_thumbnail" data-bg-color="#060A07">
-  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#3BE77B" stroke-width="6">
-    <rect x="300" y="200" width="600" height="400"/>
-    <path d="M300 200 L180 110 M900 200 L1020 110 M300 600 L180 690 M900 600 L1020 690"/>
-    <rect x="180" y="110" width="840" height="580" stroke="#1F8A4A"/>
-    <path d="M300 340 H900 M300 470 H900" stroke="#1F8A4A" stroke-dasharray="14 10"/>
-    <text x="600" y="420" font-family="monospace" font-size="72" fill="#C8FFD6" stroke="none" text-anchor="middle" dominant-baseline="middle">theRoom</text>
+  <!-- the logo, big: the monitor mark with its cursor, the wordmark under it -->
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(600 330) scale(11) translate(-16 -16)" fill="none" stroke="#5FB0FF" stroke-width="2" shape-rendering="crispEdges">
+      <path d="M3 5h26v18H3zM11 29h10M16 23v6M7 10l3 3-3 3"/>
+      <rect x="13" y="10" width="3" height="6" fill="#B6D8FF" stroke="none"/>
+    </g>
+    <text x="600" y="580" font-family="monospace" font-size="96" fill="#B6D8FF" text-anchor="middle">theRoom</text>
+    <text x="600" y="648" font-family="monospace" font-size="34" fill="#085FA6" text-anchor="middle" letter-spacing="6">BY LUIZ CORDEIRO</text>
   </svg>
 </template>
 </head>
 <body>
 <div id="root">
-<div id="gate" role="dialog" aria-modal="true" aria-label="are you human? yes or no">
-  <div class="scan" aria-hidden="true"></div>
-  <div class="term">
-    <pre class="out" id="gate-out" aria-live="polite"></pre>
-    <input id="gate-in" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" maxlength="24" aria-label="are you human? yes or no">
+<div id="gate" data-v="tty" role="dialog" aria-modal="true" aria-label="are you human? yes or no">
+  <div class="tube">
+    <div class="beam" aria-hidden="true"></div>
+    <div class="id" aria-hidden="true">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" shape-rendering="crispEdges"><path d="M3 5h26v18H3zM11 29h10M16 23v6M7 10l3 3-3 3"/><rect x="13" y="10" width="3" height="6" fill="currentColor" stroke="none"/></svg>
+      <b>theRoom</b><small>by Luiz Cordeiro</small><em id="gate-tag"></em>
+    </div>
+    <div class="screen">
+      <pre class="out" id="gate-out" aria-live="polite"></pre>
+      <input id="gate-in" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" maxlength="24" aria-label="are you human? yes or no">
+    </div>
+    <div class="bar" aria-hidden="true"><span id="gate-bar"></span><span>&#8629; submit</span></div>
   </div>
+  <i class="led" aria-hidden="true"></i>
+  <div class="roll" aria-hidden="true"></div>
+  <div class="glass" aria-hidden="true"></div>
+  <div class="flash" aria-hidden="true"></div>
 </div>
 <div id="boot" aria-hidden="true">booting theRoom<i></i></div>
 <canvas id="room" tabindex="-1"></canvas>
@@ -489,15 +597,21 @@
   else {
     var PH = { blue: ['#5FB0FF', '#085FA6', '#B6D8FF'], cyan: ['#00CFDF', '#007782', '#A2F1FC'], green: ['#3BE77B', '#1F8A4A', '#C8FFD6'], amber: ['#EB9F00', '#855900', '#F9D5A1'], orange: ['#F68000', '#864400', '#F7C29D'], red: ['#FF635E', '#8E2A27', '#F7B5AD'], pink: ['#FC64B6', '#8C3061', '#F7BAD4'], purple: ['#B687FF', '#664196', '#D7C3FA'] };
     var acc = q.get('accent'); if (!acc) { try { acc = localStorage.getItem('theroom.accent'); } catch (e) {} }
-    var ph = PH[acc] || PH.blue;
+    var ph = PH[acc] || PH.blue, accName = PH[acc] ? acc : 'blue';
     gate.style.setProperty('--g-phosphor', ph[0]); gate.style.setProperty('--g-dim', ph[1]); gate.style.setProperty('--g-bloom', ph[2]);
+    // three dresses for the same prompt; ?gate=tty|boot|crt picks one
+    var want = q.get('gate'); if (want === 'tty' || want === 'boot' || want === 'crt') gate.dataset.v = want;
+    var TAG = { tty: 'tty1', crt: 'phosphor · ' + accName, boot: '' };
+    var BAR = { tty: '● on line', boot: 'theRoom · curitiba br', crt: 'luiz cordeiro · ai engineer' };
+    document.getElementById('gate-tag').textContent = TAG[gate.dataset.v] || '';
+    document.getElementById('gate-bar').textContent = BAR[gate.dataset.v] || '';
     var out = document.getElementById('gate-out'), inp = document.getElementById('gate-in');
     var FAST = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var PROMPT = 'luiz@theroom:~$ ', ASK = 'are you human? [yes/no] ';
+    var PROMPT = (root.clientWidth || innerWidth) < 520 ? 'theroom:~$ ' : 'luiz@theroom:~$ ', ASK = 'are you human? [yes/no] ';   // a narrow tty shortens its prompt, not its question
     var cur = document.createElement('span'); cur.className = 'c'; out.appendChild(cur);
     var put = function (text, cls) { var s = document.createElement('span'); if (cls) s.className = cls; s.textContent = text; out.insertBefore(s, cur); return s; };
     var line = null, done = false;
-    var prompt = function () { put(PROMPT, 'p'); put(ASK, 'k'); line = put('', 'k'); inp.value = ''; };
+    var prompt = function () { put(PROMPT, 'p'); put(ASK, 'q'); line = put('', 'k'); inp.value = ''; };
     var echo = function () { line.textContent = inp.value; };
     var answer = function (a) {
       done = true; inp.blur();
@@ -508,7 +622,10 @@
       var v = inp.value.trim().toLowerCase(); put('\n');
       if (v === 'yes' || v === 'y') answer('human');
       else if (v === 'no' || v === 'n') answer('agent');
-      else { put(v ? 'error: ' + v + ' is not an answer. yes or no.' : 'error: yes or no.', 'e'); put('\n'); prompt(); }
+      else {   // the tube flinches at bad input, then asks again
+        put(v ? 'error: ' + v + ' is not an answer. yes or no.' : 'error: yes or no.', 'e'); put('\n'); prompt();
+        gate.classList.add('err'); setTimeout(function () { gate.classList.remove('err'); }, 300);
+      }
     };
     prompt();
     inp.addEventListener('input', echo);
@@ -2623,11 +2740,17 @@ function applyPaletteRuntime() {
   document.querySelectorAll('#accent button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.accent === CONFIG.accent.name)));
 }
 // accent: preset name ('green' | 'blue' | 'orange') or an OKLCH hue in degrees.
+// the favicon is the logo mark, drawn at whatever the room's phosphor currently is
+function setFavicon(phosphor, bloom) {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='${CONFIG.tones.night || '#060A07'}'/><g fill='none' stroke='${phosphor}' stroke-width='2' shape-rendering='crispEdges'><path d='M3 5h26v18H3zM11 29h10M16 23v6M7 10l3 3-3 3'/></g><rect x='13' y='10' width='3' height='6' fill='${bloom}'/></svg>`;
+  const link = document.querySelector('link[rel="icon"]'); if (link) link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
 function setAccent(accent, { rebuild = true } = {}) {
   const derived = paletteFor(accent);
   Object.assign(CONFIG.palette, derived.palette); Object.assign(CONFIG.tones, derived.tones);
   CONFIG.accent.name = typeof accent === 'number' ? `hue ${Math.round(accent)}` : accent;
   applyPaletteRuntime();
+  setFavicon(derived.palette.phosphor, derived.palette.phosphorBloom);   // the tab icon wears the room's phosphor too
   if (rebuild) { clearScene(); build(); }
   try { localStorage.setItem('theroom.accent', String(accent)); } catch {}
   if (debug.on) updateHud();

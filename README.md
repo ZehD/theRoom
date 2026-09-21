@@ -13,6 +13,18 @@ anything else gets an error line and the prompt again. No buttons; on a phone a 
 runs from the inline script, so it is answerable before Three.js has downloaded. A URL that names a view
 (`#/agent`) or a place (`#/work`) skips the question.
 
+Three dresses for that one prompt, picked with `?gate=`:
+
+| `?gate=` | what it is |
+|----------|------------|
+| `tty` (default) | a console: a banner under a hairline, three blank rows, the prompt, a status line along the foot |
+| `boot` | a nameplate: the logo mark and the Doto wordmark, a rule, the prompt hanging under it |
+| `crt` | a tube: the prompt printed inside a bezelled screen that powers on out of a line, status bar welded to the glass |
+
+All three share the texture — dark scanlines that cut the glow into rows, a bed of light under the text, an
+off-centre vignette, a slow roll — and the same three brightnesses: the shell prefix is furniture, the question
+is live, what you type and the cursor are the hottest thing on screen. A wrong answer makes the tube flinch.
+
 Below that, a pill at the bottom edge of the page. **Human** is the room. **Agent** leaves it: the render loop parks, the
 chrome hides, and the same content (the page's `inspectables`, the one source of truth) comes back as text in one
 of two dresses, switchable from inside either:
