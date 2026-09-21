@@ -6,11 +6,11 @@ Live at https://theroom-seven-theta.vercel.app
 
 ## Human / Agent
 
-The page opens on a black terminal, typed out in the room's accent (the same choice the room makes: `?accent=`,
-then the last one, then blue): a prompt wakes you, asks `whoami`, then the one question, "are you an AI agent?
-[y/n]", with `[y] yes` / `[n] no` keys (also the arrow keys and Enter; `y` or `n` at any moment skips the rest of
-the typing). It runs from the inline script, so it is answerable before Three.js has downloaded. **No** starts
-the room's wireframe reveal; **yes** powers the agent view on through the CRT. A URL that names a view
+The page opens on a black terminal in the room's accent (the same choice the room makes: `?accent=`, then the
+last one, then blue) with one prompt, `are you human? [yes/no]`, and a typed answer: `yes` or `y` is a human and
+starts the room's wireframe reveal; `no` or `n` is an agent and powers the agent view on through the CRT;
+anything else gets an error line and the prompt again. No buttons; on a phone a tap raises the keyboard. It
+runs from the inline script, so it is answerable before Three.js has downloaded. A URL that names a view
 (`#/agent`) or a place (`#/work`) skips the question.
 
 Below that, a pill at the bottom edge of the page. **Human** is the room. **Agent** leaves it: the render loop parks, the

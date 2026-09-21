@@ -316,24 +316,21 @@
   @keyframes crt-line-out { from { transform: scaleX(1); opacity: 1; } to { transform: scaleX(0); opacity: 0.7; } }
   @keyframes crt-line-back { from { transform: scaleX(0); opacity: 1; } to { transform: scaleX(1); opacity: 1; } }
   @keyframes crt-line-fade { to { opacity: 0; } }
-  /* the gate: the first thing on screen, before three.js has even downloaded. A terminal session typed out in the room's own
-     accent: a prompt wakes you, asks who you are, then the one question with a blinking block. `no` starts the room's reveal;
-     `yes` powers the agent view on. A URL that names a view or a place skips it. Scanlines and a vignette, like the screen it is. */
-  #gate { --g-phosphor: #5FB0FF; --g-dim: #085FA6; --g-bloom: #B6D8FF; position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: #000; color: var(--g-phosphor); overflow: hidden; transition: opacity 260ms linear; }
+  /* the gate: the first thing on screen, before three.js has even downloaded. A bare prompt in the room's own accent asks one
+     question and takes a typed answer: yes or y is a human (the room reveals), no or n is an agent (the text view powers on),
+     anything else is an error and the prompt again. No buttons; on glass a tap raises the keyboard. A URL that names a view or
+     a place skips it. Scanlines and a vignette, like the screen it is. */
+  #gate { --g-phosphor: #5FB0FF; --g-dim: #085FA6; --g-bloom: #B6D8FF; position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: #000; color: var(--g-phosphor); overflow: hidden; transition: opacity 260ms linear; cursor: text; }
   #gate.off { opacity: 0; pointer-events: none; }
   #gate .scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 3px), radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.6) 100%); }
-  #gate .term { position: relative; width: min(760px, 100%); font: 24px/1.5 VT323, ui-monospace, monospace; text-shadow: 0 0 7px color-mix(in srgb, var(--g-phosphor) 60%, transparent); }
-  #gate .hdr { margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid color-mix(in srgb, var(--g-dim) 70%, transparent); color: var(--g-dim); letter-spacing: 0.04em; text-shadow: none; }
-  #gate .out { margin: 0; min-height: 7.5em; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #gate .term { position: relative; width: min(760px, 100%); font: 26px/1.5 VT323, ui-monospace, monospace; text-shadow: 0 0 7px color-mix(in srgb, var(--g-phosphor) 60%, transparent); }
+  #gate .out { margin: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
   #gate .out .p { color: var(--g-dim); }
   #gate .out .r { color: var(--g-bloom); }
+  #gate .out .e { color: #FF5A4A; text-shadow: 0 0 7px rgba(255, 90, 74, 0.5); }
   #gate .out .c { display: inline-block; width: 0.55em; height: 1em; vertical-align: -0.15em; background: var(--g-bloom); animation: boot-blink 1s steps(1) infinite; }
-  #gate .a { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 18px; }
-  #gate .a button { appearance: none; display: inline-flex; align-items: center; gap: 10px; font: 22px/1 VT323, ui-monospace, monospace; letter-spacing: 0.04em; color: var(--g-phosphor); background: transparent; border: 1px solid var(--g-dim); border-radius: 0; padding: 7px 16px 5px 7px; cursor: pointer; text-shadow: none; }
-  #gate .a button b { font-weight: 400; padding: 2px 8px 0; background: var(--g-phosphor); color: #000; }
-  #gate .a button:hover, #gate .a button[data-sel="true"], #gate .a button:focus-visible { background: var(--g-phosphor); color: #000; border-color: var(--g-phosphor); outline: none; }
-  #gate .a button:hover b, #gate .a button[data-sel="true"] b, #gate .a button:focus-visible b { background: #000; color: var(--g-phosphor); }
-  @container (max-width: 767px) { #gate .term { font-size: 20px; } #gate .out { min-height: 9em; } #gate .a button { font-size: 19px; } }
+  #gate input { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; margin: 0; pointer-events: none; }
+  @container (max-width: 767px) { #gate .term { font-size: 21px; } }
   @media (prefers-reduced-motion: reduce) { #gate { transition: none; } #gate .out .c { animation: none; } }
   #agent .index .copy { display: inline-block; margin: 14px 0 0; appearance: none; font: 12px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); border-radius: 0; padding: 10px 14px 9px; cursor: pointer; }
   #agent .index .copy:hover { background: var(--phosphor-bloom); border-color: var(--phosphor-bloom); }
@@ -427,12 +424,11 @@
 </head>
 <body>
 <div id="root">
-<div id="gate" role="dialog" aria-modal="true" aria-label="Are you an AI agent?">
+<div id="gate" role="dialog" aria-modal="true" aria-label="are you human? yes or no">
   <div class="scan" aria-hidden="true"></div>
   <div class="term">
-    <div class="hdr" id="gate-hdr"></div>
     <pre class="out" id="gate-out" aria-live="polite"></pre>
-    <div class="a" id="gate-a" hidden><button type="button" data-answer="agent"><b>y</b>yes</button><button type="button" data-answer="human"><b>n</b>no</button></div>
+    <input id="gate-in" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" maxlength="24" aria-label="are you human? yes or no">
   </div>
 </div>
 <div id="boot" aria-hidden="true">booting theRoom<i></i></div>
@@ -495,47 +491,40 @@
     var acc = q.get('accent'); if (!acc) { try { acc = localStorage.getItem('theroom.accent'); } catch (e) {} }
     var ph = PH[acc] || PH.blue;
     gate.style.setProperty('--g-phosphor', ph[0]); gate.style.setProperty('--g-dim', ph[1]); gate.style.setProperty('--g-bloom', ph[2]);
-    var out = document.getElementById('gate-out'), ans = document.getElementById('gate-a'), btns = Array.prototype.slice.call(ans.querySelectorAll('button')), sel = -1;
-    var clock = ''; try { clock = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }).format(new Date()) + ' BRT'; } catch (e) {}
-    document.getElementById('gate-hdr').textContent = 'theRoom · Curitiba' + (clock ? ' · ' + clock : '');
+    var out = document.getElementById('gate-out'), inp = document.getElementById('gate-in');
     var FAST = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var PROMPT = 'luiz@theroom:~$ ', ASK = 'are you an AI agent? [y/n] ';
-    var LINES = [{ cmd: 'wake' }, { say: '> wake up. the room has you.' }, { say: '> knock, knock.' }, { cmd: 'whoami' }, { say: '> that is the question.' }, { cmd: ASK, ask: true }];
+    var PROMPT = 'luiz@theroom:~$ ', ASK = 'are you human? [yes/no] ';
     var cur = document.createElement('span'); cur.className = 'c'; out.appendChild(cur);
     var put = function (text, cls) { var s = document.createElement('span'); if (cls) s.className = cls; s.textContent = text; out.insertBefore(s, cur); return s; };
-    var timer = 0, done = false, asked = false;
-    var type = function (span, text, ms, then) {   // one character at a time, a little uneven, like a hand on a keyboard
-      var i = 0;
-      var step = function () { span.textContent = text.slice(0, ++i); if (i < text.length) timer = setTimeout(step, ms + Math.random() * ms * 0.8); else then(); };
-      if (FAST) { span.textContent = text; then(); } else step();
+    var line = null, done = false;
+    var prompt = function () { put(PROMPT, 'p'); put(ASK, 'k'); line = put('', 'k'); inp.value = ''; };
+    var echo = function () { line.textContent = inp.value; };
+    var answer = function (a) {
+      done = true; inp.blur();
+      put(a === 'human' ? '> ok. lights on.' : '> ok. the room, as text.', 'r');
+      setTimeout(function () { G.answer = a; gate.classList.add('off'); setTimeout(function () { gate.hidden = true; }, 280); if (G.on) G.on(a); }, FAST ? 0 : 480);
     };
-    var run = function (i) {
-      if (done || i >= LINES.length) return;
-      var L = LINES[i];
-      if (L.cmd) { put(PROMPT, 'p'); type(put('', 'k'), L.cmd, 34, function () { if (L.ask) { asked = true; ans.hidden = false; } else { put('\n'); timer = setTimeout(function () { run(i + 1); }, 320); } }); }
-      else type(put('', 'r'), L.say, 13, function () { put('\n'); timer = setTimeout(function () { run(i + 1); }, 240); });
+    var submit = function () {
+      var v = inp.value.trim().toLowerCase(); put('\n');
+      if (v === 'yes' || v === 'y') answer('human');
+      else if (v === 'no' || v === 'n') answer('agent');
+      else { put(v ? 'error: ' + v + ' is not an answer. yes or no.' : 'error: yes or no.', 'e'); put('\n'); prompt(); }
     };
-    var pick = function (a) {
-      if (done) return; done = true; clearTimeout(timer); ans.hidden = true;
-      if (!asked) { out.textContent = ''; out.appendChild(cur); put(PROMPT, 'p'); put(ASK, 'k'); }   // an early answer skips to the question
-      put(a === 'agent' ? 'y' : 'n', 'k'); put('\n');
-      type(put('', 'r'), a === 'agent' ? '> agent. the room, as text.' : '> human. lights on.', 13, function () {
-        setTimeout(function () { G.answer = a; gate.classList.add('off'); setTimeout(function () { gate.hidden = true; }, 280); if (G.on) G.on(a); }, FAST ? 0 : 520);
-      });
-    };
-    var select = function (i) { sel = i; btns.forEach(function (b, j) { b.dataset.sel = String(i === j); }); };
-    ans.addEventListener('click', function (e) { var b = e.target.closest('button[data-answer]'); if (b) pick(b.dataset.answer); });
+    prompt();
+    inp.addEventListener('input', echo);
+    gate.addEventListener('pointerdown', function () { if (!done) inp.focus({ preventScroll: true }); });   // a tap raises the keyboard on glass
     document.addEventListener('keydown', function (e) {
-      if (done || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (done) return;
       var k = e.key;
-      if (k === 'y' || k === 'Y') pick('agent'); else if (k === 'n' || k === 'N') pick('human');
-      else if (k === 'ArrowLeft' || k === 'ArrowUp') select(sel <= 0 ? 0 : sel - 1);
-      else if (k === 'ArrowRight' || k === 'ArrowDown') select(sel < 0 ? 1 : Math.min(1, sel + 1));
-      else if ((k === 'Enter' || k === ' ') && sel >= 0 && document.activeElement !== btns[sel]) pick(btns[sel].dataset.answer);
-      else return;
-      e.preventDefault();
+      if (k === 'Enter') { e.preventDefault(); submit(); return; }
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (document.activeElement !== inp) {   // focus strayed: take the key by hand and bring it back
+        inp.focus({ preventScroll: true });
+        if (k.length === 1) inp.value = (inp.value + k).slice(0, 24); else if (k === 'Backspace') inp.value = inp.value.slice(0, -1); else return;
+        echo(); e.preventDefault();
+      }
     }, true);
-    timer = setTimeout(function () { run(0); }, FAST ? 0 : 500);
+    inp.focus({ preventScroll: true });
   }
 })();
 </script>
