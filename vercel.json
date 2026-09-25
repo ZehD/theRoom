@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/", "destination": "/theroom.html" },
+    { "source": "/theroom2", "destination": "/theroom2.html" },
     { "source": "/mcp", "destination": "/api/mcp" }
   ],
   "functions": {

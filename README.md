@@ -127,6 +127,9 @@ deploys -> `npm run test:prod`.
   truth, and `npm test` fails when the file is stale. The secrets are left out of it on purpose.
 - The page loads Three.js from jsDelivr and fonts from Google Fonts at runtime, so it needs network access to render.
 - The Claude Design export zip stays out of git (`*.zip` is ignored) because it contains process uploads.
+- `/theroom2` serves `theroom2.html`, a snapshot of the `theRoom2.0` branch (the After Hours room) for testing
+  on devices; `noindex`, not linked from the room. Refresh it with `git show theRoom2.0:theroom.html`, re-adding
+  its two meta lines (`og:url` and `robots`).
 
 ## Later
 
