@@ -127,7 +127,8 @@ deploys -> `npm run test:prod`.
   truth, and `npm test` fails when the file is stale. The secrets are left out of it on purpose.
 - The page loads Three.js from jsDelivr and fonts from Google Fonts at runtime, so it needs network access to render.
 - The Claude Design export zip stays out of git (`*.zip` is ignored) because it contains process uploads.
-
-## Later
-
-- Try a smaller room (`CONFIG.room`): the camera presets, the desk AO occluder and the open-side clamp in `inRoom` are all in metres and would move with it.
+- The room is a port of the "After Hours" design (`after-hours-source.zip`, `app/room.ts`): an orthographic
+  cutaway with real lights and shadows, then ACES tone mapping and a Bayer dither pass. Its layout draws from a
+  seeded RNG (1712) in call order, so an object added mid-build shifts every random value after it. Zones
+  are `{ position, target, zoom }` shots in `CONFIG.camera.presets`, with `portrait` variants for phones;
+  `CONFIG.room` only sizes the reveal sweep and the debug grid.

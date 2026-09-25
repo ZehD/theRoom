@@ -67,7 +67,7 @@ export function renderRoom(list) {
   out.push('');
   out.push('## secrets');
   out.push('');
-  out.push('There are three secrets in the room. They are not in this file. The terminal on the right monitor is where to look: `ls`.');
+  out.push('There are three secrets in the room. They are not in this file. The terminal on the CRT in the middle of the desk is where to look: `ls`.');
   out.push('');
   return out.join('\n');
 }

@@ -22,7 +22,7 @@ const handler = createMcpHandler((server) => {
     'whoami',
     {
       title: 'The whole room, as text',
-      description: 'Who Luiz is: experience, stack, certifications, the paper on the whiteboard, the shelf. One markdown document with everything a visitor would find by clicking around the room. Read this first; there is nothing else to fetch.',
+      description: 'Who Luiz is: experience, stack, certifications, the paper pinned to the wall, the shelf. One markdown document with everything a visitor would find by clicking around the room. Read this first; there is nothing else to fetch.',
       inputSchema: z.object({}),
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false }
     },

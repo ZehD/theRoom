@@ -224,7 +224,7 @@ the rest of the room
 
 - Vinyl on the turntable, mostly jazz and Brazilian records from the 60s and 70s.
 - A telescope by the window for the rare clear night.
-- A French bulldog asleep on the rug, breathing slowly.
+- A French bulldog asleep on his cushion, breathing slowly.
 
 ## ~/sound  ·  Turntable
 _rain on the window, records on the deck_
@@ -258,4 +258,4 @@ claude mcp add --transport http theroom https://theroom-seven-theta.vercel.app/m
 
 ## secrets
 
-There are three secrets in the room. They are not in this file. The terminal on the right monitor is where to look: `ls`.
+There are three secrets in the room. They are not in this file. The terminal on the CRT in the middle of the desk is where to look: `ls`.
