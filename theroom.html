@@ -17,20 +17,20 @@
 <meta name="ext-resource-dependency" content="audio/rain.mp3" data-resource-id="rainMp3" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500&family=Silkscreen&family=JetBrains+Mono:wght@400;500&family=Doto:ROND,wght@0,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500&family=Silkscreen&family=JetBrains+Mono:wght@400;500&family=Doto:ROND,wght@0,800&family=Caveat:wght@700&display=swap" rel="stylesheet">
 <style>
   :root { --ink: #060A07; --soil: #0E1610; --moss: #1B2A1F; --phosphor: #3BE77B; --phosphor-dim: #1F8A4A; --phosphor-bloom: #C8FFD6; --paper: #B9C9BC; --ex-w: 760px; --ex-h: 460px; --ex-fade: 250ms; --ex-slide: 12px; --ex-dim: 0.55; }
   html, body { margin: 0; height: 100%; background: var(--ink); overflow: hidden; }
   /* #root is the frame: fixed UI hangs off it and the container queries below measure it. ?vp=390x844 shrinks it to a phone-sized preview. */
   /* the room's night: the canvas is transparent, so this gradient is the air around the cutaway (After Hours) */
-  #root { position: fixed; inset: 0; container-type: size; background: radial-gradient(ellipse at 50% 49%, #162131 0%, #0c121d 48%, #070b12 83%); }
+  #root { position: fixed; inset: 0; container-type: size; background: radial-gradient(ellipse at 50% 49%, var(--room-bg0, #162131) 0%, var(--room-bg1, #0c121d) 48%, var(--room-bg2, #070b12) 83%); }
   #root.vp { inset: auto; left: 50%; top: 50%; transform: translate(-50%, -50%); outline: 1px solid var(--moss); overflow: hidden; }
   #boot { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); font: 14px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-dim); white-space: nowrap; }
   #boot i { display: inline-block; width: 7px; height: 12px; margin-left: 4px; vertical-align: -1px; background: var(--phosphor); animation: boot-blink 1s steps(1) infinite; }
   @keyframes boot-blink { 50% { opacity: 0; } }
   #room { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
   /* a soft inset shade over the room, under the chrome */
-  #vignette { position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 140px 35px #03070c50; }
+  #vignette { position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 140px 35px color-mix(in srgb, var(--room-shade, #03070c) 31%, transparent); }
   #fade { position: fixed; inset: 0; background: var(--ink); opacity: 0; pointer-events: none; }
   .hud { position: fixed; right: 16px; font: 12px/1.5 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor); background: var(--soil); border: 1px solid var(--moss); padding: 8px 10px; white-space: pre; pointer-events: none; margin: 0; }
   #fps { top: calc(var(--top-h, 52px) + 16px); }
@@ -310,7 +310,7 @@
     #chip .label { white-space: normal; line-height: 1.35; }
     #chip .more { white-space: nowrap; }
     #chip .label::before { margin-right: 8px; }
-    #vignette { box-shadow: inset 0 0 90px 12px #03070c40; }
+    #vignette { box-shadow: inset 0 0 90px 12px color-mix(in srgb, var(--room-shade, #03070c) 25%, transparent); }
   }
   /* ── human / agent ─────────────────────────────────────────────────────────────────────────────────────────────────
      A pill at the bottom edge. AGENT leaves the room: the canvas stops drawing, the chrome goes, and the same content comes
@@ -679,8 +679,8 @@ const CONFIG = {
     ink: '#060A07', soil: '#0E1610', moss: '#1B2A1F', phosphorDim: '#1F8A4A',
     phosphor: '#3BE77B', phosphorBloom: '#C8FFD6', paper: '#B9C9BC', ember: '#FF5A4A'
   },
-  // Paper tones for the post-it's recipe (pale paper, a dimmer strip, marker ink) and the favicon's night. Shifted with the accent like the palette.
-  tones: { pale: '#3E4841', paleDim: '#2A352E', marker: '#166B3A', night: '#0A120C' },
+  // The favicon's night. Shifted with the accent like the palette.
+  tones: { night: '#0A120C' },
   room: { width: 8.4, depth: 6.65, height: 4.55 },   // the After Hours cutaway: floor slab to the top of the walls, open on +z
   // After Hours pipeline: lit scene -> OutputPass (ACES at `exposure`, sRGB) -> an ordered dither to ditherLevels per channel at ditherAmp.
   // The canvas never draws above pixelRatioMax device px per css px. phosphor = the 'p' ramp (ink -> phosphor -> bloom), on top of the dither.
@@ -825,7 +825,7 @@ const CONFIG = {
         { name: 'on-the-deck.txt', title: 'On the deck', meta: 'side B, 33⅓', bullets: ['Getz/Gilberto — Stan Getz, João Gilberto (1964)', 'Clube da Esquina — Milton Nascimento, Lô Borges (1972)', 'Kind of Blue — Miles Davis (1959)', 'Elis & Tom — Elis Regina, Tom Jobim (1974)', 'A Love Supreme — John Coltrane (1965)'] },
         { name: 'receiver.txt', title: 'The receiver', meta: '1970s silver face', text: 'Belt-drive deck on a walnut plinth, a second-hand receiver with the one warm display in the room. The records are on the shelf below, the ones that get played on top.' }
       ] } },
-    { id: 'frenchie',      label: "this is Tito, he's the key", touchLabel: 'a dog', hint: true, phase: 1, secret: 'dog', view: { dir: [0.45, 0.5, 0.75], near: 2 } },   // hover only: no menu word, no shell place; the chip is the clue to the sudo password. On glass the first tap only says "a dog"; the second earns the clue
+    { id: 'frenchie',      label: "this is Tito, he's the key", hoverLabel: 'a dog', hint: true, phase: 1, secret: 'dog', view: { dir: [0.45, 0.5, 0.75], near: 2 } },   // no menu word, no shell place; the chip is the clue to the sudo password. Hovered (or tapped once) he is only "a dog"; a click, or the second tap, earns his name, which holds while the camera is up close
     { id: 'post-it',       label: 'a post-it', hint: true, phase: 1, secret: 'note', view: { dir: [0, 0, 1] } }   // hover only; a click glides close enough to read it
   ],
   content: {}
@@ -880,11 +880,16 @@ function paletteFor(accent) {
   for (const k of Object.keys(SPEC.tones)) if (k !== 'white') out.tones[k] = shiftHex(SPEC.tones[k], preset.hue, preset.dL);
   return out;
 }
+// The room is drawn in After Hours blue whatever the accent (its screens and the reveal's wire too, in ROOM_PAL); the frame pass then
+// turns the finished picture's hue by roomShift() degrees, and the backdrop behind the transparent canvas turns with it (turnHex)
+const ROOM_HUE = CONFIG.accent.presets.blue.hue, ROOM_PAL = paletteFor('blue').palette;
+function roomShift() { const a = CONFIG.accent.name, p = CONFIG.accent.presets[a], h = p ? (p.hue ?? REF_HUE) : parseFloat(String(a).slice(4)); return Number.isFinite(h) ? h - ROOM_HUE : 0; }
+function turnHex(hex, deg) { const [L, C, h] = hexToOklch(hex); return C < 0.004 || !deg ? hex : oklchToHex(L, C, h + deg); }
 
 // ───────────────────────────── materials & textures ─────────────────────────────
 const MAT = {
   // loading wireframe: everything above uH is discarded, so a rising uH builds the room up from the floor; uEdge tints the leading 35 cm
-  wire: new THREE.ShaderMaterial({ wireframe: true, uniforms: { uColor: { value: new THREE.Color(CONFIG.palette.phosphorDim) }, uEdge: { value: new THREE.Color(CONFIG.palette.phosphorBloom) }, uH: { value: 0 } },
+  wire: new THREE.ShaderMaterial({ wireframe: true, uniforms: { uColor: { value: new THREE.Color(ROOM_PAL.phosphorDim) }, uEdge: { value: new THREE.Color(ROOM_PAL.phosphorBloom) }, uH: { value: 0 } },
     vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
     fragmentShader: 'uniform vec3 uColor, uEdge; uniform float uH; varying vec3 vW; void main(){ if (vW.y > uH) discard; float e = 1.0 - smoothstep(0.0, 0.35, uH - vW.y); gl_FragColor = vec4(mix(uColor, uEdge, e), 1.0); }' })
 };
@@ -937,16 +942,16 @@ class Terminal {
   }
   draw() {
     const x = this.x, F = this.shell ? (CONFIG.terminal.font || 1) : 1, S = this.S * F, lh = 14 * S, n = this.lines.length, T = CONFIG.terminal, sh = this.shell, pw = sh?.mode === 'password';   // F: larger shell glyphs on touch screens
-    x.fillStyle = this.bg || pal.ink; x.fillRect(0, 0, this.W * S, this.H * S);
+    x.fillStyle = this.bg || ROOM_PAL.ink; x.fillRect(0, 0, this.W * S, this.H * S);
     x.font = (14 * S) + 'px VT323, monospace'; x.textBaseline = 'top';
-    this.lines.forEach((l, i) => { const dim = sh ? [T.prompt, T.rootPrompt, T.sudoPrompt].some(p => l.startsWith(p)) : i < n - 4; x.fillStyle = dim ? pal.phosphorDim : pal.phosphor; x.fillText(l, 5 * S, 4 * S + i * lh); });
+    this.lines.forEach((l, i) => { const dim = sh ? [T.prompt, T.rootPrompt, T.sudoPrompt].some(p => l.startsWith(p)) : i < n - 4; x.fillStyle = dim ? ROOM_PAL.phosphorDim : ROOM_PAL.phosphor; x.fillText(l, 5 * S, 4 * S + i * lh); });
     let cx = 5 * S; const cy = 4 * S + n * lh;
     if (sh) {   // the live line: dim prompt (ember for root), bright input (hidden while sudo asks for a password), then the cursor
       const P = pw ? T.sudoPrompt : sh.root ? T.rootPrompt : T.prompt;
-      x.fillStyle = sh.root && !pw ? pal.ember : pal.phosphorDim; x.fillText(P, cx, cy); cx += x.measureText(P).width;
-      if (!pw) { x.fillStyle = pal.phosphor; x.fillText(sh.input, cx, cy); cx += x.measureText(sh.input).width; }
+      x.fillStyle = sh.root && !pw ? ROOM_PAL.ember : ROOM_PAL.phosphorDim; x.fillText(P, cx, cy); cx += x.measureText(P).width;
+      if (!pw) { x.fillStyle = ROOM_PAL.phosphor; x.fillText(sh.input, cx, cy); cx += x.measureText(sh.input).width; }
     }
-    if (this.cursor || (this.shell && performance.now() < this.shell.solidUntil)) { x.fillStyle = pal.phosphorBloom; x.fillRect(cx, cy, 7 * S, 12 * S); }
+    if (this.cursor || (this.shell && performance.now() < this.shell.solidUntil)) { x.fillStyle = ROOM_PAL.phosphorBloom; x.fillRect(cx, cy, 7 * S, 12 * S); }
     if (this.scan) { x.fillStyle = '#0917241f'; for (let y = 0; y < this.H * this.S; y += 3 * this.S) x.fillRect(0, y, this.W * this.S, this.S); }
     this.tex.needsUpdate = true;
   }
@@ -956,15 +961,25 @@ function buildTextures() {
   // the room's two screens: navy glass with faint scanlines, the After Hours look, in the chrome's phosphor
   TEX.termL = new Terminal(LOG.agent, { w: 160, h: 228, rows: 15, wrap: 24, scale: 2, bg: '#0e2438', scan: true });   // the portrait screen: the agent log, wrapped to its narrow column
   TEX.termR = new Terminal(null, { scale: CONFIG.terminal.scale * (devicePixelRatio >= 1.5 ? 2 : 1), shell: SHELL, bg: '#122940', scan: true });   // the shell; its transcript lives in SHELL and survives a rebuild. Dense screens get a sharper texture
-  // post-it: the root recipe in the owner's hand. Drawn twice: paper + ink, and ink alone (the hover glow layer). The paper is
-  // the room's, so it wears the blue tones whatever the accent.
-  { const LINES = ['in the terminal', 'type "su"', 'insert the KEY', 'then type', '"phosphor"'], tn = paletteFor('blue').tones;
-    const drawInk = (x, ink) => { x.fillStyle = ink; x.font = '12px VT323, monospace'; x.textBaseline = 'top'; LINES.forEach((l, i) => x.fillText(l, 6, 10 + i * 16)); };
-    const [c, x] = cnv(96, 96); x.fillStyle = tn.pale; x.fillRect(0, 0, 96, 96); x.fillStyle = tn.paleDim; x.fillRect(0, 0, 96, 5);   // the sticky strip
-    drawInk(x, tn.marker);
-    TEX.postit = canvasTex(c);
-    const [c2, x2] = cnv(96, 96); drawInk(x2, '#ffffff');
-    TEX.postitInk = canvasTex(c2); }
+  // post-it: the root recipe in the owner's hand, a pen (Caveat), dark ink on warm paper, every line a little crooked and the KEY
+  // underlined twice. Drawn twice: paper + ink, and ink alone (the hover glow layer). 256 px, smooth-filtered with mipmaps: a hand, not pixels
+  { const LINES = [['in the terminal', -0.03, 22], ['type "su"', 0.02, 30], ['insert the KEY', -0.015, 18], ['then type', 0.025, 34], ['"phosphor"', -0.02, 26]];
+    const drawInk = (x, ink) => {
+      x.fillStyle = x.strokeStyle = ink; x.font = '700 40px Caveat, "Segoe Print", cursive'; x.textBaseline = 'alphabetic'; x.lineCap = 'round';
+      LINES.forEach(([l, turn, left], i) => {
+        x.save(); x.translate(left, 66 + i * 42); x.rotate(turn); x.fillText(l, 0, 0);
+        const k = l.indexOf('KEY');
+        if (k >= 0) { const a = x.measureText(l.slice(0, k)).width, b = a + x.measureText('KEY').width; x.lineWidth = 3;
+          for (const [y, s] of [[7, 0], [13, 4]]) { x.beginPath(); x.moveTo(a - 2 + s, y); x.quadraticCurveTo((a + b) / 2, y + 3, b + 4 - s, y - 1); x.stroke(); } }
+        x.restore();
+      });
+    };
+    const note = c => { const t = canvasTex(c); t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; return t; };
+    const [c, x] = cnv(256, 256); x.fillStyle = '#8f8a72'; x.fillRect(0, 0, 256, 256); x.fillStyle = '#7d7862'; x.fillRect(0, 0, 256, 22);   // warm paper, the sticky strip
+    drawInk(x, '#141821');
+    TEX.postit = note(c);
+    const [c2, x2] = cnv(256, 256); drawInk(x2, '#ffffff');
+    TEX.postitInk = note(c2); }
 }
 
 // ───────────────────────────── the room (After Hours) ─────────────────────────────
@@ -1422,12 +1437,26 @@ const POST_SHADER = {
     uPhosphor: { value: CONFIG.render.phosphor ? 1 : 0 },
     uInk: { value: new THREE.Color(pal.ink) },
     uPhos: { value: new THREE.Color(pal.phosphor) },
-    uBloom: { value: new THREE.Color(pal.phosphorBloom) }
+    uBloom: { value: new THREE.Color(pal.phosphorBloom) },
+    uHue: { value: 0 }   // radians from the room's blue to the accent's hue (applyPaletteRuntime)
   },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: `
-    uniform sampler2D tDiffuse; uniform float uLevels, uAmp, uPhosphor; uniform vec3 uInk, uPhos, uBloom; varying vec2 vUv;
+    uniform sampler2D tDiffuse; uniform float uLevels, uAmp, uPhosphor, uHue; uniform vec3 uInk, uPhos, uBloom; varying vec2 vUv;
     vec3 toSRGB(vec3 c){ return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), c)); }
+    vec3 toLinear(vec3 c){ return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), c)); }
+    // the accent: the finished frame's hue turned in OKLab (lightness and chroma kept), so every pixel of the room follows at once
+    vec3 turnHue(vec3 srgb, float a){
+      vec3 c = toLinear(srgb);
+      vec3 lms = vec3(dot(c, vec3(0.4122214708, 0.5363325363, 0.0514459929)), dot(c, vec3(0.2119034982, 0.6806995451, 0.1073969566)), dot(c, vec3(0.0883024619, 0.2817188376, 0.6299787005)));
+      lms = sign(lms) * pow(abs(lms), vec3(1.0 / 3.0));
+      vec3 lab = vec3(dot(lms, vec3(0.2104542553, 0.7936177850, -0.0040720468)), dot(lms, vec3(1.9779984951, -2.4285922050, 0.4505937099)), dot(lms, vec3(0.0259040371, 0.7827717662, -0.8086757660)));
+      float cs = cos(a), sn = sin(a); lab.yz = vec2(cs * lab.y - sn * lab.z, sn * lab.y + cs * lab.z);
+      lms = vec3(dot(lab, vec3(1.0, 0.3963377774, 0.2158037573)), dot(lab, vec3(1.0, -0.1055613458, -0.0638541728)), dot(lab, vec3(1.0, -0.0894841775, -1.2914855480)));
+      lms = lms * lms * lms;
+      c = vec3(dot(lms, vec3(4.0767416621, -3.3077115913, 0.2309699292)), dot(lms, vec3(-1.2684380046, 2.6097574011, -0.3413193965)), dot(lms, vec3(-0.0041960863, -0.7034186147, 1.7076147010)));
+      return toSRGB(clamp(c, 0.0, 1.0));
+    }
     float bayer(vec2 p){ vec2 a = mod(floor(p), 2.0); return (2.0 * a.x + 3.0 * a.y - 4.0 * a.x * a.y) / 4.0; }
     void main(){
       vec4 c = texture2D(tDiffuse, vUv);
@@ -1436,7 +1465,7 @@ const POST_SHADER = {
         vec3 ink = toSRGB(uInk), phos = toSRGB(uPhos), bloom = toSRGB(uBloom);
         float l = clamp(dot(c.rgb, vec3(0.299, 0.587, 0.114)), 0.0, 1.0);
         c = vec4(l < 0.5 ? mix(ink, phos, l * 2.0) : mix(phos, bloom, (l - 0.5) * 2.0), 1.0);
-      }
+      } else if (abs(uHue) > 0.001) c.rgb = turnHue(c.rgb, uHue);
       float n = bayer(gl_FragCoord.xy) + bayer(floor(gl_FragCoord.xy / 2.0)) / 4.0 - 0.46875;
       c.rgb = floor(c.rgb * uLevels + n * uAmp) / uLevels;
       gl_FragColor = c;
@@ -1539,7 +1568,7 @@ function buildGrid() {
   for (let x = Math.ceil(-W / 2); x <= W / 2; x++) pts.push(x, 0.004, -D / 2, x, 0.004, D / 2);   // on the whole metres, across the floor
   for (let z = Math.ceil(-D / 2); z <= D / 2; z++) pts.push(-W / 2, 0.004, z, W / 2, 0.004, z);
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-  const l = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: pal.phosphorDim })); l.visible = false; l.name = 'debug-grid'; return l;
+  const l = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: ROOM_PAL.phosphorDim })); l.visible = false; l.name = 'debug-grid'; return l;
 }
 let grid;
 
@@ -1643,7 +1672,7 @@ function setHover(target) {
   if (hover.current === target) return;
   hover.current = target;
   canvas.classList.toggle('hot', !!target);
-  if (target) { hover.shown = target; chipText.textContent = (TOUCH && target.insp.touchLabel) || target.insp.label; if (TOUCH) chipText.insertAdjacentHTML('beforeend', ' <span class="more">· tap again</span>'); chipEl.classList.add('on'); } else chipEl.classList.remove('on');   // on glass the chip also says how to open
+  if (target) { hover.shown = target; chipText.textContent = target.insp.hoverLabel && hintFocus !== target.insp ? target.insp.hoverLabel : target.insp.label; if (TOUCH) chipText.insertAdjacentHTML('beforeend', ' <span class="more">· tap again</span>'); chipEl.classList.add('on'); } else chipEl.classList.remove('on');   // on glass the chip also says how to open
 }
 // the chip: centred over the anchor, its connector ending hover.lift px above it, kept 16 px inside the frame's sides and 8 px under the top bar
 // (#top paints over it; an anchor above the frame, zoomed in or up close, would pin the tag under the bar). Wider than the frame allows, it
@@ -1667,6 +1696,8 @@ function hoverTick(dt) {
   const locked = explorer.open || TERM.open || debug.on || camTween.active;
   if (debug.on || (pointers.size && canvas.classList.contains('drag'))) setHover(null);   // a hand turning the room lights nothing; debug lets the last light fade
   else if (!locked && hover.moved && hover.frame % CONFIG.hover.everyNthFrame === 0) { hover.moved = false; setHover(pickAt(hover.pointer)); }
+  // up close on the dog his name holds wherever the pointer went (the glide moved him out from under it): the click earned it
+  if (hintFocus?.hoverLabel && !debug.on && !TERM.open && !explorer.open && hover.current?.insp !== hintFocus) setHover(hover.targets.find(tg => tg.insp === hintFocus) || null);
   // t damps toward 1 on the lit object (the hovered one, or the CRT while the shell has the keyboard), fast in and slower out (hover.fade). n damps
   // toward 1 on the CRT while the shell is open: the camera sits at the glass, so the screen's own light does the work and its frame goes out.
   // The note goes out too while it's read up close: at ~34x its frame and ink would bloom over the paper (the dog keeps his: the chip is the clue)
@@ -2299,8 +2330,8 @@ canvas.addEventListener('pointerup', e => {
   if (e.pointerType === 'touch') {   // no hover on glass: the first tap lights the object and holds its label (the dog's chip is the clue); the next tap on it opens
     if (hit && hover.current !== hit) { setHover(hit); return; }
     setHover(hit); chipText.querySelector('.more')?.remove();
-    if (hit?.insp.touchLabel) chipText.textContent = hit.insp.label;   // the second tap earns the real label (the dog's is the clue)
   }
+  if (hit?.insp.hoverLabel) chipText.textContent = hit.insp.label;   // a click (the second tap on glass) earns the real label: the dog's name is the clue
   if (hit) focusObject(hit.insp);   // shell, window, or (the dog) just a glide up close
 });
 // dither swatch for image placeholders: 4×4 Bayer at ~30%, moss on soil, regenerated with the accent
@@ -2359,11 +2390,11 @@ function clearScene() {
 // Applies the current CONFIG.palette to the chrome (the hover chip too, through the CSS vars), the wireframe reveal and the phosphor ramp.
 // The room keeps its After Hours blue, neon hover frames included; only the screens' text follows (setAccent redraws them).
 function applyPaletteRuntime() {
-  const c = CONFIG.palette;
-  MAT.wire.uniforms.uColor.value.set(c.phosphorDim); MAT.wire.uniforms.uEdge.value.set(c.phosphorBloom);
-  if (grid) grid.material.color.set(c.phosphorDim);
-  if (post) { post.uniforms.uInk.value.set(c.ink); post.uniforms.uPhos.value.set(c.phosphor); post.uniforms.uBloom.value.set(c.phosphorBloom); }
+  const c = CONFIG.palette, turn = roomShift();
+  // the room itself (its wire, grid and screens included) stays blue: the frame pass turns it, and the backdrop turns with it
+  if (post) { post.uniforms.uInk.value.set(c.ink); post.uniforms.uPhos.value.set(c.phosphor); post.uniforms.uBloom.value.set(c.phosphorBloom); post.uniforms.uHue.value = turn * D2R; }
   const root = document.documentElement.style;
+  [['--room-bg0', '#162131'], ['--room-bg1', '#0c121d'], ['--room-bg2', '#070b12'], ['--room-shade', '#03070c']].forEach(([k, hex]) => root.setProperty(k, turnHex(hex, turn)));
   root.setProperty('--ink', c.ink); root.setProperty('--soil', c.soil); root.setProperty('--moss', c.moss); root.setProperty('--phosphor', c.phosphor); root.setProperty('--phosphor-dim', c.phosphorDim); root.setProperty('--phosphor-bloom', c.phosphorBloom); root.setProperty('--paper', c.paper);
   root.setProperty('--dither', ditherSwatch());
   const ex = CONFIG.explorer; root.setProperty('--ex-w', ex.width + 'px'); root.setProperty('--ex-h', ex.height + 'px'); root.setProperty('--ex-fade', ex.fade + 'ms'); root.setProperty('--ex-slide', ex.slide + 'px'); root.setProperty('--ex-dim', String(ex.dim));
@@ -2375,14 +2406,13 @@ function setFavicon(phosphor, bloom) {
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='${CONFIG.tones.night || '#060A07'}'/><g fill='none' stroke='${phosphor}' stroke-width='2' shape-rendering='crispEdges'><path d='M3 5h26v18H3zM11 29h10M16 23v6M7 10l3 3-3 3'/></g><rect x='13' y='10' width='3' height='6' fill='${bloom}'/></svg>`;
   const link = document.querySelector('link[rel="icon"]'); if (link) link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
-// rebuild: re-create the room as well (nothing in the room follows the accent any more; kept for checking a clean rebuild from the console)
+// The room follows through the frame pass (uHue), not a rebuild. rebuild: re-create the room anyway (for checking a clean rebuild from the console)
 function setAccent(accent, { rebuild = false } = {}) {
   const derived = paletteFor(accent);
   Object.assign(CONFIG.palette, derived.palette); Object.assign(CONFIG.tones, derived.tones);
   CONFIG.accent.name = typeof accent === 'number' ? `hue ${Math.round(accent)}` : accent;
   applyPaletteRuntime();
   setFavicon(derived.palette.phosphor, derived.palette.phosphorBloom);   // the tab icon wears the room's phosphor too
-  for (const term of [TEX.termL, TEX.termR]) term?.draw();   // the screens are the shell's: they redraw in the new phosphor
   if (rebuild && ROOM) { clearScene(); build(); }
   try { localStorage.setItem('theroom.accent', String(accent)); } catch {}
   if (debug.on) updateHud();
@@ -2416,7 +2446,7 @@ accentEl.innerHTML = Object.keys(CONFIG.accent.presets).map(n =>
 // ───────────────────────────── init ─────────────────────────────
 async function init() {
   await Promise.race([
-    Promise.all([document.fonts.load('14px VT323'), document.fonts.load('12px "IBM Plex Mono"'), document.fonts.load('800 26px Doto'), document.fonts.load('500 10px "JetBrains Mono"'), document.fonts.load('15px "JetBrains Mono"')]),
+    Promise.all([document.fonts.load('14px VT323'), document.fonts.load('12px "IBM Plex Mono"'), document.fonts.load('800 26px Doto'), document.fonts.load('500 10px "JetBrains Mono"'), document.fonts.load('15px "JetBrains Mono"'), document.fonts.load('700 40px Caveat')]),
     new Promise(r => setTimeout(r, 1500))
   ]);
   // accent from ?accent=, then last choice, then CONFIG
