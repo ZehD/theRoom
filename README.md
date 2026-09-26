@@ -132,3 +132,10 @@ deploys -> `npm run test:prod`.
   seeded RNG (1712) in call order, so an object added mid-build shifts every random value after it. Zones
   are `{ position, target, zoom }` shots in `CONFIG.camera.presets`, with `portrait` variants for phones;
   `CONFIG.room` only sizes the reveal sweep and the debug grid.
+
+## Later
+
+- **Rain sound is silent on Safari mobile (iOS).** Reported 2026-09-26 on `/theroom2`. The rain plays through the Web Audio
+  API (`rain` in the page: an `AudioContext` plus the decoded `audio/rain.mp3`). Two likely causes to check first: iOS mutes
+  Web Audio while the ring/silent switch is on (an `<audio>` element is not muted), and the context has to be created or
+  resumed inside the touch gesture itself. Test on a real iPhone with the switch both ways.
