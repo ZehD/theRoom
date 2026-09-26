@@ -698,7 +698,7 @@ const CONFIG = {
       work:     { position: [5.7, 8.83, 14.76],   target: [0.55, 2.05, -1.9],  zoom: 2.5, route: '/work',     label: 'work',     portrait: { zoom: 3.6 } },   // the CRT, the portrait monitor, the desk
       projects: { position: [5.43, 10.06, 14.55], target: [3, 0.75, -1.5],     zoom: 3.2, route: '/projects', label: 'projects', portrait: { zoom: 5.5 } },   // the tower (Stack)
       about:    { position: [1.78, 8.53, 14.84],  target: [-3.37, 1.75, -1.82], zoom: 2.1, route: '/about',   label: 'about',   portrait: { zoom: 4.3 } },   // the bookcase
-      writing:  { position: [11.92, 9.18, 7.26],  target: [-4.07, 2.4, 0.3],   zoom: 3,   route: '/writing',  label: 'writing',  portrait: { zoom: 5.5 } },   // the left wall: the print and the pinned sketch
+      writing:  { position: [11.92, 9.28, 7.26],  target: [-4.07, 2.5, 0.3],   zoom: 3,   route: '/writing',  label: 'writing',  portrait: { zoom: 5.5 } },   // the left wall: the whiteboard and the paper (Studies)
       contact:  { position: [3.78, 10.24, 14.43], target: [-1.15, 1.75, -1.5], zoom: 4.2, route: '/contact',  label: 'contact' }     // the desk corner with the mug (Let's talk)
     },
     // Free look is OrbitControls with the After Hours feel: damped, no pan. Its limits are absolute, so each zone gets the After Hours window
@@ -780,7 +780,7 @@ const CONFIG = {
         { name: 'summary.txt', title: 'Personal summary', meta: 'Luiz Aurio Cordeiro Junior · Curitiba, Paraná, Brazil', text: 'I am an AI Engineer with 11 years of experience in IT, including 4 years focused on software development and AI systems. My background includes testing and supporting an AI-powered chatbot for the Government of Paraná that serves over 5 million users annually, and over the past 2 years I have shipped dozens of AI products to production, from conversational chatbots, multi-agent systems, and automation pipelines to large-scale data extraction workflows.', text2: 'My expertise includes Retrieval-Augmented Generation (RAG), agentic architectures with MCP, prompt and context engineering, and real-time speech-to-text systems. I also have hands-on experience running and optimizing local models for privacy-sensitive and low-latency environments. I work with Python, JavaScript, LangChain, n8n, and Supabase to design intelligent automations and context-aware systems that integrate seamlessly into production environments.' }
       ] } },
     { id: 'monitor-right', label: 'terminal', title: 'Terminal', line: 'a shell into the room: cd, ls, help', phase: 1, terminal: true },
-    { id: 'rack',          label: 'stack', title: 'Stack', line: 'Python, TypeScript, n8n and what runs on them', phase: 1, view: { dir: [0, 0, 1] },   // face on: the lens sits in front of the fans, past the backpack
+    { id: 'rack',          label: 'stack', title: 'Stack', line: 'Python, TypeScript, n8n and what runs on them', phase: 1, view: { dir: [0, 0, 1] },   // face on: the lens sits in front of the fans
       explorer: { path: '~/stack', files: [
         { name: 'languages.conf', control: 'rack', title: 'Languages', meta: 'what the code is written in', bullets: ['Python', 'Java', 'SQL', 'JavaScript', 'TypeScript', 'C/C++'] },
         { name: 'frameworks.conf', control: 'rack', title: 'Frameworks and tools', meta: 'the working set', bullets: ['FastAPI', 'LangChain', 'LangGraph', 'n8n', 'CrewAI', 'PySpark', 'Git', 'Docker', 'Pandas', 'NumPy', 'Matplotlib'] },
@@ -788,14 +788,14 @@ const CONFIG = {
         { name: 'cloud-db.conf', control: 'rack', title: 'Cloud and databases', meta: 'where it runs and what it stores', bullets: ['PostgreSQL', 'MySQL', 'Supabase', 'SQLAlchemy', 'Google Cloud Platform (GCP)', 'Amazon Web Services (AWS)'] },
         { name: 'process.conf', control: 'rack', title: 'Project and collaboration', meta: 'how the work gets shipped', bullets: ['Agile methodologies', 'Scrum', 'Kanban', 'JIRA', 'CI/CD workflows'] }
       ] } },
-    { id: 'cert-frame',    label: 'certifications', title: 'CCA-F', line: 'Claude Certified Architect (Foundations), IBM certs', phase: 1, view: { dir: [1, 0, 0] },   // the left wall faces +x
+    { id: 'cert-frame',    label: 'certifications', title: 'CCA-F', line: 'Claude Certified Architect (Foundations), IBM certs', phase: 1, view: { dir: [0, 0, 1] },   // small, on the back wall (faces +z)
       explorer: { path: '~/certifications', files: [
         { name: 'claude-certified-architect-foundations.pdf', title: 'Claude Certified Architect (Foundations)', meta: 'Anthropic', control: 'spin', spin: 'cert', items: [['Claude Certified Architect', 'Foundations · Anthropic']], text: 'Claude Certified Architect, Foundations level.' },
         { name: 'ibm-generative-ai-architecture.pdf', title: 'Generative AI architecture', meta: 'IBM', control: 'spin', spin: 'cert', items: [['Generative AI architecture', 'IBM']], text: 'IBM certification in generative AI architecture.' },
         { name: 'ibm-llm-data-preparation.pdf', title: 'LLM data preparation', meta: 'IBM', control: 'spin', spin: 'cert', items: [['LLM data preparation', 'IBM']], text: 'IBM certification in LLM data preparation.' },
         { name: 'ibm-nlp-foundations.pdf', title: 'NLP foundations', meta: 'IBM', control: 'spin', spin: 'cert', items: [['NLP foundations', 'IBM']], text: 'IBM certification in NLP foundations.' }
       ] } },
-    { id: 'whiteboard',    label: 'studies', title: 'Pre-Execution Ontology-Based Validation of LLM Tool Calls', line: 'academic paper: a knowledge graph checks every tool call before it runs', phase: 1, view: { dir: [1, 0, 0] },   // pinned to the left wall; the near plane cuts the chair out
+    { id: 'whiteboard',    label: 'studies', title: 'Pre-Execution Ontology-Based Validation of LLM Tool Calls', line: 'academic paper: a knowledge graph checks every tool call before it runs', phase: 1, view: { dir: [1, 0, 0] },   // the whiteboard on the left wall and the paper taped under it; the near plane cuts the chair out
       explorer: { path: '~/studies/paper', files: [
         { name: 'validation.graph', title: 'Ontology-Based Validation of LLM Tool Calls', meta: 'paper, in progress · accept, then reject', control: 'graph' },
         { name: 'abstract.md', title: 'Abstract', meta: 'A Knowledge Graph Approach to Hallucination Reduction', text: 'LLM agents invoke external tools from statistical knowledge frozen in their parameters, while the execution environment evolves — producing plausible but invalid calls: nonexistent tools, fabricated parameters, and violated preconditions. This work models the tool universe as a formal ontology materialized in a knowledge graph and uses it as a deterministic validation layer that checks every generated tool call against the semantic contract before execution. Experimental evaluation against an unvalidated baseline on established function-calling benchmarks measures hallucination reduction by error type, testing the hypothesis that symbolic validation excels precisely where neural reviewers are weakest: structural errors, with near-zero harmfulness.' },
@@ -1099,7 +1099,7 @@ function buildAfterHours() {
   // the post-it (the root recipe, a secret), stuck to the back wall left of the CRT, high enough that the CRT never hides it from home. An
   // object of its own: the paper, the recipe on a plane over its face, and the recipe's ink alone on top for the hover glow. After Hours'
   // note sat on the bezel at 0.15 (~13 px at home, ~8 px on a phone): nobody could hit it, so it is twice that, with a wider invisible pad
-  const postit = group('post-it'); postit.position.set(-1.2, 2.78, -3.13); postit.rotation.set(0, 0, -0.06);
+  const postit = group('post-it'); postit.position.set(-1.5, 2.78, -3.13); postit.rotation.set(0, 0, -0.06);
   box(0.3, 0.3, 0.005, 0, 0, 0, material(0x948e77), postit);
   const noteMat = material(0xffffff, { map: TEX.postit }); noteMat.color.setScalar(2.4);   // the recipe's paper is drawn dim (the old unlit room); lift it to paper under these lights
   plane(0.3, 0.3, 0, 0, 0.0026, noteMat, postit);
@@ -1242,13 +1242,15 @@ function buildAfterHours() {
   };
   plant(0.54, 3.62, -2.87, 0.7); plant(3.03, 0.97, -2.97, 0.67);
 
-  // the left wall: a framed orbital print (cert-frame) and a pinned technical sketch (whiteboard, the paper)
+  // the left wall: a whiteboard, and the paper taped under it with its pin; together they are Studies (whiteboard). The board sketches the
+  // paper's idea in marker: a graph that checks a tool call before it runs. The framed print (cert-frame) is small, on the back wall.
+  // Nothing here draws from rnd(): the layout after it must not move
   const posterTex = drawTex(256, 320, c => {
     c.fillStyle = '#162538'; c.fillRect(0, 0, 256, 320); c.fillStyle = '#8298ab'; c.font = '15px monospace'; c.fillText('THE LATENT SPACE', 24, 32);
     c.strokeStyle = '#5e7c97'; c.lineWidth = 1; for (let i = 0; i < 7; i++) { c.beginPath(); c.ellipse(128, 155, 27 + i * 10, 71, Math.PI / 4, 0, Math.PI * 2); c.stroke(); }
     c.fillStyle = '#bacbd6'; c.fillRect(126, 153, 4, 4); c.font = '9px monospace'; c.fillStyle = '#67819a'; c.fillText('SOMEWHERE BETWEEN 0 AND 1', 24, 292);
   });
-  const print = group('cert-frame'); print.position.set(-4.07, 2.9, 0.4); print.rotation.y = Math.PI / 2;
+  const print = group('cert-frame'); print.position.set(-2.2, 2.55, -3.12); print.scale.setScalar(0.55);   // back wall, between the bookcase and the desk
   box(1.11, 1.38, 0.045, 0, 0, 0, edge, print);
   plane(1.01, 1.28, 0, 0, 0.026, material(0xffffff, { map: posterTex }), print);
   const pinTex = drawTex(192, 128, c => {
@@ -1258,6 +1260,27 @@ function buildAfterHours() {
   const board = group('whiteboard');
   const sketch = plane(0.65, 0.45, -4.079, 1.79, 0.12, material(0xffffff, { map: pinTex }), board); sketch.rotation.y = Math.PI / 2; sketch.rotation.z = 0.07;
   box(0.014, 0.07, 0.14, -4.064, 2.013, 0.13, material(0x969589), board);   // the pin
+  const boardTex = drawTex(512, 320, c => {   // marker on white: the tool call, the graph it is checked against, and the verdict
+    c.fillStyle = '#b9c0c6'; c.fillRect(0, 0, 512, 320);
+    for (let i = 0; i < 9; i++) { c.fillStyle = 'rgba(80,95,110,0.05)'; c.beginPath(); c.ellipse(70 + i * 47, 150 + Math.sin(i * 1.9) * 90, 60, 18, Math.sin(i) * 0.4, 0, 7); c.fill(); }   // old ink, half wiped
+    c.lineCap = c.lineJoin = 'round'; const blueInk = '#1f3d6b', black = '#161c26';
+    const text = (s, x, y, size, ink = black, turn = 0) => { c.save(); c.translate(x, y); c.rotate(turn); c.fillStyle = ink; c.font = `700 ${size}px Caveat, "Segoe Print", cursive`; c.fillText(s, 0, 0); c.restore(); };
+    const arrow = (x1, y1, x2, y2, ink) => { c.strokeStyle = ink; c.lineWidth = 3; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); const a = Math.atan2(y2 - y1, x2 - x1); c.beginPath(); c.moveTo(x2, y2); c.lineTo(x2 - 13 * Math.cos(a - 0.45), y2 - 13 * Math.sin(a - 0.45)); c.moveTo(x2, y2); c.lineTo(x2 - 13 * Math.cos(a + 0.45), y2 - 13 * Math.sin(a + 0.45)); c.stroke(); };
+    const node = (x, y, rx, label) => { c.strokeStyle = blueInk; c.lineWidth = 3; c.beginPath(); c.ellipse(x, y, rx, 24, -0.03, 0, 7); c.stroke(); text(label, x - rx + 14, y + 8, 24, blueInk); };
+    text('check it before it runs', 24, 44, 38, black, -0.02); c.strokeStyle = black; c.lineWidth = 2.5; c.beginPath(); c.moveTo(26, 54); c.quadraticCurveTo(200, 60, 330, 52); c.stroke();
+    node(100, 118, 82, 'find_customer'); node(372, 118, 88, 'issue_contract'); arrow(184, 118, 280, 118, blueInk); text('precedes', 196, 102, 22, blueInk);
+    text('LLM:  issue_contract(42)', 30, 208, 30, black, 0.01); arrow(292, 198, 350, 176, black);
+    text('ran before?', 330, 168, 26, black, -0.04);
+    text('yes  ->  run it', 318, 236, 28, blueInk, 0.02); text('no  ->  reject', 318, 280, 28, '#5a1f2a', -0.01);
+  });
+  boardTex.magFilter = THREE.LinearFilter; boardTex.minFilter = THREE.LinearMipmapLinearFilter; boardTex.generateMipmaps = true;   // a hand, not pixels
+  const wb = new THREE.Group(); wb.position.set(-4.087, 2.82, 0.35); wb.rotation.y = Math.PI / 2; board.add(wb);
+  box(1.9, 1.15, 0.035, 0, 0, 0, material(0x8b949c, { metalness: 0.3, roughness: 0.5 }), wb);   // the aluminium frame
+  const boardMat = material(0xffffff, { map: boardTex, roughness: 0.55 }); boardMat.color.setScalar(1.35);   // lifted a little: a white board, even at night
+  plane(1.84, 1.09, 0, 0, 0.019, boardMat, wb);
+  box(1.2, 0.035, 0.08, 0, -0.6, 0.045, material(0x8b949c, { metalness: 0.3, roughness: 0.5 }), wb);   // the marker tray, two markers on it
+  cylinder(0.013, 0.013, 0.13, -0.38, -0.565, 0.06, material(0x2a4a78), 8, wb).rotation.z = Math.PI / 2;
+  cylinder(0.013, 0.013, 0.13, -0.2, -0.565, 0.055, black, 8, wb).rotation.z = Math.PI / 2;
   // a small wall clock on the back wall
   cylinder(0.28, 0.28, 0.07, -2.38, 3.58, -3.07, edge, 32).rotation.x = Math.PI / 2;
   cylinder(0.24, 0.24, 0.073, -2.38, 3.58, -3.06, material(0x86959f), 32).rotation.x = Math.PI / 2;
@@ -1353,12 +1376,6 @@ function buildAfterHours() {
   for (const part of dogHead.children) part.position.sub(neckPivot);
   const sleepingHeadY = neckPivot.y - 0.095;
   dogHead.position.set(0, sleepingHeadY, neckPivot.z + 0.025); dogHead.rotation.x = 0.07;
-  // a battered backpack and shoes by the open side
-  const bag = group(); bag.position.set(3.4, 0, -0.02); bag.rotation.y = -0.3;
-  box(0.48, 0.64, 0.32, 0, 0.36, 0, material(0x3e4a5c), bag); box(0.36, 0.32, 0.08, 0, 0.29, 0.2, dark, bag);
-  line([[-0.12, 0.65, 0], [-0.1, 0.78, 0], [0.1, 0.78, 0], [0.12, 0.65, 0]], metal, 0.025, bag);
-  line([[-0.21, 0.6, -0.16], [-0.29, 0.3, -0.22], [-0.18, 0.07, -0.16]], black, 0.028, bag);
-  for (const x of [3.14, 3.48]) { sphere(0.18, x, 0.09, 0.73, dark).scale.set(0.66, 0.52, 1.5); box(0.21, 0.03, 0.41, x, 0.028, 0.76, wood); }
 
   // Everything below is a transparent overlay (or points and lines) that the wireframe reveal would draw wrong: revealHide hides it until the cut.
   // Soft contact shadows under the big pieces, and a pool of screen light under the desk
@@ -1393,7 +1410,7 @@ function buildAfterHours() {
   target('monitor-left', second, [0, 1.45, 0.014]); neonFrame('monitor-left', second, 0.78, 1.11, [0, 0.88, 0.014]);
   target('shelf', shelf, [0, 3.35, 0.4]); neonFrame('shelf', shelf, 1.525, 3.35, [0, 1.655, 0.405]);
   target('cert-frame', print, [0, 0.73, 0.035]); neonFrame('cert-frame', print, 1.11, 1.38, [0, 0, 0.035]);
-  target('whiteboard', sketch, [0, 0.255, 0.008]); neonFrame('whiteboard', sketch, 0.65, 0.45, [0, 0, 0.008]);
+  target('whiteboard', wb, [0, 0.66, 0.02]); neonFrame('whiteboard', wb, 1.9, 1.15, [0, 0, 0.03]); neonFrame('whiteboard', sketch, 0.65, 0.45, [0, 0, 0.008]);   // the board and the paper light together
   const sleeveAnchor = group(null, sound); sleeveAnchor.position.copy(sleeve.position); sleeveAnchor.rotation.copy(sleeve.rotation);
   target('turntable', sleeveAnchor, [0, 0.38, 0.026]);   // the chip hangs over the sleeve's top edge, above both frames: from the deck's centre it would sit on the sleeve
   neonFrame('turntable', deck, 1.16, 0.72, [0, 0.865, 0], true); neonFrame('turntable', sleeveAnchor, 0.66, 0.7, [0, 0, 0.026]);   // the sleeve lights with the deck, in a frame of its own
@@ -1903,7 +1920,7 @@ function solidBox(root, box = new THREE.Box3()) {
   return box;
 }
 // An inspected object, square along view.dir: zoom so it fills `fill` of the frame on its tighter axis (height or width), the lens just
-// `tween.near` in front of it so the near plane cuts out whatever stands between (the chair before the sketch, the backpack before the tower).
+// `tween.near` in front of it so the near plane cuts out whatever stands between (the chair before the sketch).
 // The way back (camTween.back) carries the old distance, so the room comes back whole.
 function viewFor(insp) {
   const g = scene.getObjectByName(insp.id); if (!g) return null;
