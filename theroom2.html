@@ -727,7 +727,7 @@ const CONFIG = {
   // hue in OKLCH, keeping lightness and chroma (chroma reduced only where sRGB can't reach it).
   // dL nudges lightness of the phosphor family for hues that are too pale at green's lightness.
   // Swap with ?accent=blue or window.__theroom.setAccent('orange' | 210); in the room the LED strip (and key A) only unlock as root: `sudo su`, then `phosphor`.
-  // Order here = order of the LED buttons; blue is the default. The room keeps its own night blue: an accent recolours the chrome and the shell's text.
+  // Order here = order of the LED buttons; blue is the default. The room is drawn in blue; an accent recolours the chrome, and the frame pass turns the whole room to it.
   accent: { name: 'blue', presets: {
     blue:   { hue: 250, dL: -0.08 }, cyan: { hue: 205, dL: -0.04 }, green: { hue: null, dL: 0 }, amber: { hue: 75, dL: -0.06 },
     orange: { hue: 55,  dL: -0.1 },  red:  { hue: 25,  dL: -0.12 }, pink: { hue: 350, dL: -0.1 }, purple: { hue: 300, dL: -0.1 }
@@ -827,6 +827,7 @@ const CONFIG = {
         { name: 'receiver.txt', title: 'The receiver', meta: '1970s silver face', text: 'Belt-drive deck on a walnut plinth, a second-hand receiver with the one warm display in the room. The records are on the shelf below, the ones that get played on top.' }
       ] } },
     { id: 'frenchie',      label: "this is Tito, he's the key", hoverLabel: 'a dog', hint: true, phase: 1, secret: 'dog', view: { dir: [0.45, 0.5, 0.75], near: 2 } },   // no menu word, no shell place; the chip is the clue to the sudo password. Hovered (or tapped once) he is only "a dog"; a click, or the second tap, earns his name, which holds while the camera is up close
+    { id: 'robot',         label: 'in construction', hint: true, phase: 1, view: { dir: [0, 0, 1] } },   // the unfinished robot on the floating shelf: hovered it lights and the sparks fly; a click glides close. No menu word, no shell place
     { id: 'post-it',       label: 'a post-it', hint: true, phase: 1, secret: 'note', view: { dir: [0, 0, 1] } }   // hover only; a click glides close enough to read it
   ],
   content: {}
@@ -997,7 +998,7 @@ function buildAfterHours() {
   const drawTex = (w, h, draw) => { const [c, x] = cnv(w, h); draw(x); return canvasTex(c); };
   const grain = (color, size = 64) => drawTex(size, size, c => { c.fillStyle = color; c.fillRect(0, 0, size, size); for (let i = 0; i < size * size * 0.55; i++) { c.fillStyle = rnd() > 0.5 ? `rgba(150,175,195,${rnd() * 0.085})` : `rgba(0,0,0,${rnd() * 0.12})`; c.fillRect(Math.floor(rnd() * size), Math.floor(rnd() * size), 1, 1); } });
   const wall = material(0x718093, { map: grain('#434e60') }), edge = material(0x19232f), dark = material(0x161e2a), metal = material(0x2b3544, { metalness: 0.35, roughness: 0.65 });
-  const wood = material(0x777773, { map: grain('#59616a') }), deskWood = material(0x8b8580, { map: grain('#6b655f') }), paper = material(0x929b9d), blue = material(0x5a7898);
+  const wood = material(0x777773, { map: grain('#59616a') }), deskWood = material(0x8b8580, { map: grain('#6b655f') }), paper = material(0x929b9d);
   const fabric = material(0x536376, { map: grain('#485264') }), black = material(0x111823), glow = basic(0x8ebbe3), warm = basic(0xbda78d);
   const unitBox = new THREE.BoxGeometry(1, 1, 1);   // shared by every box: clearScene disposes it once
   const box = (w, h, d, x, y, z, m = dark, parent = root) => { const mesh = new THREE.Mesh(unitBox, m); mesh.scale.set(w, h, d); mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh; };
@@ -1216,11 +1217,18 @@ function buildAfterHours() {
   box(2.81, 0.075, 0.47, -0.66, 3.59, -2.91, wood);
   for (const x of [-1.75, 0.43]) { box(0.035, 0.29, 0.035, x, 3.44, -3.02, metal); box(0.035, 0.03, 0.36, x, 3.35, -2.94, metal); }
   for (let i = 0; i < 6; i++) book(-1.65 + i * 0.125, 3.635, -2.86, 0.10, 0.38 + rnd() * 0.11, 0.26, i + 1);
-  const robot = group(); robot.position.set(-0.13, 3.63, -2.88);
+  // the robot is unfinished (the "in construction" object): a work light blinks on its antenna, one eye stutters on a loose wire, and
+  // while it is hovered a welder's sparks spray off its right shoulder (animate). No rnd() in here: the layout after it must not move
+  const robot = group('robot'); robot.position.set(-0.13, 3.63, -2.88);
   box(0.23, 0.21, 0.16, 0, 0.17, 0, metal, robot); box(0.29, 0.18, 0.21, 0, 0.38, 0, wood, robot);
-  for (const x of [-0.07, 0.07]) { box(0.035, 0.03, 0.012, x, 0.39, 0.111, glow, robot); box(0.075, 0.07, 0.16, x, 0.033, 0.02, dark, robot); }
-  cylinder(0.01, 0.01, 0.11, 0, 0.52, 0, metal, 6, robot); sphere(0.025, 0, 0.58, 0, blue, robot);
+  const robotEyes = [basic(0x8ebbe3), basic(0x8ebbe3)];
+  [-0.07, 0.07].forEach((x, i) => { box(0.035, 0.03, 0.012, x, 0.39, 0.111, robotEyes[i], robot); box(0.075, 0.07, 0.16, x, 0.033, 0.02, dark, robot); });
+  const robotBeacon = material(0x5a7898, { emissive: 0x9fd4ff, emissiveIntensity: 0 });
+  cylinder(0.01, 0.01, 0.11, 0, 0.52, 0, metal, 6, robot); sphere(0.025, 0, 0.58, 0, robotBeacon, robot);
   for (const x of [-0.165, 0.165]) box(0.07, 0.17, 0.09, x, 0.19, 0, metal, robot);
+  const sparkPos = new Float32Array(14 * 3), sparkGeo = new THREE.BufferGeometry(); sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
+  const sparks = new THREE.Points(sparkGeo, new THREE.PointsMaterial({ color: 0xd5f3ff, size: 0.018, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+  sparks.material.visible = false; sparks.userData.ignoreHover = true; robot.add(sparks);   // hover switches the material, like the glows: sparks.visible belongs to the reveal
   // plants with angular leaves, some a little droopy
   const leafMats = [material(0x527476), material(0x395c60), material(0x6c8580)];
   const plant = (x, y, z, scale = 1) => {
@@ -1354,7 +1362,7 @@ function buildAfterHours() {
 
   // Everything below is a transparent overlay (or points and lines) that the wireframe reveal would draw wrong: revealHide hides it until the cut.
   // Soft contact shadows under the big pieces, and a pool of screen light under the desk
-  const revealHide = [rainLines, noteInk, notePad];
+  const revealHide = [rainLines, noteInk, notePad, sparks];
   const floorDecal = (w, h, x, y, z, m) => { const p = plane(w, h, x, y, z, m); p.rotation.x = -Math.PI / 2; p.userData.ignoreHover = true; revealHide.push(p); return p; };
   const shadowTex = drawTex(128, 128, c => { const g = c.createRadialGradient(64, 64, 4, 64, 64, 62); g.addColorStop(0, 'rgba(0,0,0,0.42)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, 128, 128); });
   for (const [w, h, x, z, opacity = 0.8] of [[3.4, 2.4, 0.15, -0.1, 0.65], [2, 1.5, -3.3, 1.8], [1.6, 1.3, 2.6, 1.5], [2.1, 1.7, 3, -1.7], [5.6, 2.6, 0.2, -1.6, 0.45]]) floorDecal(w, h, x, 0.025, z, basic(0x050912, { map: shadowTex, transparent: true, opacity, depthWrite: false }));
@@ -1392,6 +1400,7 @@ function buildAfterHours() {
   target('mug', mug, [-1.0, 1.95, -1.31]); neonFrame('mug', mug, 0.36, 0.26, [-1.035, 1.56, -1.31], true);   // a coaster of light on the desk, like the deck's
   target('rack', rack, [3.05, 1.3, -1.23]); neonFrame('rack', rack, 0.69, 1.16, [3.05, 0.58, -1.14]);   // the tower's face, clear of the fan hubs
   target('post-it', postit, [0, 0.16, 0]); neonFrame('post-it', postit, 0.3, 0.3, [0, 0, 0.005]); hot['post-it'].glows.push({ material: noteInk.material, strength: 1 });   // a frame of its own, and the recipe's ink glows
+  target('robot', robot, [0, 0.66, 0]); neonFrame('robot', robot, 0.44, 0.64, [0, 0.3, 0.13]);   // the unfinished robot: its frame, and the sparks while lit (lifts)
   target('frenchie', dogHead, [0, 0.73, 0.03]);
   const dogParts = []; dog.traverse(o => { if (o.isMesh && (o.material === piedFur || o.geometry === earGeometry || o.parent === dog || o.parent === dogBody)) dogParts.push(o); });
   for (const [scale, strength, color] of [[1.2, 0.12, 0x51aaff], [1.11, 0.3, 0x71c8ff], [1.045, 0.95, 0xd5f3ff]]) {   // the shells ride on the parts, so they breathe and lift with him
@@ -1401,7 +1410,8 @@ function buildAfterHours() {
   // each inspectable's light as hoverTick eases it (group.userData.hover): t = how lit, n = how far the shell is open, which puts the CRT's
   // frame out (the camera sits at its glass). Glows fade with t·(1 − n) and aren't drawn at all while dark; a monitor's screen brightens with t,
   // the tower's fan rings too
-  const lifts = { 'monitor-right': t => screenColor(crtMat, t), 'monitor-left': t => screenColor(sideMat, t), rack: t => { for (const m of fanRings) m.emissiveIntensity = 0.7 * (1 + CONFIG.hover.fanBoost * t); } };
+  const lifts = { 'monitor-right': t => screenColor(crtMat, t), 'monitor-left': t => screenColor(sideMat, t), rack: t => { for (const m of fanRings) m.emissiveIntensity = 0.7 * (1 + CONFIG.hover.fanBoost * t); },
+    robot: t => { sparks.material.opacity = t; sparks.material.visible = MOTION && t >= 0.005; } };   // still air under reduced motion: no sparks
   for (const [id, h] of Object.entries(hot)) root.getObjectByName(id).userData.hover = (t, n) => {
     const a = t * (1 - n); for (const g of h.glows) { g.material.opacity = a * g.strength; g.material.visible = a >= 0.005; }
     lifts[id]?.(t);
@@ -1421,7 +1431,8 @@ function buildAfterHours() {
   revealHide.push(dust, steam);
   return { root, revealHide, hot, led, monitorLight, recordLabel, dogBody, dogHead, sleepingHeadY,
     dog: { time: 0, lifted: -Infinity, next: lerp(...CONFIG.motion.dog.lift, Math.random()) },
-    rain: { lines: rainLines, geo: rainGeo, pos: rainPos, speed: rainSpeed }, dust: { group: dust, motes, time: 0 }, steam: { points: steam, geo: steamGeo, pos: steamPos } };
+    rain: { lines: rainLines, geo: rainGeo, pos: rainPos, speed: rainSpeed }, dust: { group: dust, motes, time: 0 }, steam: { points: steam, geo: steamGeo, pos: steamPos },
+    robot: { eyes: robotEyes, beacon: robotBeacon, sparks, sparkGeo, sparkPos } };
 }
 let ROOM = null;     // the handles of the room in the scene (buildAfterHours)
 const BUILT = [];   // what build() added to the scene: the room's root group, the one thing raycasts and clearScene walk
@@ -1598,6 +1609,16 @@ function animate(t, dt) {
   const st = R.steam.pos;
   for (let i = 0; i < 12; i++) { const age = (t * 0.1 + i / 12) % 1; st[i * 3] = -0.98 + Math.sin(age * 8 + t * 0.3) * age * 0.06; st[i * 3 + 1] = 1.83 + age * 0.5; st[i * 3 + 2] = -1.31 + age * 0.04; }
   R.steam.geo.attributes.position.needsUpdate = true;
+  // the unfinished robot: the work light on its antenna blinks, the right eye stutters on its loose wire, and while it is lit the welder's
+  // sparks (points in the robot's own frame) spray off the right shoulder, fall and start again, each on its own index-seeded path
+  const rb = R.robot; rb.beacon.emissiveIntensity = t % 1.6 < 0.22 ? 1.6 : 0; rb.eyes[1].visible = Math.sin(t * 13.7) * Math.sin(t * 2.3) > -0.55;
+  if (rb.sparks.visible && rb.sparks.material.visible) {
+    const sp = rb.sparkPos;
+    for (let i = 0; i < 14; i++) { const age = (t * 1.7 + i * 0.618) % 1, a = i * 2.4, v = 0.35 + (i % 5) * 0.06;   // out, forward and up, then down: each lands on the board (y 0) as its life ends
+      sp[i * 3] = 0.21 + (0.12 + 0.3 * Math.abs(Math.cos(a))) * v * age; sp[i * 3 + 1] = 0.3 + 0.6 * v * age - (0.3 + 0.6 * v) * age * age; sp[i * 3 + 2] = 0.08 + 0.3 * Math.abs(Math.sin(a)) * v * age; }
+    rb.sparkGeo.attributes.position.needsUpdate = true;
+    rb.sparks.material.size = Math.min(6, 1.6 + camera.zoom * 0.45);   // points are pixels under an ortho lens: a glint at home, a spark up close
+  }
 }
 // dust, every frame (frozen in place under reduced motion): each mote faces the camera, never drops under a pixel and never grows past three,
 // so a glide's zoom doesn't blow the flecks up into squares. Up close (the shell, a window, the dog or the note) the dust sits out
@@ -1697,8 +1718,8 @@ function hoverTick(dt) {
   const locked = explorer.open || TERM.open || debug.on || camTween.active;
   if (debug.on || (pointers.size && canvas.classList.contains('drag'))) setHover(null);   // a hand turning the room lights nothing; debug lets the last light fade
   else if (!locked && hover.moved && hover.frame % CONFIG.hover.everyNthFrame === 0) { hover.moved = false; setHover(pickAt(hover.pointer)); }
-  // up close on the dog his name holds wherever the pointer went (the glide moved him out from under it): the click earned it
-  if (hintFocus?.hoverLabel && !debug.on && !TERM.open && !explorer.open && hover.current?.insp !== hintFocus) setHover(hover.targets.find(tg => tg.insp === hintFocus) || null);
+  // up close on the dog (his name: the click earned it) or the robot, the chip holds wherever the pointer went (the glide moved it out from under it)
+  if (hintFocus && hintFocus.id !== 'post-it' && !debug.on && !TERM.open && !explorer.open && hover.current?.insp !== hintFocus) setHover(hover.targets.find(tg => tg.insp === hintFocus) || null);
   // t damps toward 1 on the lit object (the hovered one, or the CRT while the shell has the keyboard), fast in and slower out (hover.fade). n damps
   // toward 1 on the CRT while the shell is open: the camera sits at the glass, so the screen's own light does the work and its frame goes out.
   // The note goes out too while it's read up close: at ~34x its frame and ink would bloom over the paper (the dog keeps his: the chip is the clue)
