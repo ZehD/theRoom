@@ -63,7 +63,7 @@
   #room.hot { cursor: pointer; }
   #room.drag { cursor: grabbing; }
   #room.shell { cursor: text; }
-  #shell-in { position: fixed; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; }
+  #shell-in { position: fixed; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; font-size: 16px; }   /* 16px: no iOS focus zoom */
   /* explorer window: flat soil sheet, 1px moss border, no radius, no shadow */
   #dim { position: fixed; inset: 0; background: var(--ink); opacity: 0; pointer-events: none; transition: opacity var(--ex-fade) linear; z-index: 5; }
   #dim.on { opacity: var(--ex-dim); pointer-events: auto; }
@@ -370,7 +370,7 @@
   #gate .out .e { color: var(--g-ember); text-shadow: 0 0 2px color-mix(in srgb, var(--g-ember) 80%, transparent), 0 0 14px color-mix(in srgb, var(--g-ember) 35%, transparent); }
   #gate .out .c { display: inline-block; width: 0.58em; height: 1.02em; vertical-align: -0.16em; background: var(--g-bloom); box-shadow: 0 0 9px color-mix(in srgb, var(--g-bloom) 65%, transparent); animation: boot-blink 1s steps(1) infinite; }
   #gate ::selection { background: var(--g-phosphor); color: #000; text-shadow: none; }
-  #gate input { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; margin: 0; pointer-events: none; }
+  #gate input { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; margin: 0; pointer-events: none; font-size: 16px; }   /* 16px: under that, iOS zooms the page onto a focused field and pans it about while you type */
   #gate .id { display: none; align-items: center; gap: 10px; color: var(--g-dim); text-shadow: none; }
   #gate .id svg { color: var(--g-phosphor); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--g-phosphor) 55%, transparent)); flex: 0 0 auto; }
   #gate .id b { font-family: Doto, Silkscreen, VT323, ui-monospace, monospace; font-variation-settings: "ROND" 0, "wght" 800; font-weight: 800; }
