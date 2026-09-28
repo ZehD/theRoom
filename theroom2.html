@@ -21,7 +21,7 @@
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500&family=Silkscreen&family=JetBrains+Mono:wght@400;500&family=Doto:ROND,wght@0,800&family=Caveat:wght@700&display=swap" rel="stylesheet">
 <style>
   :root { --ink: #060A07; --soil: #0E1610; --moss: #1B2A1F; --phosphor: #3BE77B; --phosphor-dim: #1F8A4A; --phosphor-bloom: #C8FFD6; --paper: #B9C9BC; --ex-w: 760px; --ex-h: 460px; --ex-fade: 250ms; --ex-slide: 12px; --ex-dim: 0.55; }
-  html, body { margin: 0; height: 100%; background: var(--ink); overflow: hidden; }
+  html, body { margin: 0; height: 100%; background: var(--ink); overflow: hidden; overscroll-behavior: none; }   /* no rubber-band: with the keyboard up iOS lets the page pan behind it */
   /* #root is the frame: fixed UI hangs off it and the container queries below measure it. ?vp=390x844 shrinks it to a phone-sized preview. */
   /* the room's night: the canvas is transparent, so this gradient is the air around the cutaway (After Hours) */
   #root { position: fixed; inset: 0; container-type: size; background: radial-gradient(ellipse at 50% 49%, var(--room-bg0, #162131) 0%, var(--room-bg1, #0c121d) 48%, var(--room-bg2, #070b12) 83%); }
@@ -63,7 +63,7 @@
   #room.hot { cursor: pointer; }
   #room.drag { cursor: grabbing; }
   #room.shell { cursor: text; }
-  #shell-in { position: fixed; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; font-size: 16px; }   /* 16px: no iOS focus zoom */
+  #shell-in { position: fixed; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; font-size: 16px; color: transparent; caret-color: transparent; }   /* 16px: no iOS focus zoom; iOS draws its caret past opacity */
   /* explorer window: flat soil sheet, 1px moss border, no radius, no shadow */
   #dim { position: fixed; inset: 0; background: var(--ink); opacity: 0; pointer-events: none; transition: opacity var(--ex-fade) linear; z-index: 5; }
   #dim.on { opacity: var(--ex-dim); pointer-events: auto; }
@@ -354,7 +354,7 @@
   #gate { --g-phosphor: #5FB0FF; --g-dim: #085FA6; --g-bloom: #B6D8FF; --g-ember: #FF5A4A;
     --g-rule: color-mix(in srgb, var(--g-dim) 62%, transparent);
     --g-glow: 0 0 2px color-mix(in srgb, var(--g-phosphor) 85%, transparent), 0 0 11px color-mix(in srgb, var(--g-phosphor) 40%, transparent), 0 0 32px color-mix(in srgb, var(--g-phosphor) 15%, transparent);
-    position: absolute; inset: 0; z-index: 10; display: grid; background: #000; color: var(--g-phosphor); overflow: hidden; transition: opacity 260ms linear; cursor: text; }
+    position: absolute; inset: 0; z-index: 10; display: grid; background: #000; color: var(--g-phosphor); overflow: hidden; transition: opacity 260ms linear; cursor: text; touch-action: none; }
   #gate.off { opacity: 0; pointer-events: none; }
   #gate::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(60ch 34ch at var(--bed-x, 38%) var(--bed-y, 40%), color-mix(in srgb, var(--g-phosphor) 7%, transparent), transparent 72%); }
   #gate .glass { position: absolute; inset: 0; z-index: 5; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.38) 0 1px, transparent 1px 3px), radial-gradient(128% 106% at var(--bed-x, 38%) var(--bed-y, 40%), transparent 0 44%, rgba(0, 0, 0, 0.5) 80%, rgba(0, 0, 0, 0.93) 100%); }
@@ -370,7 +370,7 @@
   #gate .out .e { color: var(--g-ember); text-shadow: 0 0 2px color-mix(in srgb, var(--g-ember) 80%, transparent), 0 0 14px color-mix(in srgb, var(--g-ember) 35%, transparent); }
   #gate .out .c { display: inline-block; width: 0.58em; height: 1.02em; vertical-align: -0.16em; background: var(--g-bloom); box-shadow: 0 0 9px color-mix(in srgb, var(--g-bloom) 65%, transparent); animation: boot-blink 1s steps(1) infinite; }
   #gate ::selection { background: var(--g-phosphor); color: #000; text-shadow: none; }
-  #gate input { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; margin: 0; pointer-events: none; font-size: 16px; }   /* 16px: under that, iOS zooms the page onto a focused field and pans it about while you type */
+  #gate input { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; margin: 0; pointer-events: none; font-size: 16px; color: transparent; caret-color: transparent; }   /* 16px: under that, iOS zooms the page onto a focused field; transparent caret: iOS draws its own and ignores opacity */
   #gate .id { display: none; align-items: center; gap: 10px; color: var(--g-dim); text-shadow: none; }
   #gate .id svg { color: var(--g-phosphor); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--g-phosphor) 55%, transparent)); flex: 0 0 auto; }
   #gate .id b { font-family: Doto, Silkscreen, VT323, ui-monospace, monospace; font-variation-settings: "ROND" 0, "wght" 800; font-weight: 800; }
@@ -648,6 +648,7 @@
     prompt();
     inp.addEventListener('input', echo);
     gate.addEventListener('pointerdown', function () { if (!done) inp.focus({ preventScroll: true }); });   // a tap raises the keyboard on glass
+    gate.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });   // with the keyboard up iOS pans the whole page under a finger that drifts while it taps or types: the prompt slid off and back
     document.addEventListener('keydown', function (e) {
       if (done) return;
       var k = e.key;
