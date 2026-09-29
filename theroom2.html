@@ -220,6 +220,7 @@
   [hidden] { display: none !important; }
   /* site chrome: a bar along the top with the name and one link per object in the room. Flat soil, 1px moss rule. */
   #top { position: fixed; left: 0; right: 0; top: 0; min-height: 52px; display: flex; align-items: center; gap: 20px; padding: 0 16px; background: var(--soil); border-bottom: 1px solid var(--moss); font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor-dim); opacity: 0; transition: opacity 400ms linear; z-index: 1; }
+  #top.open { z-index: 12; }   /* the phone menu, dropped open while the shell is up, paints over the keyboard (#kb is 11) */
   #top.on { opacity: 1; }
   /* logo: the monitor-with-cursor mark (strokes in currentColor; the cursor block blinks) beside "theRoom" in Doto, a square dot-matrix face,
      and "by Luiz Cordeiro" in small tracked mono under it. A click goes home. */
@@ -354,8 +355,10 @@
   #gate { --g-phosphor: #5FB0FF; --g-dim: #085FA6; --g-bloom: #B6D8FF; --g-ember: #FF5A4A;
     --g-rule: color-mix(in srgb, var(--g-dim) 62%, transparent);
     --g-glow: 0 0 2px color-mix(in srgb, var(--g-phosphor) 85%, transparent), 0 0 11px color-mix(in srgb, var(--g-phosphor) 40%, transparent), 0 0 32px color-mix(in srgb, var(--g-phosphor) 15%, transparent);
+    --g-safe: env(safe-area-inset-bottom);   /* the foot's safe area; the keyboard takes it over while it is up (below) */
     position: absolute; inset: 0; z-index: 10; display: grid; background: #000; color: var(--g-phosphor); overflow: hidden; transition: opacity 260ms linear; cursor: text; touch-action: none; }
   #gate.off { opacity: 0; pointer-events: none; }
+  #root[data-kb] #gate { --g-safe: 0px; }   /* the keyboard docks under the gate's black: every dress pads its foot by --kb-h */
   #gate::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(60ch 34ch at var(--bed-x, 38%) var(--bed-y, 40%), color-mix(in srgb, var(--g-phosphor) 7%, transparent), transparent 72%); }
   #gate .glass { position: absolute; inset: 0; z-index: 5; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.38) 0 1px, transparent 1px 3px), radial-gradient(128% 106% at var(--bed-x, 38%) var(--bed-y, 40%), transparent 0 44%, rgba(0, 0, 0, 0.5) 80%, rgba(0, 0, 0, 0.93) 100%); }
   #gate .roll { position: absolute; left: 0; right: 0; top: -30vh; height: 26vh; z-index: 4; pointer-events: none; background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--g-bloom) 4%, transparent), transparent); animation: gate-roll 8s linear 1.6s infinite; }
@@ -388,7 +391,7 @@
 
   /* ── tty: a console, text where a console starts. A banner under a hairline, three blank rows, the prompt, a status line
      welded to the foot. Nothing centred; the two rules give the black a top and a bottom. ── */
-  #gate[data-v="tty"] { --bed-x: 30%; --bed-y: 32%; grid-template-rows: auto minmax(0, 1fr) auto; padding: clamp(24px, 4.5vh, 46px) clamp(20px, 5vw, 72px) 0; }
+  #gate[data-v="tty"] { --bed-x: 30%; --bed-y: 32%; grid-template-rows: auto minmax(0, 1fr) auto; padding: clamp(24px, 4.5vh, 46px) clamp(20px, 5vw, 72px) var(--kb-h, 0px); }
   #gate[data-v="tty"] .tube { display: contents; }
   #gate[data-v="tty"] .id { display: flex; grid-row: 1; padding-bottom: 9px; border-bottom: 1px solid var(--g-rule); animation: gate-fade 90ms 560ms linear both; }
   #gate[data-v="tty"] .id svg { width: 18px; height: 18px; }
@@ -396,10 +399,10 @@
   #gate[data-v="tty"] .id small { display: none; }
   #gate[data-v="tty"] .id em { margin-left: auto; font-size: 10px; letter-spacing: 0.14em; }
   #gate[data-v="tty"] .screen { grid-row: 2; align-self: start; width: min(74ch, 100%); padding-top: 4.5em; font-size: clamp(21px, 2.1vw, 28px); letter-spacing: 0.02em; animation: gate-fade 90ms 760ms linear both; }
-  #gate[data-v="tty"] .bar { display: flex; grid-row: 3; justify-content: space-between; gap: 16px; margin-top: 12px; padding: 9px 0 calc(9px + env(safe-area-inset-bottom)); border-top: 1px solid var(--g-rule); font: 10px/1 Silkscreen, VT323, ui-monospace, monospace; letter-spacing: 0.12em; text-transform: uppercase; color: var(--g-dim); animation: gate-fade 90ms 900ms linear both; }
+  #gate[data-v="tty"] .bar { display: flex; grid-row: 3; justify-content: space-between; gap: 16px; margin-top: 12px; padding: 9px 0 calc(9px + var(--g-safe)); border-top: 1px solid var(--g-rule); font: 10px/1 Silkscreen, VT323, ui-monospace, monospace; letter-spacing: 0.12em; text-transform: uppercase; color: var(--g-dim); animation: gate-fade 90ms 900ms linear both; }
 
   /* ── nameplate: the machine names itself, a rule declares the measure, the prompt hangs under it. ── */
-  #gate[data-v="boot"] { --bed-y: 44%; --bed-x: 50%; place-items: center; padding: 40px 32px calc(64px + env(safe-area-inset-bottom)); }
+  #gate[data-v="boot"] { --bed-y: 44%; --bed-x: 50%; place-items: center; padding: 40px 32px calc(64px + var(--g-safe) + var(--kb-h, 0px)); }
   #gate[data-v="boot"] .tube { position: static; width: min(620px, 100%); animation: gate-fade 260ms 40ms linear both; }   /* opacity only: a transform here would trap the status line inside the column */
   #gate[data-v="boot"] .id { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 18px; padding-bottom: 30px; }
   #gate[data-v="boot"] .id svg { grid-row: 1 / 3; width: 64px; height: 64px; }
@@ -408,13 +411,13 @@
   #gate[data-v="boot"] .id em { display: none; }
   #gate[data-v="boot"] .id::after { content: ""; grid-column: 1 / -1; height: 1px; margin-top: 30px; background: var(--g-dim); transform-origin: left center; animation: gate-rule 300ms cubic-bezier(.2, .8, .2, 1) 740ms both; }
   #gate[data-v="boot"] .screen { font-size: clamp(20px, 2vw, 26px); animation: gate-fade 90ms 1000ms linear both; }
-  #gate[data-v="boot"] .bar { display: flex; justify-content: space-between; gap: 16px; position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 9px clamp(16px, 4vw, 32px) calc(9px + env(safe-area-inset-bottom)); border-top: 1px solid var(--g-rule); font: 10px/1 Silkscreen, VT323, ui-monospace, monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--g-dim); animation: gate-fade 90ms 1120ms linear both; }
+  #gate[data-v="boot"] .bar { display: flex; justify-content: space-between; gap: 16px; position: absolute; left: 0; right: 0; bottom: var(--kb-h, 0px); z-index: 2; padding: 9px clamp(16px, 4vw, 32px) calc(9px + var(--g-safe)); border-top: 1px solid var(--g-rule); font: 10px/1 Silkscreen, VT323, ui-monospace, monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--g-dim); animation: gate-fade 90ms 1120ms linear both; }
 
   /* ── tube: the prompt is printed inside a lit CRT with a bezel, and the tube powers on out of a line. ── */
-  #gate[data-v="crt"] { --bed-x: 50%; --bed-y: 46%; place-items: center; padding: clamp(10px, 3vw, 28px); }
+  #gate[data-v="crt"] { --bed-x: 50%; --bed-y: 46%; place-items: center; padding: clamp(10px, 3vw, 28px) clamp(10px, 3vw, 28px) calc(clamp(10px, 3vw, 28px) + var(--kb-h, 0px)); }
   #gate[data-v="crt"]::before { display: none; }
   #gate[data-v="crt"] .glass { z-index: 0; background: none; }
-  #gate[data-v="crt"] .tube { width: min(980px, 100%); aspect-ratio: 4 / 3; max-height: calc(100dvh - 56px); box-sizing: border-box; padding: clamp(18px, 2.6vw, 30px) clamp(18px, 2.8vw, 38px) 0; border-radius: 26px / 32px; overflow: hidden; background: radial-gradient(118% 118% at 50% 44%, #071019 0%, #03070B 58%, #000 100%); box-shadow: 0 0 0 9px #0A0C0E, 0 0 0 10px #171C20, inset 0 0 0 1px color-mix(in srgb, var(--g-bloom) 7%, transparent), inset 0 0 70px 26px rgba(0, 0, 0, 0.92), 0 26px 70px -18px #000, 0 0 130px 8px color-mix(in srgb, var(--g-phosphor) 8%, transparent); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; animation: gate-unfurl 520ms cubic-bezier(.15, .6, .35, 1) both; }
+  #gate[data-v="crt"] .tube { width: min(980px, 100%); aspect-ratio: 4 / 3; max-height: calc(100cqh - 56px - var(--kb-h, 0px)); box-sizing: border-box; padding: clamp(18px, 2.6vw, 30px) clamp(18px, 2.8vw, 38px) 0; border-radius: 26px / 32px; overflow: hidden; background: radial-gradient(118% 118% at 50% 44%, #071019 0%, #03070B 58%, #000 100%); box-shadow: 0 0 0 9px #0A0C0E, 0 0 0 10px #171C20, inset 0 0 0 1px color-mix(in srgb, var(--g-bloom) 7%, transparent), inset 0 0 70px 26px rgba(0, 0, 0, 0.92), 0 26px 70px -18px #000, 0 0 130px 8px color-mix(in srgb, var(--g-phosphor) 8%, transparent); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; animation: gate-unfurl 520ms cubic-bezier(.15, .6, .35, 1) both; }
   #gate[data-v="crt"] .tube::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.34) 0 1px, transparent 1px 3px), radial-gradient(112% 112% at 50% 50%, transparent 52%, rgba(0, 0, 0, 0.55) 86%, rgba(0, 0, 0, 0.85) 100%); }
   #gate[data-v="crt"] .beam { display: block; animation: gate-beam 300ms ease-out both; }
   #gate[data-v="crt"] .id { display: flex; padding-bottom: 9px; border-bottom: 1px solid var(--g-rule); animation: gate-fade 90ms 420ms linear both; }
@@ -428,17 +431,27 @@
   @keyframes gate-beam { 0% { transform: scaleX(0); opacity: 1; } 43% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
 
   @container (max-width: 767px) {
-    #gate[data-v="tty"] { padding: 24px 20px 0; }
+    #gate[data-v="tty"] { padding: 24px 20px var(--kb-h, 0px); }
     #gate[data-v="tty"] .screen { padding-top: 3em; font-size: 20px; max-width: none; }
-    #gate[data-v="boot"] { padding: 24px 20px calc(58px + env(safe-area-inset-bottom)); }
+    #gate[data-v="boot"] { padding: 24px 20px calc(58px + var(--g-safe) + var(--kb-h, 0px)); }
     #gate[data-v="boot"] .id svg { width: 32px; height: 32px; }
     #gate[data-v="boot"] .id b { font-size: 30px; }
     #gate[data-v="boot"] .screen { font-size: 20px; }
-    #gate[data-v="crt"] .tube { aspect-ratio: auto; height: calc(100dvh - 20px); border-radius: 16px / 20px; box-shadow: 0 0 0 6px #0A0C0E, 0 0 0 7px #171C20, inset 0 0 0 1px color-mix(in srgb, var(--g-bloom) 7%, transparent), inset 0 0 50px 18px rgba(0, 0, 0, 0.92), 0 0 90px 6px color-mix(in srgb, var(--g-phosphor) 8%, transparent); }
+    #gate[data-v="crt"] .tube { aspect-ratio: auto; height: calc(100cqh - 20px - var(--kb-h, 0px)); border-radius: 16px / 20px; box-shadow: 0 0 0 6px #0A0C0E, 0 0 0 7px #171C20, inset 0 0 0 1px color-mix(in srgb, var(--g-bloom) 7%, transparent), inset 0 0 50px 18px rgba(0, 0, 0, 0.92), 0 0 90px 6px color-mix(in srgb, var(--g-phosphor) 8%, transparent); }
     #gate[data-v="crt"] .screen { font-size: 20px; }
     #gate .id em { display: none; }
   }
   @container (max-height: 560px) { #gate[data-v="boot"] .id small { display: none; } #gate[data-v="boot"] .id b { font-size: 26px; } #gate[data-v="boot"] .id svg { width: 40px; height: 40px; } }
+  /* a phone on its side with the keyboard up leaves a strip: the status line goes (the keyboard's own return key is the "↵ submit"),
+     the prompt climbs to the top, the tube drops its 4:3 and the nameplate its mark, so the question and the answer stay in sight */
+  @container (max-height: 520px) {
+    #root[data-kb] #gate .bar { display: none; }
+    #root[data-kb] #gate[data-v="tty"] .screen { padding-top: .5em; }
+    #root[data-kb] #gate[data-v="crt"] .tube { max-height: none; aspect-ratio: auto; height: calc(100cqh - 20px - var(--kb-h, 0px)); padding-top: 10px; }
+    #root[data-kb] #gate[data-v="crt"] .screen { padding-top: .4em; }
+    #root[data-kb] #gate[data-v="boot"] .id { padding-bottom: 8px; }
+    #root[data-kb] #gate[data-v="boot"] .id svg, #root[data-kb] #gate[data-v="boot"] .id::after { display: none; }
+  }
   @media (prefers-reduced-motion: reduce) {
     #gate, #gate * { animation: none !important; transition: none !important; }
     #gate .out .c { animation: boot-blink 1s steps(1) infinite !important; }
@@ -523,6 +536,86 @@
     #agent .bios .keys { display: none; }
   }
   @media (prefers-reduced-motion: reduce) { #agent .bios .post::after { animation: none; } }
+  /* ── the keyboard (After Hours) ─────────────────────────────────────────────────────────────────────────────────────
+     A breadbin 64 docked at the foot of the frame whenever something takes typing (the gate, the shell): sculpted keycaps in
+     a recessed bed, a deep case. The desktop board has the full rows and four function keys; phones and touch screens get the
+     thumb board ([data-mobile]), which stands in for the OS keyboard. While it is up, #root carries data-kb (who asked) and
+     --kb-h (its height), so the gate and the chrome make room. It keeps its After Hours blue-grey; an accent turns its hue. */
+  #kb { position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; width: min(1000px, calc(100% - 56px)); margin: 0 auto; box-sizing: border-box; padding: 16px 26px env(safe-area-inset-bottom); border-top: 1px solid #657e945e; border-radius: 15px 15px 0 0; background: linear-gradient(178deg, #354a5d 0%, #2b3e51 10%, #26384a 80%, #1e2e3e 80%); box-shadow: 0 -5px 12px #02081280, inset 0 2px 1px #a6c5d52c, inset 6px 0 12px #637d9114, inset -6px 0 12px #07121e50; color: #b1cadc; font-family: "Courier New", monospace; cursor: default; isolation: isolate; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none; animation: kb-in 420ms 120ms cubic-bezier(.16, 1, .3, 1) both; }
+  #kb.out { animation: kb-out 240ms cubic-bezier(.5, 0, .75, 0) both; pointer-events: none; }
+  @keyframes kb-in { from { transform: translateY(calc(100% + 12px)); } to { transform: none; } }
+  @keyframes kb-out { from { transform: none; } to { transform: translateY(calc(100% + 12px)); } }
+  #kb button { font: inherit; }
+  #kb .retro-keyboard-top { height: 32px; display: flex; align-items: center; gap: 22px; margin-bottom: 13px; }
+  #kb .retro-badge { display: flex; align-items: center; gap: 9px; white-space: nowrap; padding: 5px 9px 5px 5px; background: #0e1b27; border: 1px solid #62798c55; border-radius: 3px; box-shadow: 0 1px #839cad22, inset 0 1px 3px #03091370; font-size: 13px; letter-spacing: .5px; color: #9eb8cb; line-height: 1; }
+  #kb .retro-badge b { font-size: 16px; font-weight: 400; color: #d0e6f3; margin-left: 9px; }
+  #kb .retro-badge-stripes { display: flex; width: 21px; height: 18px; transform: skew(-13deg); overflow: hidden; margin: 0 2px; }
+  #kb .retro-badge-stripes i { flex: 1; background: #406482; } #kb .retro-badge-stripes i:nth-child(2) { background: #6491ad; } #kb .retro-badge-stripes i:nth-child(3) { background: #97bace; }
+  #kb .retro-vents { height: 18px; flex: 1; max-width: 340px; margin: auto; background: repeating-linear-gradient(90deg, #07142299 0, #07142299 2px, #6b829a22 3px, transparent 4px, transparent 7px); border-radius: 2px; opacity: .85; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+  #kb .retro-power { display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 1px; color: #92a9bc; } #kb .retro-power i { width: 5px; height: 5px; border-radius: 50%; background: #acdfff; box-shadow: 0 0 9px #91d8ff88; }
+  #kb .retro-sound { display: grid; place-items: center; width: 31px; height: 29px; padding: 0; border: 1px solid #718da04d; border-radius: 3px; background: #1a2c3d; color: #9ebfd6; cursor: pointer; box-shadow: inset 0 1px #88a8bf16, 0 1px 2px #08111d55; -webkit-tap-highlight-color: transparent; }
+  #kb .retro-sound[aria-pressed="false"] { color: #728ba0; }
+  #kb .retro-sound:focus-visible, #kb .retro-key:focus-visible { outline: 2px solid #9fd8fc; outline-offset: 3px; }
+  #kb .retro-keyboard-bed { display: flex; gap: 15px; padding: 9px 9px 12px; border-radius: 7px; background: #0a1420; box-shadow: inset 0 2px 6px #01050b, 0 1px #768da32e, 0 -1px 1px #030811; transform: perspective(1100px) rotateX(3deg); transform-origin: bottom; }
+  #kb .retro-main-keys { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+  #kb .retro-key-row { display: flex; gap: 5px; min-width: 0; height: 36px; }
+  #kb .retro-key { position: relative; display: block; min-width: 0; flex-basis: 0; flex-shrink: 1; height: 100%; padding: 0; border: 0; border-radius: 4px; background: linear-gradient(90deg, #152434, #213447 12%, #1c2d3d 87%, #132334); box-shadow: 0 5px 0 #102030, 0 6px 0 1px #040a12, 0 8px 4px #0009; color: #c6dce9; cursor: pointer; -webkit-tap-highlight-color: transparent; transform: translateY(-2px); transition: transform 70ms cubic-bezier(.2, .65, .4, 1), box-shadow 70ms, filter .15s; }
+  #kb .retro-key-face { position: absolute; inset: 0 3px 3px; display: flex; align-items: center; justify-content: center; border: 1px solid #9fbacf37; border-bottom-color: #1c3041; border-radius: 4px 4px 5px 5px; background: radial-gradient(ellipse at 50% 15%, #30495e, #3e566a 70%, #445e74); box-shadow: inset 0 1px 1px #b7d3e23d, inset 1px 0 #91adc322, inset -1px 0 #06132155, inset 0 -2px 3px #0b1d2d66; text-shadow: 0 1px 1px #0008; font-size: 14px; font-weight: 700; line-height: 1; transition: background .15s, color .15s; }
+  @media (hover: hover) { #kb .retro-key:hover { filter: brightness(1.16); } #kb .retro-sound:hover { color: #e4f7ff; background: #314b60; } }   /* glass keeps a tapped cap "hovered": no hover there */
+  #kb .retro-key[data-pressed="true"] { transform: translateY(3px); box-shadow: 0 0 0 #102030, 0 1px 0 1px #040a12, 0 2px 2px #0009; filter: brightness(1.13); }
+  #kb .retro-key[data-pressed="true"] .retro-key-face { background: radial-gradient(ellipse at 50% 20%, #35576e, #45677f); color: #e7f6ff; border-color: #b1e1fd77; box-shadow: inset 0 1px 3px #081d3099, 0 0 8px #74baff22; }
+  #kb .retro-key-symbol { position: absolute; top: 4px; left: 5px; font-size: 9px; color: #91aebf; font-weight: 400; }
+  #kb .retro-key:has(.retro-key-symbol) .retro-key-legend { padding-top: 7px; }
+  #kb .retro-key-word .retro-key-face { font-size: 10px; letter-spacing: .3px; }
+  #kb .retro-key-caption { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 8px; letter-spacing: .4px; color: #839cb0; font-weight: 400; }
+  #kb .retro-key:has(.retro-key-caption) .retro-key-legend { padding-bottom: 9px; }
+  #kb .retro-key-accent { background: #2d475c; }
+  #kb .retro-key-accent .retro-key-face { background: radial-gradient(ellipse at 50% 15%, #496478, #5b7689); color: #e0edf5; border-top-color: #a7c9de66; }
+  #kb .retro-space .retro-key-face { background: linear-gradient(#405b70, #4a657a 38%, #3d576c 80%, #334c61); font-size: 9px; letter-spacing: 3px; color: #7e9cb2; }
+  #kb .retro-space .retro-key-legend { align-self: flex-end; margin-bottom: 4px; }
+  #kb .retro-function-keys { display: flex; flex-direction: column; gap: 10px; flex: 0 0 52px; padding: 1px 0 0; }
+  #kb .retro-function-keys .retro-key { min-height: 0; flex: 1; }
+  #kb .retro-function-keys .retro-key-face { background: radial-gradient(ellipse at 50% 10%, #567185, #607a8b); font-size: 14px; font-style: italic; color: #dbe8f0; }
+  #kb .retro-function-keys .retro-key-caption { font-size: 8px; color: #b2c9d8; font-style: normal; }
+  #kb .retro-function-keys .retro-key:first-child .retro-key-face { background: radial-gradient(ellipse at 50% 10%, #46667f, #62889e); }
+  #kb .retro-keyboard-lip { height: 28px; display: flex; align-items: center; gap: 12px; padding: 0 7px; font-size: 9px; letter-spacing: 1.5px; color: #7992a7; text-shadow: 0 -1px #07121a99; }
+  #kb .retro-lip-rule { flex: 1; height: 1px; background: #07131f55; box-shadow: 0 1px #829eb016; }
+  #kb .retro-mobile-layout, #kb .kb-layer { display: none; }
+  #kb .kb-layer.on { display: contents; }   /* the thumb board's three layers are built once; the current one joins the rows */
+  @container (max-height: 760px) { #kb { padding-top: 10px; padding-left: 22px; padding-right: 22px; } #kb .retro-keyboard-top { height: 25px; margin-bottom: 8px; } #kb .retro-key-row { height: 30px; } #kb .retro-main-keys { gap: 6px; } #kb .retro-keyboard-lip { height: 20px; } }
+  @container (max-height: 600px) { #kb .retro-key-row { height: 26px; } #kb .retro-main-keys { gap: 5px; } #kb .retro-keyboard-lip { height: 14px; } }
+  /* the thumb board: a tools row (Tab, Ctrl, the arrows), four rows of big caps, and the command line stays above it all */
+  #kb[data-mobile] { width: 100%; padding: 10px 8px env(safe-area-inset-bottom); border-radius: 13px 13px 0 0; }
+  #kb[data-mobile] .retro-keyboard-top { height: 31px; gap: 12px; margin: 0 5px 9px; }
+  #kb[data-mobile] .retro-badge { font-size: 11px; gap: 6px; padding: 5px 7px 5px 4px; }
+  #kb[data-mobile] .retro-badge b { font-size: 15px; margin-left: 6px; }
+  #kb[data-mobile] .retro-badge-stripes { height: 17px; width: 18px; }
+  #kb[data-mobile] .retro-vents { height: 15px; }
+  #kb[data-mobile] .retro-power, #kb[data-mobile] .retro-desktop-layout { display: none; }
+  #kb[data-mobile] .retro-sound { height: 34px; width: 38px; flex-shrink: 0; }
+  #kb[data-mobile] .retro-mobile-layout { display: block; max-width: 600px; margin: 0 auto; }
+  #kb[data-mobile] .retro-mobile-tools { display: flex; gap: 6px; height: 35px; margin: 0 4px 10px; }
+  #kb[data-mobile] .retro-mobile-tools .retro-key-face { font-size: 16px; }
+  #kb[data-mobile] .retro-mobile-tools .retro-key-word .retro-key-face { font-size: 11px; letter-spacing: .4px; }
+  #kb[data-mobile] .retro-keyboard-bed { padding: 9px 4px 12px; transform: none; gap: 0; }
+  #kb[data-mobile] .retro-main-keys { gap: 8px; }
+  #kb[data-mobile] .retro-key-row { height: 44px; gap: 4px; }
+  #kb[data-mobile] .retro-home-row { padding: 0 calc(5% + 2px); }
+  #kb[data-mobile] .retro-key-face { inset: 0 1px 3px; border-radius: 4px; font-size: 19px; font-weight: 400; }
+  #kb[data-mobile] .retro-key-word .retro-key-face { font-size: 13px; letter-spacing: .3px; }
+  #kb[data-mobile] .retro-key-symbol { display: none; }
+  #kb[data-mobile] .retro-key:has(.retro-key-symbol) .retro-key-legend { padding: 0; }
+  #kb[data-mobile] .retro-space .retro-key-face { font-size: 12px; letter-spacing: 1.2px; color: #adc7da; }
+  #kb[data-mobile] .retro-space .retro-key-legend { align-self: center; margin: 0; }
+  #kb[data-mobile] .retro-bottom-row .retro-key-accent .retro-key-face { font-size: 25px; background: radial-gradient(ellipse at 50% 15%, #55758d, #64869c); color: #e3f5ff; }
+  #kb[data-mobile] .retro-keyboard-lip { height: 22px; padding: 0 7px; font-size: 8px; letter-spacing: 1px; }
+  @container (max-height: 680px) { #kb[data-mobile] { padding-top: 8px; } #kb[data-mobile] .retro-keyboard-top { height: 26px; margin-bottom: 7px; } #kb[data-mobile] .retro-key-row { height: 38px; } #kb[data-mobile] .retro-main-keys { gap: 7px; } #kb[data-mobile] .retro-mobile-tools { height: 31px; margin-bottom: 8px; } #kb[data-mobile] .retro-keyboard-lip { height: 17px; } }
+  /* a phone on its side: the same keys, a narrower case, the badge strip thinned and the lip gone, so the screen keeps some height */
+  @container (max-height: 520px) { #kb[data-mobile] { width: min(640px, 100%); padding-top: 6px; } #kb[data-mobile] .retro-keyboard-top { height: 22px; margin-bottom: 5px; } #kb[data-mobile] .retro-sound { height: 22px; } #kb[data-mobile] .retro-keyboard-lip { display: none; } #kb[data-mobile] .retro-key-row { height: 30px; } #kb[data-mobile] .retro-main-keys { gap: 5px; } #kb[data-mobile] .retro-mobile-tools { height: 27px; margin-bottom: 6px; } #kb[data-mobile] .retro-keyboard-bed { padding: 6px 3px 8px; } }
+  @media (prefers-reduced-motion: reduce) { #kb, #kb.out { animation: none; } #kb .retro-key, #kb .retro-key-face { transition: none; } }
+  /* while it is up: the view pill steps aside (the keys are the thing now), the accent strip rides above the case */
+  #root[data-kb] #mode { opacity: 0; pointer-events: none; }
+  #root[data-kb] #accent { bottom: calc(16px + var(--kb-h, 0px)); }
 </style>
 <template id="__bundler_thumbnail" data-bg-color="#060A07">
   <!-- the logo, big: the monitor mark with its cursor, the wordmark under it -->
@@ -599,7 +692,226 @@
 <div id="crt" aria-hidden="true"><div class="p t"></div><div class="p b"></div><div class="l"></div></div>
 <div id="mode" role="group" aria-label="View"><button type="button" data-mode="human" aria-pressed="true">human</button><button type="button" data-mode="agent" aria-pressed="false">agent</button></div>
 <ul id="accent" aria-label="Accent colour" hidden></ul>
+<section id="kb" aria-label="Keyboard" hidden></section>
 </div>
+<script>
+// ───────────────────────────── the keyboard (After Hours) ─────────────────────────────
+// Whenever something takes typing (the gate, the shell) a breadbin 64 docks at the foot of the frame. Two layouts: the desktop board
+// (full rows, four function keys) and a thumb board for phones and touch screens (letters, 123 and #+= layers, a tools row with Tab,
+// Ctrl and the arrows; Shift twice locks, a held ⌫ repeats). On touch it stands in for the OS keyboard: the hosts' fields go read-only
+// with inputmode=none, so glass never raises its own. Physical keys press the matching cap. A host is { name, onKey }; onKey gets
+// { key, ctrl, shift }: a printable key with its case applied, or Enter, Backspace, Tab, Escape, Home, Arrow*, or Help/Clear/History/Whoami
+// from the function column (F1/F3/F5/F7 on a real keyboard too). A plain script, like the gate: it works before the modules arrive.
+window.__kb = (function () {
+  var root = document.getElementById('root'), el = document.getElementById('kb');
+  var REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var K = function (code, label, value, shifted, width, more) { var k = { code: code, label: label, value: value, shifted: shifted, width: width || 1 }; for (var m in more) k[m] = more[m]; return k; };
+  var letters = function (s) { return s.split('').map(function (c) { return K('Key' + c.toUpperCase(), c.toUpperCase(), c); }); };
+  var chars = function (s) { return s.split('').map(function (c) { return K('Symbol' + c.charCodeAt(0), c, c); }); };
+  var numbers = '1234567890'.split('').map(function (c, i) { return K('Digit' + c, c, c, '!@#$%^&*()'[i]); });
+  var backspace = K('Backspace', 'DEL', 'Backspace', null, 1.7, { caption: 'INST' }), enter = K('Enter', 'RETURN', 'Enter', null, 1.85, { accent: true });
+  var tab = K('Tab', 'TAB', 'Tab', null, 1.3), shift = K('ShiftLeft', 'SHIFT', 'Shift', null, 1.85), ctrl = K('ControlLeft', 'CTRL', 'Control', null, 1.3);
+  var left = K('ArrowLeft', '←', 'ArrowLeft'), down = K('ArrowDown', '↓', 'ArrowDown'), up = K('ArrowUp', '↑', 'ArrowUp'), right = K('ArrowRight', '→', 'ArrowRight');
+  var DESK = [
+    [K('Escape', 'ESC', 'Escape')].concat(numbers, [K('Minus', '−', '-', '_'), K('Equal', '=', '=', '+'), backspace]),
+    [tab].concat(letters('qwertyuiop'), [K('BracketLeft', '[', '[', '{'), K('BracketRight', ']', ']', '}'), K('Backslash', '\\', '\\', '|', 1.4)]),
+    [K('CapsLock', 'LOCK', 'CapsLock', null, 1.55, { caption: 'SHIFT' })].concat(letters('asdfghjkl'), [K('Semicolon', ';', ';', ':'), K('Quote', "'", "'", '"'), enter]),
+    [shift].concat(letters('zxcvbnm'), [K('Comma', ',', ',', '<'), K('Period', '.', '.', '>'), K('Slash', '/', '/', '?'), K('ShiftRight', 'SHIFT', 'Shift', null, 2.85)]),
+    [ctrl, K('Backquote', '`', '`', '~'), K('Space', 'SPACE', ' ', null, 6.7), K('Home', 'HOME', 'Home', null, 1.7), left, down, up, right]
+  ];
+  var FN = [K('F1', 'f 1', 'Help', null, 1, { caption: 'HELP', accent: true }), K('F3', 'f 3', 'Clear', null, 1, { caption: 'CLEAR' }), K('F5', 'f 5', 'History', null, 1, { caption: 'HISTORY' }), K('F7', 'f 7', 'Whoami', null, 1, { caption: 'WHOAMI' })];
+  var FNKEY = { F1: 'Help', F3: 'Clear', F5: 'History', F7: 'Whoami' };
+  var mBack = K('Backspace', '⌫', 'Backspace', null, 1.4), mShift = K('ShiftLeft', '⇧', 'Shift', null, 1.4);
+  var LAYERS = {
+    letters: [letters('qwertyuiop'), letters('asdfghjkl'), [mShift].concat(letters('zxcvbnm'), [mBack])],
+    numbers: [numbers.map(function (k) { return K(k.code, k.label, k.value); }), chars('-/:;()$&@"'), [K('SymbolPage', '#+=', 'Symbols', null, 1.4, { aria: 'More symbols' })].concat(chars(".,?!'"), [mBack])],
+    symbols: [chars('[]{}#%^*+='), chars('_\\|~<>€£¥•'), [K('SymbolPage', '123', 'Numbers', null, 1.4, { aria: 'Numbers and symbols' })].concat(chars('`.,?!'), [mBack])]
+  };
+  var layerKey = K('KeyboardLayer', '123', 'Numbers', null, 1.55, { aria: 'Numbers and symbols' });
+  var BOTTOM = [layerKey, K('Slash', '/', '/'), K('Space', 'space', ' ', null, 4.8), K('Period', '.', '.'), K('Enter', '↵', 'Enter', null, 1.75, { accent: true })];
+  var TOOLS = [K('Tab', 'TAB', 'Tab', null, 1.25), K('ControlLeft', 'CTRL', 'Control', null, 1.25), left, up, down, right];
+  var NAME = { ' ': 'Space', Backspace: 'Backspace', Enter: 'Return', Shift: 'Shift', CapsLock: 'Shift lock', Control: 'Control' };
+  var SPEAKER = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/>';
+  var ICON = { on: SPEAKER + '<path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>', off: SPEAKER + '<path d="m22 9-6 6M16 9l6 6"/></svg>' };
+
+  var host = null, mobile = false, layer = 'letters', shifted = false, locked = false, control = false, physical = false, lastShift = 0;
+  var pressed = {}, caps = [], built = false, snd = null, muted = false, repeatT = null, repeatI = null, outT = null, lastH = -1;
+  try { muted = localStorage.getItem('theroom.kb.sound') === 'off'; } catch (e) {}
+
+  // the click: a short filtered impact and a damped case resonance, made only once a key is pressed (browsers start audio on a gesture)
+  var click = {
+    ctx: null, noise: null,
+    play: function (code, release) {
+      try {
+        if (!this.ctx) {
+          var A = window.AudioContext || window.webkitAudioContext; if (!A) return;
+          this.ctx = new A(); this.noise = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.07), this.ctx.sampleRate);
+          var d = this.noise.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        }
+        var self = this;
+        if (this.ctx.state === 'suspended') { var p = this.ctx.resume(); if (p && p.then) p.then(function () { self.hit(code, release); }, function () {}); }
+        else this.hit(code, release);
+      } catch (e) {}   // the keys work without sound
+    },
+    hit: function (code, release) {
+      var c = this.ctx; if (!c || c.state !== 'running' || !this.noise) return;
+      var wide = code === 'Space' || code === 'Enter', vary = 0; for (var i = 0; i < code.length; i++) vary += code.charCodeAt(i); vary %= 7;
+      var t = c.currentTime, len = release ? 0.026 : wide ? 0.067 : 0.044;
+      var src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+      src.buffer = this.noise; f.type = 'bandpass'; f.frequency.value = (wide ? 1050 : 1500) + vary * 95; f.Q.value = 0.7;
+      g.gain.setValueAtTime(release ? 0.028 : 0.1, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      src.connect(f); f.connect(g); g.connect(c.destination); src.start(t); src.stop(t + len);
+      src.onended = function () { src.disconnect(); f.disconnect(); g.disconnect(); };
+      if (release) return;
+      var body = c.createOscillator(), bg = c.createGain();
+      body.type = 'triangle'; body.frequency.setValueAtTime(wide ? 155 : 210 + vary * 10, t); body.frequency.exponentialRampToValueAtTime(85, t + len);
+      bg.gain.setValueAtTime(0.07, t); bg.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      body.connect(bg); bg.connect(c.destination); body.start(t); body.stop(t + len);
+      body.onended = function () { body.disconnect(); bg.disconnect(); };
+    }
+  };
+
+  var send = function (e) { if (host && host.onKey) host.onKey(e); };
+  function stopRepeat() { clearTimeout(repeatT); clearInterval(repeatI); repeatT = repeatI = null; }
+  function feedback(code, isDown, quiet) {
+    if (isDown) pressed[code] = true; else delete pressed[code];
+    paint();
+    if (!muted && !quiet) click.play(code, !isDown);
+  }
+  // legends and latches: Shift shows the shifted symbols (and, on the thumb board, the case of the letters); Shift twice locks it there (⇪)
+  function paint() {
+    var act = shifted || physical;
+    for (var i = 0; i < caps.length; i++) {
+      var c = caps[i], k = c.k, v = k.value;
+      var latched = (v === 'Shift' && (act || (mobile && locked))) || (v === 'Control' && control) || (v === 'CapsLock' && locked);
+      c.b.setAttribute('data-pressed', String(!!pressed[k.code] || latched));
+      if (c.toggle) c.b.setAttribute('aria-pressed', String(latched));
+      var leg = mobile && v === 'Shift' && locked ? '⇪' : mobile && /^[a-z]$/.test(v || '') ? (act !== locked ? k.label : k.label.toLowerCase()) : act && k.shifted ? k.shifted : k.label;
+      if (c.leg.textContent !== leg) c.leg.textContent = leg;
+    }
+  }
+  function setLayer(name) {
+    layer = name; shifted = false; lastShift = 0;
+    var ls = el.querySelectorAll('.kb-layer'); for (var i = 0; i < ls.length; i++) ls[i].classList.toggle('on', ls[i].getAttribute('data-layer') === name);
+    layerKey.label = name === 'letters' ? '123' : 'ABC'; layerKey.value = name === 'letters' ? 'Numbers' : 'Letters'; layerKey.aria = name === 'letters' ? 'Numbers and symbols' : 'Letters';
+    var lb = el.querySelector('[data-code="KeyboardLayer"]'); if (lb) { lb.setAttribute('aria-label', layerKey.aria); lb.title = layerKey.aria; }
+    paint();
+  }
+  function activate(k) {
+    var v = k.value;
+    if (v === 'Letters' || v === 'Numbers' || v === 'Symbols') return setLayer(v.toLowerCase());
+    if (v === 'Shift') {
+      if (mobile && locked) { locked = false; shifted = false; lastShift = 0; }
+      else if (mobile && lastShift && performance.now() - lastShift < 350) { locked = true; shifted = false; lastShift = 0; }
+      else { shifted = !shifted; lastShift = performance.now(); }
+      return paint();
+    }
+    if (v === 'CapsLock') { locked = !locked; return paint(); }
+    if (v === 'Control') { control = !control; return paint(); }
+    var act = shifted || physical, out = v != null ? v : k.label, ctl = control;
+    if (/^[a-z]$/.test(out)) out = act !== locked ? out.toUpperCase() : out;
+    else if (act && k.shifted) out = k.shifted;
+    shifted = false; control = false; lastShift = 0; paint();   // only two Shift taps in a row lock: ⇧H ⇧I is two capitals
+    send({ key: out, ctrl: ctl, shift: act });
+  }
+  function cap(k) {
+    var b = document.createElement('button'), face = document.createElement('span'), leg = document.createElement('span'), name = k.aria || NAME[k.value] || k.value;
+    b.type = 'button'; b.tabIndex = -1; b.style.flexGrow = k.width; b.setAttribute('data-code', k.code); b.setAttribute('aria-label', name);
+    b.className = 'retro-key' + (k.accent ? ' retro-key-accent' : '') + (k.value === ' ' ? ' retro-space' : '') + (k.label.length > 2 ? ' retro-key-word' : '');
+    b.title = k.caption && /^F\d/.test(k.code) ? k.caption + ' · ' + k.code : name;
+    face.className = 'retro-key-face'; leg.className = 'retro-key-legend';
+    if (k.shifted) { var sym = document.createElement('span'); sym.className = 'retro-key-symbol'; sym.textContent = k.shifted; face.appendChild(sym); }
+    face.appendChild(leg);
+    if (k.caption) { var cp = document.createElement('span'); cp.className = 'retro-key-caption'; cp.textContent = k.caption; face.appendChild(cp); }
+    b.appendChild(face);
+    var toggle = k.value === 'Shift' || k.value === 'Control' || k.value === 'CapsLock'; if (toggle) b.setAttribute('aria-pressed', 'false');
+    caps.push({ k: k, b: b, leg: leg, toggle: toggle });
+    b.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return;
+      e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (x) {}
+      var held = k.value === 'Backspace' && !control;   // a held ⌫ repeats (not ^⌫)
+      feedback(k.code, true); activate(k);
+      if (held) { stopRepeat(); repeatT = setTimeout(function () { repeatI = setInterval(function () { send({ key: 'Backspace' }); }, 70); }, 380); }
+    });
+    b.addEventListener('pointerup', function (e) { stopRepeat(); if (e.button === 0) feedback(k.code, false); });
+    b.addEventListener('pointercancel', function () { stopRepeat(); feedback(k.code, false, true); });
+    b.addEventListener('lostpointercapture', function () { stopRepeat(); feedback(k.code, false, true); });
+    b.addEventListener('click', function (e) { if (e.detail !== 0) return; feedback(k.code, true); activate(k); setTimeout(function () { feedback(k.code, false); }, 110); });   // Enter or Space on a focused cap
+    return b;
+  }
+  function row(keys, cls) { var r = document.createElement('div'); r.className = 'retro-key-row' + (cls ? ' ' + cls : ''); keys.forEach(function (k) { r.appendChild(cap(k)); }); return r; }
+  function paintSound() {
+    snd.innerHTML = muted ? ICON.off : ICON.on; snd.setAttribute('aria-pressed', String(!muted));
+    snd.setAttribute('aria-label', muted ? 'Enable keyboard sound' : 'Mute keyboard sound'); snd.title = muted ? 'Keyboard sound off' : 'Keyboard sound on';
+  }
+  function build() {
+    if (built) return; built = true;
+    el.innerHTML = '<div class="retro-keyboard-top"><div class="retro-badge"><span class="retro-badge-stripes" aria-hidden="true"><i></i><i></i><i></i></span><span>theroom <b>64</b></span></div><div class="retro-vents" aria-hidden="true"></div><button type="button" class="retro-sound"></button><span class="retro-power" aria-hidden="true"><i></i>POWER</span></div>'
+      + '<div class="retro-mobile-layout" role="group" aria-label="Keys"><div class="retro-mobile-tools"></div><div class="retro-keyboard-bed"><div class="retro-main-keys"></div></div></div>'
+      + '<div class="retro-keyboard-bed retro-desktop-layout" role="group" aria-label="Keys"><div class="retro-main-keys"></div><div class="retro-function-keys"></div></div>'
+      + '<div class="retro-keyboard-lip" aria-hidden="true"><span>PERSONAL COMPUTER</span><span class="retro-lip-rule"></span><span>MODEL 01</span></div>';
+    var desk = el.querySelector('.retro-desktop-layout .retro-main-keys'); DESK.forEach(function (keys) { desk.appendChild(row(keys)); });
+    var fn = el.querySelector('.retro-function-keys'); FN.forEach(function (k) { fn.appendChild(cap(k)); });
+    var tools = el.querySelector('.retro-mobile-tools'); TOOLS.forEach(function (k) { tools.appendChild(cap(k)); });
+    var main = el.querySelector('.retro-mobile-layout .retro-main-keys');
+    Object.keys(LAYERS).forEach(function (name) {
+      var g = document.createElement('div'); g.className = 'kb-layer'; g.setAttribute('data-layer', name);
+      LAYERS[name].forEach(function (keys, i) { g.appendChild(row(keys, name === 'letters' && i === 1 ? 'retro-home-row' : '')); });
+      main.appendChild(g);
+    });
+    main.appendChild(row(BOTTOM, 'retro-bottom-row'));
+    snd = el.querySelector('.retro-sound'); paintSound();
+    snd.addEventListener('click', function () { muted = !muted; try { localStorage.setItem('theroom.kb.sound', muted ? 'off' : 'on'); } catch (e) {} paintSound(); });
+    el.addEventListener('mousedown', function (e) { e.preventDefault(); });   // a click on the case never takes focus from the field it types into
+    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    if (window.ResizeObserver) new ResizeObserver(function () { measure(); }).observe(el);
+  }
+  // which board: the thumb board on touch screens and narrow frames (the ?vp preview frame counts), the desktop board elsewhere
+  function fit() {
+    var m = root.hasAttribute('data-touch') || (root.clientWidth || innerWidth) <= 650;
+    if (m !== mobile) { mobile = m; locked = shifted = false; }
+    if (mobile) el.setAttribute('data-mobile', ''); else el.removeAttribute('data-mobile');
+    paint();
+  }
+  function measure() {
+    if (!host) return;
+    var h = el.offsetHeight; root.style.setProperty('--kb-h', h + 'px');
+    if (h !== lastH) { var first = lastH < 0; lastH = h; if (!first && api.onresize) api.onresize(h); }
+  }
+  // physical keys press their caps (and click) while a host has the keyboard; F1/F3/F5/F7 are the function column, so the browser's own
+  // meaning of them (help, find, reload, caret browsing) waits until the keyboard goes down
+  addEventListener('keydown', function (e) {
+    if (!host || e.isComposing) return;
+    physical = e.shiftKey;
+    var f = FNKEY[e.code];
+    if (f && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) { feedback(e.code, true); send({ key: f }); } return; }
+    if (!e.repeat && !e.metaKey) feedback(e.code, true); else paint();   // a Cmd chord lights nothing: macOS never sends the keyup of a key pressed under Command
+  }, true);
+  addEventListener('keyup', function (e) { if (!host) return; physical = e.shiftKey; if (e.key === 'Meta') pressed = {}; feedback(e.code, false, true); }, true);
+  addEventListener('blur', function () { stopRepeat(); pressed = {}; physical = false; if (built) paint(); });
+  addEventListener('resize', function () { if (host) { fit(); measure(); } });
+  function show(h) {
+    build(); clearTimeout(outT);
+    var fresh = el.hidden || el.classList.contains('out');
+    host = h; root.setAttribute('data-kb', h.name || '');
+    if (fresh) { pressed = {}; shifted = control = locked = false; setLayer('letters'); }
+    el.classList.remove('out'); el.hidden = false; fit(); lastH = -1; measure();
+  }
+  function hide(h) {
+    if (!host || (h && host !== h)) return;
+    host = null; stopRepeat(); pressed = {}; shifted = control = locked = physical = false; lastH = -1; paint();
+    el.classList.add('out');
+    outT = setTimeout(function () { el.hidden = true; el.classList.remove('out'); root.style.setProperty('--kb-h', '0px'); root.removeAttribute('data-kb'); }, REDUCED ? 0 : 240);
+  }
+  var api = {
+    show: show, hide: hide, onresize: null,
+    soft: function () { return root.hasAttribute('data-touch'); },   // glass: the keyboard replaces the OS one, and the hosts' fields go read-only
+    height: function () { return host && !el.hidden ? el.offsetHeight : 0; },
+    turn: function (deg) { el.style.filter = deg ? 'hue-rotate(' + Math.round(deg) + 'deg)' : ''; }   // the room's accent turn (roomShift), on the case's blue
+  };
+  return api;
+})();
+</script>
 <script>
 (function () {   // runs before the three.js modules download: a phone on a slow link sees the boot line, and a dead load names itself instead of staying black
   var q = new URLSearchParams(location.search), vp = /^(\d+)x(\d+)$/.exec(q.get('vp') || ''), root = document.getElementById('root');
@@ -616,6 +928,7 @@
     var PH = { blue: ['#5FB0FF', '#085FA6', '#B6D8FF'], cyan: ['#00CFDF', '#007782', '#A2F1FC'], green: ['#3BE77B', '#1F8A4A', '#C8FFD6'], amber: ['#EB9F00', '#855900', '#F9D5A1'], orange: ['#F68000', '#864400', '#F7C29D'], red: ['#FF635E', '#8E2A27', '#F7B5AD'], pink: ['#FC64B6', '#8C3061', '#F7BAD4'], purple: ['#B687FF', '#664196', '#D7C3FA'] };
     var acc = q.get('accent'); if (!acc) { try { acc = localStorage.getItem('theroom.accent'); } catch (e) {} }
     var ph = PH[acc] || PH.blue, accName = PH[acc] ? acc : 'blue';
+    var TURN = { blue: 0, cyan: -45, green: -99, amber: -175, orange: -195, red: -225, pink: 100, purple: 50 };   // the keyboard's hue: the turn the room gives its blue for this accent (roomShift, in OKLCH degrees)
     gate.style.setProperty('--g-phosphor', ph[0]); gate.style.setProperty('--g-dim', ph[1]); gate.style.setProperty('--g-bloom', ph[2]);
     // three dresses for the same prompt; ?gate=tty|boot|crt picks one
     var want = q.get('gate'); if (want === 'tty' || want === 'boot' || want === 'crt') gate.dataset.v = want;
@@ -625,19 +938,26 @@
     document.getElementById('gate-bar').textContent = BAR[gate.dataset.v] || '';
     var out = document.getElementById('gate-out'), inp = document.getElementById('gate-in');
     var FAST = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var KB = window.__kb, soft = !!(KB && KB.soft());   // glass: the room's keyboard stands in for the OS one, so the field is read-only and never focused
+    if (soft) { inp.readOnly = true; inp.setAttribute('inputmode', 'none'); }
     var PROMPT = (root.clientWidth || innerWidth) < 520 ? 'theroom:~$ ' : 'luiz@theroom:~$ ', ASK = 'are you human? [yes/no] ';   // a narrow tty shortens its prompt, not its question
     var cur = document.createElement('span'); cur.className = 'c'; out.appendChild(cur);
     var put = function (text, cls) { var s = document.createElement('span'); if (cls) s.className = cls; s.textContent = text; out.insertBefore(s, cur); return s; };
-    var line = null, done = false;
-    var prompt = function () { put(PROMPT, 'p'); put(ASK, 'q'); line = put('', 'k'); inp.value = ''; };
+    var line = null, head = null, done = false, tried = [], host = { name: 'gate', onKey: function (e) { key(e); } };
+    var fit = function () {   // a tty scrolls: the oldest lines go until the live one sits above the status line and the keyboard
+      var bar = gate.querySelector('.bar'), kb = document.getElementById('kb');
+      var lim = Math.min(bar && bar.offsetParent ? bar.getBoundingClientRect().top : Infinity, kb && !kb.hidden ? kb.getBoundingClientRect().top : Infinity);
+      while (out.firstChild !== head && cur.getBoundingClientRect().bottom > lim) out.removeChild(out.firstChild);
+    };
+    var prompt = function () { head = put(PROMPT, 'p'); put(ASK, 'q'); line = put('', 'k'); inp.value = ''; fit(); };
     var echo = function () { line.textContent = inp.value; };
     var answer = function (a) {
       done = true; inp.blur();
       put(a === 'human' ? '> ok. lights on.' : '> ok. the room, as text.', 'r');
-      setTimeout(function () { G.answer = a; gate.classList.add('off'); setTimeout(function () { gate.hidden = true; }, 280); if (G.on) G.on(a); }, FAST ? 0 : 480);
+      setTimeout(function () { G.answer = a; gate.classList.add('off'); if (KB) KB.hide(host); setTimeout(function () { gate.hidden = true; if (KB) root.appendChild(document.getElementById('kb')); }, 280); if (G.on) G.on(a); }, FAST ? 0 : 480);
     };
     var submit = function () {
-      var v = inp.value.trim().toLowerCase(); put('\n');
+      var v = inp.value.trim().toLowerCase(); put('\n'); if (v) tried.push(v);
       if (v === 'yes' || v === 'y') answer('human');
       else if (v === 'no' || v === 'n') answer('agent');
       else {   // the tube flinches at bad input, then asks again
@@ -645,22 +965,39 @@
         gate.classList.add('err'); setTimeout(function () { gate.classList.remove('err'); }, 300);
       }
     };
+    // every key that isn't the field's own typing, from the room's keyboard or a real one. The rest of the keyboard answers the way a
+    // shell would, and never with more than a line: the function column (help, clear, history, whoami), ^C, ^L, and Tab finishes yes or no
+    var reply = function (cmd, text) { line.textContent = cmd; put('\n'); put(text, 'q'); put('\n'); prompt(); };
+    var key = function (e) {
+      if (done) return;
+      var k = e.key, v = inp.value, w = v.trim().toLowerCase();
+      if (k === 'Enter') submit();
+      else if (e.ctrl && (k === 'c' || k === 'C')) { line.textContent = v + '^C'; put('\n'); prompt(); }
+      else if (k === 'Clear' || (e.ctrl && (k === 'l' || k === 'L'))) { while (out.firstChild !== cur) out.removeChild(out.firstChild); prompt(); }
+      else if (k === 'Help') reply('help', 'yes: a person. the room lights up.\nno: an agent. the room, as text.');
+      else if (k === 'History') reply('history', tried.length ? tried.map(function (t, i) { return '  ' + (i + 1) + '  ' + t; }).join('\n') : 'nothing typed yet.');
+      else if (k === 'Whoami') reply('whoami', 'that is what i am asking.');
+      else if (k === 'Tab') { if (w) inp.value = 'yes'.indexOf(w) === 0 ? 'yes' : 'no'.indexOf(w) === 0 ? 'no' : v; echo(); }
+      else if (k === 'Backspace') { inp.value = v.slice(0, -1); echo(); }
+      else if (k.length === 1 && !e.ctrl) { inp.value = (v + k).slice(0, 24); echo(); }
+      if (!soft && !done && document.activeElement !== inp) inp.focus({ preventScroll: true });
+    };
     prompt();
     inp.addEventListener('input', echo);
-    gate.addEventListener('pointerdown', function () { if (!done) inp.focus({ preventScroll: true }); });   // a tap raises the keyboard on glass
-    gate.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });   // with the keyboard up iOS pans the whole page under a finger that drifts while it taps or types: the prompt slid off and back
+    gate.addEventListener('pointerdown', function () { if (!done && !soft) inp.focus({ preventScroll: true }); });   // a click anywhere on the black gives the field its keys back
+    gate.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });   // no pan under a drifting finger (iOS panned the page behind its own keyboard: the prompt slid off and back)
     document.addEventListener('keydown', function (e) {
       if (done) return;
       var k = e.key;
-      if (k === 'Enter') { e.preventDefault(); submit(); return; }
+      if (k === 'Enter' || k === 'Tab' || (k === 'c' && e.ctrlKey && !e.shiftKey && !e.metaKey && !e.altKey && !String(getSelection()))) { e.preventDefault(); key({ key: k, ctrl: e.ctrlKey }); return; }   // ^C drops the line (with text selected it still copies); Ctrl+L stays the browser's here, f3 clears
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (document.activeElement !== inp) {   // focus strayed: take the key by hand and bring it back
-        inp.focus({ preventScroll: true });
-        if (k.length === 1) inp.value = (inp.value + k).slice(0, 24); else if (k === 'Backspace') inp.value = inp.value.slice(0, -1); else return;
-        echo(); e.preventDefault();
+      if (soft || document.activeElement !== inp) {   // a read-only field (glass) or focus that strayed: the key is typed by hand
+        if (k.length !== 1 && k !== 'Backspace') return;
+        e.preventDefault(); key({ key: k });
       }
     }, true);
-    inp.focus({ preventScroll: true });
+    if (KB) { gate.appendChild(document.getElementById('kb')); KB.turn(TURN[accName]); KB.show(host); }   // inside the aria-modal dialog while it types there: outside it, VoiceOver skips it (and on glass it is the only way in)
+    if (!soft) inp.focus({ preventScroll: true });
   }
 })();
 </script>
@@ -948,13 +1285,16 @@ class Terminal {
     x.fillStyle = this.bg || ROOM_PAL.ink; x.fillRect(0, 0, this.W * S, this.H * S);
     x.font = (14 * S) + 'px VT323, monospace'; x.textBaseline = 'top';
     this.lines.forEach((l, i) => { const dim = sh ? [T.prompt, T.rootPrompt, T.sudoPrompt].some(p => l.startsWith(p)) : i < n - 4; x.fillStyle = dim ? ROOM_PAL.phosphorDim : ROOM_PAL.phosphor; x.fillText(l, 5 * S, 4 * S + i * lh); });
-    let cx = 5 * S; const cy = 4 * S + n * lh;
-    if (sh) {   // the live line: dim prompt (ember for root), bright input (hidden while sudo asks for a password), then the cursor
+    let cx = 5 * S; const cy = 4 * S + n * lh, at = sh && !pw ? Math.min(sh.caret ?? sh.input.length, sh.input.length) : 0;
+    if (sh) {   // the live line: dim prompt (ember for root), bright input (hidden while sudo asks for a password), then the cursor at the caret
       const P = pw ? T.sudoPrompt : sh.root ? T.rootPrompt : T.prompt;
       x.fillStyle = sh.root && !pw ? ROOM_PAL.ember : ROOM_PAL.phosphorDim; x.fillText(P, cx, cy); cx += x.measureText(P).width;
-      if (!pw) { x.fillStyle = ROOM_PAL.phosphor; x.fillText(sh.input, cx, cy); cx += x.measureText(sh.input).width; }
+      if (!pw) { x.fillStyle = ROOM_PAL.phosphor; x.fillText(sh.input, cx, cy); cx += x.measureText(sh.input.slice(0, at)).width; }
     }
-    if (this.cursor || (this.shell && performance.now() < this.shell.solidUntil)) { x.fillStyle = ROOM_PAL.phosphorBloom; x.fillRect(cx, cy, 7 * S, 12 * S); }
+    if (this.cursor || (this.shell && performance.now() < this.shell.solidUntil)) {
+      x.fillStyle = ROOM_PAL.phosphorBloom; x.fillRect(cx, cy, 7 * S, 12 * S);
+      if (sh && !pw && at < sh.input.length) { x.fillStyle = this.bg || ROOM_PAL.ink; x.fillText(sh.input[at], cx, cy); }   // mid-line, the block inverts the character it sits on
+    }
     if (this.scan) { x.fillStyle = '#0917241f'; for (let y = 0; y < this.H * this.S; y += 3 * this.S) x.fillRect(0, y, this.W * this.S, this.S); }
     this.tex.needsUpdate = true;
   }
@@ -1948,13 +2288,18 @@ function inspect(insp) {
   tweenCamera(view, () => openExplorer(insp));
 }
 // ───────────────────────────── terminal (the CRT) ─────────────────────────────
-// The CRT in the middle of the desk is a shell. A click on it (or its menu word) glides the camera up to the screen; from then on the keyboard
-// types into it: cd <place> | ls | clear | exit. Esc, 'exit' or a click off the screen glides back. The transcript lives in
-// SHELL rather than in the texture, so an accent change (or a rebuild) redraws it unchanged.
-const SHELL = { lines: [], input: '', solidUntil: 0, root: false, mode: null, tries: 0 };   // mode: null | 'password' (sudo is asking)
+// The CRT in the middle of the desk is a shell. A click on it (or its menu word) glides the camera up to the screen and the room's
+// keyboard (window.__kb) slides up under it; from then on either keyboard types into it: cd <place> | ls | clear | exit. Esc, 'exit'
+// or a click off the screen glides back. The transcript lives in SHELL rather than in the texture, so an accent change (or a rebuild)
+// redraws it unchanged. caret = where the block sits in the typed line; hist = the lines run, for ↑ ↓ and `history` (hi: how far back).
+const SHELL = { lines: [], input: '', caret: 0, hist: [], hi: -1, draft: '', solidUntil: 0, root: false, mode: null, tries: 0 };   // mode: null | 'password' (sudo is asking)
 const TERM = { open: false, back: null };
 const PLACES = ['home'].concat(CONFIG.inspectables.filter(i => i.explorer).map(i => i.cmd || i.label.replace(/\s+/g, '-')));
 const shellIn = document.getElementById('shell-in');   // offscreen field that holds focus while the shell is open: its value is the typed line
+const KB = window.__kb, SOFT = TOUCH && !!KB;   // glass: the room's keyboard is the only one, so the field is read-only (no OS keyboard) and every key is typed by hand
+if (SOFT) { shellIn.readOnly = true; shellIn.setAttribute('inputmode', 'none'); }
+shellIn.maxLength = CONFIG.terminal.maxInput;   // native typing or a paste past the line's length is refused or cut, like the room's keys, instead of pushing the tail off
+const shellHost = { name: 'shell', onKey: e => shellEdit(e) };
 const exitEl = document.getElementById('exit'); exitEl.addEventListener('click', () => leaveTerminal());   // touch: no Esc key, so a button steps out
 const shellDraw = () => { if (TEX.termR) { TEX.termR.cursor = true; TEX.termR.draw(); } };
 function shellPrint(s) {   // word-wrapped to the screen's columns; the transcript keeps the last terminal.rows lines
@@ -2005,6 +2350,7 @@ function shellRun(raw) {
     fetchVisitors().then(d => { for (const l of visitorLines(d).slice(0, 6)) shellPrint(l); shellDraw(); }).catch(() => { shellPrint('who: the visitor book did not answer'); shellDraw(); });
   }
   else if (cmd === 'clear') SHELL.lines.length = 0;
+  else if (cmd === 'history') { const H = SHELL.hist, from = Math.max(0, H.length - (CONFIG.terminal.rows - 2)); H.slice(from).forEach((c, i) => shellPrint(String(from + i + 1).padStart(4) + '  ' + c)); }
   else if (cmd === 'exit' || cmd === 'logout') { if (SHELL.root) { SHELL.root = false; shellPrint('logout'); } else leaveTerminal(); }
   else if (cmd === 'cd' || cmd === 'go' || cmd === 'open') { if (!shellGo(arg || 'home')) shellPrint('cd: ' + arg + ': no such place'); }
   else if (cmd === 'phosphor') {   // root only: the accent strip. `phosphor` shows it, `phosphor <name>` sets a colour, `phosphor off` hides it
@@ -2019,28 +2365,75 @@ function shellRun(raw) {
   else if (REFLEX[cmd]) shellPrint(REFLEX[cmd](arg));
   else if (!shellGo(cmd)) shellPrint(cmd + ': command not found');
 }
-// Keys while the shell is open. The field takes the characters (so the host's own shortcuts and mobile keyboards see a text
-// input, not bare keystrokes); Enter runs the line, Esc steps out. Nothing propagates on to shortcut handlers.
+// Physical keys while the shell is open. On a desk the field takes the characters (so dead keys, IME and the host's own shortcuts see a
+// text input, not bare keystrokes); the keys that edit rather than type go to shellEdit. On glass the field is read-only, so a
+// hardware keyboard's characters go there too. Nothing propagates on to shortcut handlers.
 function shellKey(e) {
   e.stopPropagation();
-  if (e.metaKey || e.ctrlKey || e.altKey) return;   // browser shortcuts pass through
+  if (e.isComposing) return;
   const k = e.key;
-  if (k === 'Escape') { e.preventDefault(); leaveTerminal(); return; }
-  if (k === 'Enter') { e.preventDefault(); const raw = shellIn.value; shellIn.value = ''; shellRun(raw); }
-  else if (k === 'Tab') e.preventDefault();
-  else if (document.activeElement !== shellIn) {   // focus strayed: take this key by hand and bring focus back
-    shellIn.focus({ preventScroll: true });
-    if (k.length === 1) shellIn.value += k; else if (k === 'Backspace') shellIn.value = shellIn.value.slice(0, -1); else return;
-    e.preventDefault();
-  } else return;   // the field takes the character; shellSync follows on its input event
-  shellSync();
+  if (e.ctrlKey && !e.shiftKey && !e.metaKey && !e.altKey && (k === 'c' || k === 'l')) { e.preventDefault(); shellEdit({ key: k, ctrl: true }); return; }   // ^C drops the line, ^L clears the screen (Ctrl+Shift+C stays Inspect)
+  if (e.metaKey || e.ctrlKey || e.altKey) return;   // browser shortcuts pass through
+  if (['Escape', 'Enter', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(k)) { e.preventDefault(); shellEdit({ key: k }); return; }
+  if ((SOFT || document.activeElement !== shellIn) && (k.length === 1 || k === 'Backspace' || k === 'Delete')) { e.preventDefault(); shellEdit({ key: k }); }   // read-only, or focus strayed: typed by hand
+  // else the field takes the character; shellSync follows on its input event
+}
+// One line editor for everything the field doesn't type itself: every key of the room's keyboard, and the editing keys of a real one.
+// The line lives in shellIn and SHELL.caret follows the field's own caret, so both kinds of keys can take turns on one line.
+const FN_RUN = { Help: 'help', Clear: 'clear', History: 'history', Whoami: 'whoami' };   // the function column runs its word, the line being typed stays
+function shellEdit({ key, ctrl }) {
+  if (!TERM.open) return;
+  const T = CONFIG.terminal, v = shellIn.value, at = Math.min(SHELL.caret, v.length), k = key.length === 1 ? key.toLowerCase() : key, pw = SHELL.mode === 'password';
+  const set = (s, c) => { s = s.slice(0, T.maxInput); shellIn.value = s; SHELL.input = s; SHELL.caret = Math.max(0, Math.min(c, s.length)); try { shellIn.setSelectionRange(SHELL.caret, SHELL.caret); } catch {} SHELL.solidUntil = performance.now() + 600; shellDraw(); };
+  const edit = (s, c) => { SHELL.hi = -1; set(s, c); };   // a changed line leaves the history walk
+  if (!SOFT && document.activeElement !== shellIn) shellIn.focus({ preventScroll: true });
+  if (key === 'Escape') return leaveTerminal();
+  if (key === 'Enter') { if (!pw && v.trim()) SHELL.hist = SHELL.hist.concat(v.trim()).slice(-50); edit('', 0); shellRun(v); shellDraw(); return; }
+  if (ctrl && k === 'c') { shellPrint((pw ? T.sudoPrompt : SHELL.root ? T.rootPrompt : T.prompt) + (pw ? '' : v) + '^C'); SHELL.mode = null; return edit('', 0); }
+  if (ctrl && k === 'l') { SHELL.lines.length = 0; return set(v, at); }
+  if (FN_RUN[key]) { if (!pw) shellRun(FN_RUN[key]); return set(v, at); }   // not while sudo asks: the word would be taken for the password
+  if (ctrl && k === 'u') return edit(v.slice(at), 0);
+  if (key === 'Home' || (ctrl && k === 'a')) return set(v, 0);
+  if (key === 'End' || (ctrl && k === 'e')) return set(v, v.length);
+  if (ctrl) return;
+  if (key === 'ArrowLeft') return set(v, at - 1);
+  if (key === 'ArrowRight') return set(v, at + 1);
+  if (key === 'ArrowUp' || key === 'ArrowDown') { if (!pw) shellRecall(key === 'ArrowUp' ? 1 : -1, set); return; }
+  if (key === 'Tab') { if (!pw) shellComplete(v, at, edit); return; }
+  if (key === 'Backspace') return at ? edit(v.slice(0, at - 1) + v.slice(at), at - 1) : undefined;
+  if (key === 'Delete') return edit(v.slice(0, at) + v.slice(at + 1), at);
+  if (key.length === 1 && v.length < T.maxInput) edit(v.slice(0, at) + key + v.slice(at), at + 1);
+}
+// ↑ ↓ walk the lines already run, newest first; the line being typed waits below them
+function shellRecall(dir, set) {
+  const H = SHELL.hist; if (!H.length) return;
+  if (SHELL.hi === -1) SHELL.draft = shellIn.value;
+  SHELL.hi = Math.max(-1, Math.min(H.length - 1, SHELL.hi + dir));
+  const s = SHELL.hi === -1 ? SHELL.draft : H[H.length - 1 - SHELL.hi]; set(s, s.length);
+}
+// Tab finishes a command, or a place after cd, the way bash does: one match is typed out, a longer common start is filled in,
+// otherwise the choices are printed under the line. The secrets (sudo, phosphor) are never offered.
+const SHELL_WORDS = ['help', 'ls', 'cd', 'who', 'mcp', 'history', 'clear', 'exit', 'whoami', 'pwd'];
+function shellComplete(v, at, edit) {
+  const head = v.slice(0, at), word = /\S*$/.exec(head)[0], before = head.slice(0, head.length - word.length), lead = before.trim().toLowerCase();
+  const pool = !lead ? SHELL_WORDS.concat(PLACES) : /^(cd|go|open)$/.test(lead) ? PLACES : [];
+  const hits = [...new Set(pool.filter(c => c.startsWith(word.toLowerCase())))];
+  if (!hits.length) return;
+  let fill = hits[0]; for (const h of hits) while (!h.startsWith(fill)) fill = fill.slice(0, -1);
+  if (hits.length === 1) fill += ' ';
+  if (fill.length > word.length) return edit(before + fill + v.slice(at), before.length + fill.length);
+  shellPrint((SHELL.root ? CONFIG.terminal.rootPrompt : CONFIG.terminal.prompt) + v); shellPrint(hits.join('  ')); shellDraw();
 }
 function shellSync() {
-  if (shellIn.value.length > CONFIG.terminal.maxInput) shellIn.value = shellIn.value.slice(0, CONFIG.terminal.maxInput);
-  SHELL.input = shellIn.value; SHELL.solidUntil = performance.now() + 600;   // a keystroke holds the cursor solid; then it blinks again
+  const max = CONFIG.terminal.maxInput;
+  if (shellIn.value.length > max) { const c = Math.min(shellIn.selectionStart ?? max, max); shellIn.value = shellIn.value.slice(0, max); shellIn.setSelectionRange(c, c); }   // fallback: maxLength already holds it
+  if (shellIn.value !== SHELL.input) SHELL.hi = -1;
+  SHELL.input = shellIn.value; SHELL.caret = Math.min(shellIn.selectionStart ?? SHELL.input.length, SHELL.input.length);
+  SHELL.solidUntil = performance.now() + 600;   // a keystroke holds the cursor solid; then it blinks again
   shellDraw();
 }
 shellIn.addEventListener('input', shellSync);
+document.addEventListener('selectionchange', () => { if (TERM.open && document.activeElement === shellIn && shellIn.selectionStart !== SHELL.caret) shellSync(); });   // a caret the field moved itself (⌥←, select-all)
 addEventListener('keydown', e => { if (TERM.open) shellKey(e); }, true);   // capture: ahead of every other key handler on the page
 for (const ev of ['keyup', 'keypress']) addEventListener(ev, e => { if (TERM.open) e.stopPropagation(); }, true);
 // the shot square on to the CRT's screen, zoomed so the screen fills terminal.fill of the band it may use: under the top bar, above the
@@ -2057,22 +2450,27 @@ function terminalView() {
   const pos = c.clone().addScaledVector(n, REACH); pos.y -= dy;
   return { position: pos, target: c.clone().setY(c.y - dy), zoom };
 }
-// fraction of the frame height the on-screen keyboard leaves visible: what the browser reports, else the touch assumption, else all of it. ?kb=0.5 fakes one
+// fraction of the frame height the keyboard leaves visible: the room's own while it is up (its height is known), else what the browser
+// reports of an OS one, else the touch assumption, else all of it. ?kb=0.5 fakes one
 function keyboardFree() {
   const forced = +new URLSearchParams(location.search).get('kb'); if (forced) return forced;
+  const own = TERM.open ? KB?.height() || 0 : 0; if (own) return Math.min(1, Math.max(0.35, 1 - own / VP.h));
   const vv = window.visualViewport, real = vv && !rootEl.classList.contains('vp') ? vv.height / VP.h : 1;   // the preview frame ignores the browser's own viewport
   return Math.min(1, Math.max(0.35, real < 0.9 ? real : (TOUCH && TERM.open ? CONFIG.terminal.keyboard : 1)));
 }
 window.visualViewport?.addEventListener('resize', () => { if (!TERM.open) return; const v = terminalView(); if (v && (v.position.distanceTo(freeGoal.position) > 0.02 || Math.abs(v.zoom - freeGoal.zoom) > 0.01)) tweenCamera(v); });
+if (KB) KB.onresize = () => { if (!TERM.open) return; const v = terminalView(); if (v) tweenCamera(v); };   // the keyboard changed height (a turned phone, a narrower window): frame the screen above it again
 function enterTerminal() {
   if (TERM.open) return;
+  KB?.show(shellHost);   // first: the shot is framed above it
   TERM.open = true;   // set first: the view assumes a phone keyboard only while the shell is open
-  const view = terminalView(); if (!view) { TERM.open = false; return; }
+  const view = terminalView(); if (!view) { TERM.open = false; KB?.hide(shellHost); return; }
   let back = shot(camState);
   if (explorer.open) { back = camTween.back || back; camTween.back = null; closeExplorer(true); }   // an open window folds; its return point carries over
   TERM.open = true; TERM.back = back;
   setHover(null); hover.pointer.set(2, 2); canvas.classList.add('shell'); exitEl.hidden = !TOUCH;
-  shellIn.value = SHELL.input = ''; shellIn.focus({ preventScroll: true });   // the keyboard goes to the field, not to a focused link or the page
+  shellIn.value = SHELL.input = ''; SHELL.caret = 0; SHELL.hi = -1;
+  if (SOFT) document.activeElement?.blur?.(); else shellIn.focus({ preventScroll: true });   // the keys go to the field, not to a focused link or the page (on glass nothing holds focus: the room's keyboard types)
   if (!history.state?.term) history.pushState({ term: true, zone: nav.zone }, '', location.href);   // back steps out of the shell
   SHELL.solidUntil = performance.now() + CONFIG.tween.duration; shellDraw();   // cursor solid through the glide, blinking on arrival
   tweenCamera(view);
@@ -2080,8 +2478,8 @@ function enterTerminal() {
 }
 function leaveTerminal({ tween = true, fromHistory = false } = {}) {
   if (!TERM.open) return;
-  TERM.open = false; hover.moved = true; canvas.classList.remove('shell'); shellIn.blur(); exitEl.hidden = true;
-  if (SHELL.mode) { SHELL.mode = null; shellIn.value = SHELL.input = ''; shellDraw(); }   // a half-typed password dies with the session
+  TERM.open = false; hover.moved = true; canvas.classList.remove('shell'); shellIn.blur(); exitEl.hidden = true; KB?.hide(shellHost);
+  if (SHELL.mode) { SHELL.mode = null; shellIn.value = SHELL.input = ''; SHELL.caret = 0; shellDraw(); }   // a half-typed password dies with the session
   if (tween && TERM.back) tweenCamera(TERM.back);
   TERM.back = null;
   if (!fromHistory && history.state?.term) history.back();
@@ -2365,7 +2763,7 @@ canvas.addEventListener('pointerup', e => {
   const moved = Math.hypot(e.clientX - pressAt[0], e.clientY - pressAt[1]); pressAt = null;
   if (moved > CONFIG.explorer.dragTolerance) return;
   const hit = pickAt(ndcOf(e));   // the same pick as the hover: what's in front is what's clicked
-  if (TERM.open) { if (!hit?.insp.terminal) leaveTerminal(); else { if (document.activeElement === shellIn) shellIn.blur(); shellIn.focus({ preventScroll: true }); } return; }   // a click off the screen glides back; on the screen, re-summons a dismissed keyboard
+  if (TERM.open) { if (!hit?.insp.terminal) leaveTerminal(); else if (!SOFT) { if (document.activeElement === shellIn) shellIn.blur(); shellIn.focus({ preventScroll: true }); } return; }   // a click off the screen glides back; on the screen, it gives the field its keys back
   if (hintFocus && !hit) { leaveFocus(); return; }   // off the dog or the note (up close, pickAt sees nothing else): back to the zone's shot
   if (e.pointerType === 'touch') {   // no hover on glass: the first tap lights the object and holds its label (the dog's chip is the clue); the next tap on it opens
     if (hit && hover.current !== hit) { setHover(hit); return; }
@@ -2437,6 +2835,7 @@ function applyPaletteRuntime() {
   [['--room-bg0', '#162131'], ['--room-bg1', '#0c121d'], ['--room-bg2', '#070b12'], ['--room-shade', '#03070c']].forEach(([k, hex]) => root.setProperty(k, turnHex(hex, turn)));
   root.setProperty('--ink', c.ink); root.setProperty('--soil', c.soil); root.setProperty('--moss', c.moss); root.setProperty('--phosphor', c.phosphor); root.setProperty('--phosphor-dim', c.phosphorDim); root.setProperty('--phosphor-bloom', c.phosphorBloom); root.setProperty('--paper', c.paper);
   root.setProperty('--dither', ditherSwatch());
+  window.__kb?.turn(turn);   // the keyboard's blue-grey turns with the room
   const ex = CONFIG.explorer; root.setProperty('--ex-w', ex.width + 'px'); root.setProperty('--ex-h', ex.height + 'px'); root.setProperty('--ex-fade', ex.fade + 'ms'); root.setProperty('--ex-slide', ex.slide + 'px'); root.setProperty('--ex-dim', String(ex.dim));
   document.querySelectorAll('#accent button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.accent === CONFIG.accent.name)));
 }
