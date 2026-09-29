@@ -9,9 +9,9 @@ Live at https://theroom-seven-theta.vercel.app
 The page opens on a black terminal in the room's accent (the same choice the room makes: `?accent=`, then the
 last one, then blue) with one prompt, `are you human? [yes/no]`, and a typed answer: `yes` or `y` is a human and
 starts the room's wireframe reveal; `no` or `n` is an agent and powers the agent view on through the CRT;
-anything else gets an error line and the prompt again. No buttons; on a phone a tap raises the keyboard. It
-runs from the inline script, so it is answerable before Three.js has downloaded. A URL that names a view
-(`#/agent`) or a place (`#/work`) skips the question.
+anything else gets an error line and the prompt again. No buttons: the room's own keyboard docks under the
+prompt (see [The keyboard](#the-keyboard)). It runs from the inline script, so it is answerable before Three.js
+has downloaded. A URL that names a view (`#/agent`) or a place (`#/work`) skips the question.
 
 Three dresses for that one prompt, picked with `?gate=`:
 
@@ -43,6 +43,26 @@ the same copy action. A switch made by hand goes through a CRT power-off and pow
 (two black panels close to a phosphor line, the line collapses, the view swaps, and it plays backwards);
 history and reload go straight to the view. The last choice is kept in `localStorage`, so a reload lands
 where you left; the URL is shareable either way.
+
+## The keyboard
+
+Whenever the page takes typing, a keyboard docks at the foot of the frame: at the gate, and while the shell on the
+CRT is open (it slides up with the glide and the screen is framed above it). It is the "After Hours" keyboard (a
+React original, delivered as `after-hours-keyboards.zip` and kept out of git like the other exports), ported to
+plain JS/CSS in the page as `window.__kb`, a classic script like the gate so it works before the modules arrive.
+
+- **Desktop**: a breadbin 64 with the full rows and a function column: `f1` help, `f3` clear, `f5` history,
+  `f7` whoami (the real F1/F3/F5/F7 press them too while it is up). Physical keys press the matching cap.
+- **Phones and touch screens** (and frames 650 px wide or less): the thumb board, with a tools row (Tab, Ctrl, the
+  arrows), letters / `123` / `#+=` layers, Shift twice to lock, and a held ⌫ that repeats. On touch it replaces the
+  OS keyboard: the fields go read-only with `inputmode=none`, so glass never raises its own (and the iPhone
+  keyboard no longer pans the gate). A hardware keyboard on a tablet still types.
+- The speaker button mutes the key clicks (kept in `localStorage` as `theroom.kb.sound`). The case keeps its
+  blue-grey; a non-blue accent turns its hue with the room.
+
+The shell got the keys to go with it: a real caret (← → Home End, ^A ^E), ↑ ↓ through the lines already run,
+`history`, Tab completion of commands and of places after `cd`, ^C to drop a line, ^L to clear, ^U to cut to the
+start. At the gate the same keys answer in one line each (Tab finishes `yes` or `no`).
 
 ## The room, for agents (MCP)
 
