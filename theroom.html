@@ -739,7 +739,7 @@ window.__kb = (function () {
 
   // the click: a short filtered impact and a damped case resonance, made only once a key is pressed (browsers start audio on a gesture)
   var click = {
-    ctx: null, noise: null,
+    ctx: null, noise: null, loud: 3,   // loudness: 3× the After Hours original (the loudest click still peaks near half scale, no clipping)
     play: function (code, release) {
       try {
         if (!this.ctx) {
@@ -758,13 +758,13 @@ window.__kb = (function () {
       var t = c.currentTime, len = release ? 0.026 : wide ? 0.067 : 0.044;
       var src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
       src.buffer = this.noise; f.type = 'bandpass'; f.frequency.value = (wide ? 1050 : 1500) + vary * 95; f.Q.value = 0.7;
-      g.gain.setValueAtTime(release ? 0.028 : 0.1, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      g.gain.setValueAtTime((release ? 0.028 : 0.1) * this.loud, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
       src.connect(f); f.connect(g); g.connect(c.destination); src.start(t); src.stop(t + len);
       src.onended = function () { src.disconnect(); f.disconnect(); g.disconnect(); };
       if (release) return;
       var body = c.createOscillator(), bg = c.createGain();
       body.type = 'triangle'; body.frequency.setValueAtTime(wide ? 155 : 210 + vary * 10, t); body.frequency.exponentialRampToValueAtTime(85, t + len);
-      bg.gain.setValueAtTime(0.07, t); bg.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      bg.gain.setValueAtTime(0.07 * this.loud, t); bg.gain.exponentialRampToValueAtTime(0.0001, t + len);
       body.connect(bg); bg.connect(c.destination); body.start(t); body.stop(t + len);
       body.onended = function () { body.disconnect(); bg.disconnect(); };
     }
