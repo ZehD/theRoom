@@ -751,8 +751,27 @@ window.__kb = (function () {
   try { muted = localStorage.getItem('theroom.kb.sound') === 'off'; } catch (e) {}
 
   // the click: a short filtered impact and a damped case resonance, made only once a key is pressed (browsers start audio on a gesture)
+  // the click: real clicky-switch keystrokes, 19 takes of "Mechanical Keyboards" by StavSounds (freesound.org/people/StavSounds/packs/42151,
+  // CC0), trimmed to their onset, levelled and packed in one sprite (audio/keys-clicky.mp3, 64 KB; `at`/`dur` in seconds). Each take holds
+  // the whole tap, down and up, so a release plays nothing. Space and Enter take the four heaviest, pitched down; the modifiers sit a little
+  // lower; the rest is a random take (never the same twice running) with a ±3% wobble. Until the sprite is in (or if it never comes) the
+  // synthesized click below stands in, release and all
+  var SPRITE = { at: [0.15,0.5969,1.0162,1.3932,1.8072,2.2138,2.5806,2.998,3.4265,3.7365,4.0756,4.3766,4.8416,5.3316,5.8118,6.2892,6.7255,7.1139,7.5158], dur: [0.2969,0.2693,0.2271,0.264,0.2566,0.2168,0.2675,0.2784,0.16,0.1891,0.151,0.315,0.34,0.3302,0.3274,0.2863,0.2384,0.2519,0.2527], heavy: [11, 12, 13, 14] };
   var click = {
-    ctx: null, noise: null, loud: 3,   // loudness: 3× the After Hours original (the loudest click still peaks near half scale, no clipping)
+    ctx: null, noise: null, loud: 3,   // loudness of the synthesized stand-in: 3× the After Hours original (it still peaks near half scale)
+    buffer: null, starts: null, last: -1, loading: false, gain: 0.9,
+    // fetched when the keyboard first comes up and decoded in an offline context, which needs no gesture: the first key already clicks for real
+    prefetch: function () {
+      var O = window.OfflineAudioContext || window.webkitOfflineAudioContext, self = this;
+      if (this.loading || !window.fetch || !O) return; this.loading = true;
+      fetch('audio/keys-clicky.mp3').then(function (r) { return r.ok ? r.arrayBuffer() : Promise.reject(r.status); })
+        .then(function (data) { return new Promise(function (ok, no) { new O(1, 1, 44100).decodeAudioData(data, ok, no); }); })
+        .then(function (buf) {   // each take's real onset: an mp3 decoder may or may not strip the encoder's lead-in, so look rather than trust `at`
+          var d = buf.getChannelData(0), sr = buf.sampleRate;
+          self.starts = SPRITE.at.map(function (at) { for (var i = Math.max(0, Math.floor((at - 0.06) * sr)), end = Math.min(d.length, Math.floor((at + 0.08) * sr)); i < end; i++) if (Math.abs(d[i]) > 0.05) return Math.max(0, i / sr - 0.001); return at; });
+          self.buffer = buf;
+        }).catch(function () {});   // the synthesized click stays
+    },
     play: function (code, release) {
       try {
         if (!this.ctx) {
@@ -760,10 +779,22 @@ window.__kb = (function () {
           this.ctx = new A(); this.noise = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.07), this.ctx.sampleRate);
           var d = this.noise.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
         }
-        var self = this;
-        if (this.ctx.state === 'suspended') { var p = this.ctx.resume(); if (p && p.then) p.then(function () { self.hit(code, release); }, function () {}); }
-        else this.hit(code, release);
+        if (this.buffer && release) return;   // the take already has its up-stroke
+        var self = this, go = function () { if (self.buffer) self.take(code); else self.hit(code, release); };
+        if (this.ctx.state === 'suspended') { var p = this.ctx.resume(); if (p && p.then) p.then(go, function () {}); }
+        else go();
       } catch (e) {}   // the keys work without sound
+    },
+    take: function (code) {
+      var c = this.ctx; if (!c || c.state !== 'running') return;
+      var heavy = code === 'Space' || code === 'Enter', mod = /^(Backspace|Shift|Control|Alt|Meta|Tab|CapsLock|Escape|KeyboardLayer|SymbolPage)/.test(code);
+      var pool = heavy ? SPRITE.heavy : SPRITE.at.map(function (_, i) { return i; }).filter(function (i) { return SPRITE.heavy.indexOf(i) < 0; });
+      var i = pool[Math.floor(Math.random() * pool.length)]; if (i === this.last && pool.length > 1) i = pool[(pool.indexOf(i) + 1) % pool.length]; this.last = i;
+      var src = c.createBufferSource(), g = c.createGain();
+      src.buffer = this.buffer; src.playbackRate.value = heavy ? 0.86 : mod ? 0.93 : 0.97 + Math.random() * 0.06;
+      g.gain.value = this.gain * (heavy ? 1.1 : 1);
+      src.connect(g); g.connect(c.destination); src.start(c.currentTime, this.starts[i], SPRITE.dur[i] + 0.002);
+      src.onended = function () { src.disconnect(); g.disconnect(); };
     },
     hit: function (code, release) {
       var c = this.ctx; if (!c || c.state !== 'running' || !this.noise) return;
@@ -903,7 +934,7 @@ window.__kb = (function () {
   addEventListener('blur', function () { stopRepeat(); pressed = {}; physical = false; if (built) paint(); });
   addEventListener('resize', function () { if (host) { fit(); measure(); } });
   function show(h) {
-    build(); clearTimeout(outT);
+    build(); clearTimeout(outT); click.prefetch();
     var fresh = el.hidden || el.classList.contains('out');
     host = h; root.setAttribute('data-kb', h.name || '');
     if (fresh) { pressed = {}; shifted = control = locked = false; setLayer('letters'); }

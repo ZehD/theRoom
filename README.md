@@ -56,6 +56,10 @@ plain JS/CSS in the page as `window.__kb`, a classic script like the gate so it 
   arrows), letters / `123` / `#+=` layers, Shift twice to lock, and a held ⌫ that repeats. On touch it replaces the
   OS keyboard: the fields go read-only with `inputmode=none`, so glass never raises its own (and the iPhone
   keyboard no longer pans the gate). A hardware keyboard on a tablet still types.
+- The clicks are real clicky-switch keystrokes: 19 takes from the "Mechanical Keyboards" pack by StavSounds on
+  Freesound (https://freesound.org/people/StavSounds/packs/42151/, CC0), trimmed to their onset, levelled and packed into
+  one 64 KB sprite, `audio/keys-clicky.mp3`, fetched when the keyboard first comes up. Space and Enter take the heaviest
+  takes pitched down; the rest rotate with a little pitch wobble; the synthesized click stands in until it has loaded.
 - The speaker button mutes the key clicks (kept in `localStorage` as `theroom.kb.sound`). The case keeps its
   blue-grey; a non-blue accent turns its hue with the room.
 
