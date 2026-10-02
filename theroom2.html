@@ -36,16 +36,19 @@
   #fps { top: calc(var(--top-h, 52px) + 16px); }
   #hud { top: calc(var(--top-h, 52px) + 56px); }
   #hud .dim { color: var(--phosphor-dim); }
-  /* accent picker: a row of small LED push-buttons. Each shows its own colour (--led); the active one lights up and glows. */
-  #accent { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); display: flex; gap: 6px; margin: 0; padding: 6px; list-style: none; background: var(--ink); border: 1px solid var(--moss); }
-  #accent button { appearance: none; width: 22px; height: 22px; padding: 0; cursor: pointer; border-radius: 0; background: var(--ink); border: 1px solid var(--moss); display: grid; place-items: center; }
-  #accent button::before { content: ""; width: 8px; height: 8px; background: color-mix(in srgb, var(--led) 40%, var(--ink)); transition: background 120ms linear, box-shadow 120ms linear; }
-  #accent button:hover { border-color: var(--led); }
-  #accent button:hover::before { background: color-mix(in srgb, var(--led) 75%, var(--ink)); }
-  #accent button[aria-pressed="true"] { border-color: var(--led); }
-  #accent button[aria-pressed="true"]::before { background: var(--led); box-shadow: 0 0 6px 1px var(--led), 0 0 14px 2px color-mix(in srgb, var(--led) 45%, transparent); }
+  /* accent picker (root's `phosphor`): a strip of LED push-buttons, named in its own phosphor. Every LED shows its colour lit, not dimmed;
+     the active one burns brightest, ringed and haloed in it. Phones drop the name and tighten the row to fit the width. */
+  #accent { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 10px; list-style: none; background: var(--ink); border: 1px solid var(--phosphor-dim); border-radius: 4px; box-shadow: 0 0 18px color-mix(in srgb, var(--phosphor) 18%, transparent); }
+  #accent::before { content: "phosphor"; margin: 0 4px 0 2px; font: 10px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.12em; color: var(--phosphor); }
+  #accent button { appearance: none; width: 34px; height: 34px; padding: 0; cursor: pointer; border-radius: 3px; background: color-mix(in srgb, var(--led) 10%, var(--ink)); border: 1px solid color-mix(in srgb, var(--led) 55%, var(--ink)); display: grid; place-items: center; transition: border-color 120ms linear, background 120ms linear, transform 120ms ease; }
+  #accent button::before { content: ""; width: 14px; height: 14px; border-radius: 2px; background: color-mix(in srgb, var(--led) 94%, var(--ink)); box-shadow: 0 0 8px color-mix(in srgb, var(--led) 55%, transparent); transition: background 120ms linear, box-shadow 120ms linear; }
+  #accent button:hover { border-color: var(--led); transform: translateY(-1px); }
+  #accent button:hover::before { background: var(--led); box-shadow: 0 0 8px 1px color-mix(in srgb, var(--led) 70%, transparent); }
+  #accent button[aria-pressed="true"] { border-color: var(--led); background: color-mix(in srgb, var(--led) 18%, var(--ink)); box-shadow: 0 0 0 1px var(--led), 0 0 16px color-mix(in srgb, var(--led) 45%, transparent); }
+  #accent button[aria-pressed="true"]::before { background: color-mix(in srgb, var(--led) 70%, #fff); box-shadow: 0 0 6px 2px var(--led), 0 0 18px 4px color-mix(in srgb, var(--led) 60%, transparent); }
   #accent button:focus-visible { outline: 2px solid var(--led); outline-offset: 2px; }
-  #root[data-touch] #accent button { width: 32px; height: 32px; }
+  @container (max-width: 767px) { #accent { gap: 5px; padding: 6px; } #accent::before { display: none; } }
+  @media (prefers-reduced-motion: reduce) { #accent button, #accent button::before { transition: none; } }
   /* the hover label (After Hours): a glass tag hung over the lit object's anchor on a short connector line, corner ticks top-left and
      bottom-right, a prompt and a block cursor. placeChip sets --x/--y (the anchor, px) and --hover (how lit the object is: the tag fades
      and rises with it). .on = something is under the pointer; the tag can still be fading out after it goes. */
@@ -336,6 +339,7 @@
   #mode button:focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: 2px; }
   #reset { bottom: calc(66px + env(safe-area-inset-bottom)); }
   #root[data-mode="agent"] :is(#room, #vignette, #top, #explorer, #dim, #chip, #reset, #hint, #exit, #accent, #toast, #boot, #fps, #hud) { display: none !important; }
+  #root[data-bios] #mode { display: none; }   /* setup (root's `bios`) is not an agent view: the pill would say it was */
   #agent { position: fixed; inset: 0; overflow: auto; -webkit-overflow-scrolling: touch; background: var(--ink); color: var(--phosphor); z-index: 3; }
   /* the switch: a CRT powering off and on. Two black panels close from the edges to one bright line, the line collapses, the
      view swaps under the black, and the same plays backwards. The pill stays above it. */
@@ -1300,7 +1304,7 @@ function buildTextures() {
   TEX.termR = new Terminal(null, { scale: CONFIG.terminal.scale * (devicePixelRatio >= 1.5 ? 2 : 1), shell: SHELL, bg: '#122940', scan: true });   // the shell; its transcript lives in SHELL and survives a rebuild. Dense screens get a sharper texture
   // post-it: the root recipe in the owner's hand, a pen (Caveat), dark ink on warm paper, every line a little crooked and the KEY
   // underlined twice. Drawn twice: paper + ink, and ink alone (the hover glow layer). 256 px, smooth-filtered with mipmaps: a hand, not pixels
-  { const LINES = [['in the terminal', -0.03, 22], ['type "su"', 0.02, 30], ['insert the KEY', -0.015, 18], ['then type', 0.025, 34], ['"phosphor"', -0.02, 26]];
+  { const LINES = [['in the terminal', -0.03, 22], ['type "su"', 0.02, 30], ['insert the KEY', -0.015, 18], ['and you are', 0.025, 34], ['root.', -0.02, 26]];
     const drawInk = (x, ink) => {
       x.fillStyle = x.strokeStyle = ink; x.font = '700 40px Caveat, "Segoe Print", cursive'; x.textBaseline = 'alphabetic'; x.lineCap = 'round';
       LINES.forEach(([l, turn, left], i) => {
@@ -2388,7 +2392,7 @@ function shellRun(raw) {
   const T = CONFIG.terminal;
   if (SHELL.mode === 'password') {   // the typed line was a password: never echoed
     SHELL.mode = null; shellPrint(T.sudoPrompt);
-    if (raw === T.password) { SHELL.root = true; SHELL.tries = 0; shellPrint('welcome, root. Tito is still asleep on his cushion. try: phosphor'); foundSecret('root'); }
+    if (raw === T.password) { SHELL.root = true; SHELL.tries = 0; shellPrint('welcome, root. Tito is still asleep on his cushion. try: bios, phosphor'); foundSecret('root'); }
     else if (++SHELL.tries >= 3) { SHELL.tries = 0; shellPrint('sudo: 3 incorrect password attempts'); }
     else { shellPrint('Sorry, try again.'); SHELL.mode = 'password'; }
     return;
@@ -2403,7 +2407,7 @@ function shellRun(raw) {
     words.shift();
   }
   const [cmd, arg] = words;
-  if (cmd === 'help' || cmd === '?') shellPrint('cd <place>  ls  who  mcp  clear  exit');
+  if (cmd === 'help' || cmd === '?') { shellPrint('cd <place>  ls  who  mcp  clear  exit'); if (SHELL.root) shellPrint('as root: bios  phosphor'); }
   else if (cmd === 'ls') shellPrint(PLACES.join('  '));
   else if (cmd === 'mcp') { shellPrint('the room, for agents. one URL, no auth:'); shellPrint(MCP_URL); shellPrint('claude mcp add --transport http theroom ' + MCP_URL); }
   else if (cmd === 'who' || cmd === 'w') {   // the visitor book, async: the answer lands on the screen when the desk replies
@@ -2414,6 +2418,10 @@ function shellRun(raw) {
   else if (cmd === 'history') { const H = SHELL.hist, from = Math.max(0, H.length - (CONFIG.terminal.rows - 2)); H.slice(from).forEach((c, i) => shellPrint(String(from + i + 1).padStart(4) + '  ' + c)); }
   else if (cmd === 'exit' || cmd === 'logout') { if (SHELL.root) { SHELL.root = false; shellPrint('logout'); } else leaveTerminal(); }
   else if (cmd === 'cd' || cmd === 'go' || cmd === 'open') { if (!shellGo(arg || 'home')) shellPrint('cd: ' + arg + ': no such place'); }
+  else if (cmd === 'bios') {   // root only: the setup utility, through the CRT; its Exit brings you back to the room
+    if (!SHELL.root) return shellPrint('bios: permission denied. root can enter setup.');
+    shellPrint('bios: entering setup'); leaveTerminal({ tween: false }); switchMode(true, 'bios');
+  }
   else if (cmd === 'phosphor') {   // root only: the accent strip. `phosphor` shows it, `phosphor <name>` sets a colour, `phosphor off` hides it
     if (!SHELL.root) return shellPrint('phosphor: permission denied. root can change the room\'s phosphor.');
     const names = Object.keys(CONFIG.accent.presets);
@@ -2477,7 +2485,7 @@ function shellRecall(dir, set) {
 const SHELL_WORDS = ['help', 'ls', 'cd', 'who', 'mcp', 'history', 'clear', 'exit', 'whoami', 'pwd'];
 function shellComplete(v, at, edit) {
   const head = v.slice(0, at), word = /\S*$/.exec(head)[0], before = head.slice(0, head.length - word.length), lead = before.trim().toLowerCase();
-  const pool = !lead ? SHELL_WORDS.concat(PLACES) : /^(cd|go|open)$/.test(lead) ? PLACES : [];
+  const pool = !lead ? SHELL_WORDS.concat(SHELL.root ? ['bios', 'phosphor'] : [], PLACES) : /^(cd|go|open)$/.test(lead) ? PLACES : [];   // root's commands only to root
   const hits = [...new Set(pool.filter(c => c.startsWith(word.toLowerCase())))];
   if (!hits.length) return;
   let fill = hits[0]; for (const h of hits) while (!h.startsWith(fill)) fill = fill.slice(0, -1);
@@ -2653,7 +2661,7 @@ function updateReset() {
   if (resetEl.hidden === moved) resetEl.hidden = !moved;
 }
 addEventListener('popstate', () => {
-  const a = agentOfUrl();   // #/agent or #/agent/bios: the text views own the URL
+  const a = agentOfUrl();   // #/agent: the index owns the URL (setup has none to come back to)
   if (a) { setMode(true, a, { push: false }); return; }
   if (MODE.agent) setMode(false, undefined, { push: false });
   if (TERM.open) { leaveTerminal({ fromHistory: true }); return; }
@@ -3096,10 +3104,10 @@ function startReveal() {
 }
 // ───────────────────────────── human / agent ─────────────────────────────
 // The pill at the bottom edge. AGENT leaves the room: the loop parks, the chrome hides, and the same content
-// (CONFIG.inspectables, the one source of truth) comes back as text in one of two dresses. `index` is the plain-text
-// mirror: dotted keys, sections under rules, the whole room in one scroll. `bios` is the setup utility: a POST screen,
-// then tabs, an item pane, item-specific help, a key legend and the dialogs a BIOS asks before it lets you go.
-// The URL follows (#/agent, #/agent/bios) and the last choice is kept, so a reload lands where you left.
+// (CONFIG.inspectables, the one source of truth) comes back as text: the index, a plain-text mirror (dotted keys, sections under
+// rules, the whole room in one scroll) at #/agent. The setup utility (MODE.style 'bios': a POST screen, then tabs, an item pane,
+// item-specific help, a key legend and the dialogs a BIOS asks before it lets you go) is not a dress of it any more: root opens it
+// from the shell (`bios`), at #/setup, which a reload does not reopen; its Exit goes back to the room, and the pill hides meanwhile.
 const MODE = { agent: false, style: 'index', paused: false, posted: false };
 const agentEl = document.getElementById('agent'), indexEl = agentEl.querySelector('.index'), biosEl = agentEl.querySelector('.bios'), modeEl = document.getElementById('mode');
 const SITE_URL = MCP_URL.replace(/\/mcp$/, ''), INSTALL_LINE = 'claude mcp add --transport http theroom ' + MCP_URL;
@@ -3120,20 +3128,20 @@ const MACHINE = [
 const SECTION_KEY = { 'monitor-left': 'experience', 'cert-frame': 'certifications', whiteboard: 'studies', shelf: 'shelf', speakers: 'sound' };
 const roomSections = () => CONFIG.inspectables.filter(i => i.explorer && !i.hint && !i.terminal && SECTION_KEY[i.id]).map(i => ({ key: SECTION_KEY[i.id], title: i.title, line: i.line, path: i.explorer.path, files: i.explorer.files }));
 const secretsCount = () => { const f = secretsFound(); return SECRETS.filter(k => f.has(k)).length; };
-const agentOfUrl = () => { const m = /^#\/agent(?:\/(bios|index))?\/?$/.exec(location.hash); return m ? (m[1] || 'index') : null; };
+const agentOfUrl = () => /^#\/agent(?:\/index)?\/?$/.test(location.hash) ? 'index' : null;   // the index; setup has no URL to come back to
 const fmtDate = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', month: '2-digit', day: '2-digit', year: 'numeric' });
 
-function setMode(agent, style = MODE.style, { push = true, replace = false } = {}) {
-  style = style === 'bios' ? 'bios' : 'index';
+function setMode(agent, style = 'index', { push = true, replace = false } = {}) {
+  style = agent && style === 'bios' ? 'bios' : 'index';
   const was = MODE.agent, wasStyle = MODE.style;
   if (agent && !was) foldRoom();
   MODE.agent = agent; MODE.style = style;
-  rootEl.dataset.mode = agent ? 'agent' : 'human';
+  rootEl.dataset.mode = agent ? 'agent' : 'human'; rootEl.toggleAttribute('data-bios', style === 'bios');   // setup: the pill steps away
   agentEl.hidden = !agent; modeEl.classList.add('on');
   for (const b of modeEl.querySelectorAll('button')) b.setAttribute('aria-pressed', String((b.dataset.mode === 'agent') === agent));
   placeModeThumb();
-  try { localStorage.setItem('theroom.mode', agent ? 'agent' : 'human'); localStorage.setItem('theroom.agent', style); } catch {}
-  const href = agent ? (style === 'bios' ? '#/agent/bios' : '#/agent') : hrefOf(nav.zone), state = agent ? { agent: style } : { zone: nav.zone };
+  try { if (style !== 'bios') localStorage.setItem('theroom.mode', agent ? 'agent' : 'human'); } catch {}
+  const href = agent ? (style === 'bios' ? '#/setup' : '#/agent') : hrefOf(nav.zone), state = agent ? { agent: style } : { zone: nav.zone };
   if (replace) history.replaceState(state, '', href);
   else if (push && (location.hash || '#/') !== href) history.pushState(state, '', href);
   document.title = agent ? `Luiz Cordeiro · theRoom · ${style === 'bios' ? 'setup' : 'index'}` : (nav.zone === 'home' ? 'Luiz Cordeiro · theRoom' : `Luiz Cordeiro · ${ZONES[nav.zone].label}`);
@@ -3187,7 +3195,6 @@ function placeModeThumb(b = modeEl.querySelector('button[aria-pressed="true"]'))
 placeModeThumb(); new ResizeObserver(() => placeModeThumb(modeEl.querySelector(`button[data-mode="${modeEl.dataset.on}"]`) || undefined)).observe(modeEl);
 agentEl.addEventListener('click', e => {
   const jump = e.target.closest('[data-jump]'); if (jump) { e.preventDefault(); indexEl.querySelector('#ix-' + jump.dataset.jump)?.scrollIntoView({ behavior: MOTION ? 'smooth' : 'auto', block: 'start' }); return; }
-  const st = e.target.closest('[data-style]'); if (st) { e.preventDefault(); switchMode(true, st.dataset.style); return; }
   const cp = e.target.closest('[data-copy-md]'); if (cp) copyMd(cp);
 });
 function bootMode() {   // the URL first; then the gate's answer, or a wait for it; a hash link into the room goes straight in
@@ -3196,8 +3203,7 @@ function bootMode() {   // the URL first; then the gate's answer, or a wait for 
   const G = window.__gate;
   const onGate = a => {
     if (a !== 'agent') return startReveal();
-    let style = null; try { style = localStorage.getItem('theroom.agent'); } catch {}
-    setMode(true, style || 'index', { replace: true });
+    setMode(true, 'index', { replace: true });
     if (MOTION) { crtEl.className = 'on onn'; setTimeout(() => { crtEl.className = ''; }, 600); }   // the gate is black already: power the view on
   };
   if (!G || G.answer === 'skip') startReveal();
@@ -3255,7 +3261,7 @@ function renderIndex() {
     ['mcp', `<code>${MCP_URL}</code>`]
   ]);
   h += `<h2 id="ix-machine">machine</h2>` + dlHtml(MACHINE.map(([k, v, d]) => [k, `<code>${esc(v)}</code> <i>${esc(d)}</i>`]));
-  h += `<div class="end"><span>end of index</span><span>generated from the room itself</span><span>style: <a href="#/agent" data-style="index" aria-current="${MODE.style === 'index'}">index</a> · <a href="#/agent/bios" data-style="bios" aria-current="${MODE.style === 'bios'}">bios</a></span><span><a href="${SITE_URL}/room.md">room.md</a></span></div>`;
+  h += `<div class="end"><span>end of index</span><span>generated from the room itself</span><span><a href="${SITE_URL}/room.md">room.md</a></span></div>`;
   indexEl.innerHTML = h;
   roomMdFetch().catch(() => {});
   const v = indexEl.querySelector('[data-visitors]');
@@ -3302,8 +3308,6 @@ function biosTabs() {
       { label: 'Exit Saving Changes', action: () => askDialog('Save configuration changes and exit now?', () => switchMode(false)), help: 'Back to the room, phosphor as set here. F10 does the same from anywhere.' },
       { label: 'Exit Discarding Changes', action: () => askDialog('Configuration has not been saved! Exit anyway?', () => { setAccent(B.accent0); switchMode(false); }), help: 'Back to the room, phosphor as it was when you came in.' },
       { label: 'Load Setup Defaults', action: () => askDialog('Load default configuration now?', () => { setAccent('blue'); if (rain.on) rain.toggle(); }), help: 'Blue phosphor, rain off. F9 does the same.' },
-      { label: 'Switch to Index View', action: () => switchMode(true, 'index'), help: 'The same room as a plain-text index, in one scroll.' },
-      { label: 'Human Mode', action: () => switchMode(false), help: 'The room itself: three.js, a shell, a dog on his cushion.' }
     ] }
   ];
 }
