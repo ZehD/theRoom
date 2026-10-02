@@ -2451,7 +2451,7 @@ function shellRun(raw) {
   else if (cmd === 'cd' || cmd === 'go' || cmd === 'open') { if (!shellGo(arg || 'home')) shellPrint('cd: ' + arg + ': no such place'); }
   else if (cmd === 'bios') {   // root only: the setup utility, through the CRT; its Exit brings you back to the room
     if (!SHELL.root) return shellPrint('bios: permission denied. root can enter setup.');
-    shellPrint('bios: entering setup'); leaveTerminal({ tween: false }); switchMode(true, 'bios');
+    shellPrint('bios: entering setup'); switchMode(true, 'bios');   // the switch folds the shell (foldRoom): the room comes back where it was before it
   }
   else if (cmd === 'phosphor') {   // root only: the accent strip. `phosphor` shows it, `phosphor <name>` sets a colour, `phosphor off` hides it
     if (!SHELL.root) return shellPrint('phosphor: permission denied. root can change the room\'s phosphor.');
@@ -2467,9 +2467,10 @@ function shellRun(raw) {
 }
 // Physical keys while the shell is open. On a desk the field takes the characters (so dead keys, IME and the host's own shortcuts see a
 // text input, not bare keystrokes); the keys that edit rather than type go to shellEdit. On glass the field is read-only, so a
-// hardware keyboard's characters go there too. Nothing propagates on to shortcut handlers.
+// hardware keyboard's characters go there too. Nothing propagates on to shortcut handlers, nor to the BIOS's (also on window, in capture),
+// which `bios` + Enter would otherwise wake mid-key when the switch is instant (reduced motion) and hand the same Enter.
 function shellKey(e) {
-  e.stopPropagation();
+  e.stopImmediatePropagation();
   if (e.isComposing) return;
   const k = e.key;
   if (e.ctrlKey && !e.shiftKey && !e.metaKey && !e.altKey && (k === 'c' || k === 'l')) { e.preventDefault(); shellEdit({ key: k, ctrl: true }); return; }   // ^C drops the line, ^L clears the screen (Ctrl+Shift+C stays Inspect)
@@ -2625,8 +2626,8 @@ function focusObject(insp) {
 function leaveFocus() { setHover(null); goZone(nav.zone, { push: false }); }
 function goZone(z, { push = true } = {}) {
   if (!ZONES[z]) return false;
-  hintFocus = null;
-  if (explorer.open) { camTween.back = null; closeExplorer(true); }
+  hintFocus = null; camTween.back = null;   // also a window still on its way: its return point would outlive it
+  if (explorer.open) closeExplorer(true);
   if (TERM.open) leaveTerminal({ tween: false, fromHistory: true });
   nav.zone = z;
   updateMenu();
@@ -2655,7 +2656,7 @@ navEl.addEventListener('click', e => {
   if (!insp) return;
   if (insp.terminal) return TERM.open ? leaveTerminal() : enterTerminal();   // the word toggles the shell
   if (explorer.open && explorer.insp?.id === insp.id) return closeExplorer();
-  if (explorer.open) { camTween.back = null; closeExplorer(true); }
+  if (explorer.open) { const back = camTween.back; camTween.back = null; closeExplorer(true); camTween.back = back; }   // one window for another: the way back stays the one from before the first (not the first's close-up)
   if (TERM.open) return terminalTo(insp);
   focusObject(insp);
 });
@@ -2720,7 +2721,7 @@ exEl.addEventListener('keydown', e => {
   else if (e.key === 'Home') { e.preventDefault(); selectFile(0); }
   else if (e.key === 'End') { e.preventDefault(); selectFile(-1); }
 });
-dimEl.addEventListener('click', closeExplorer);
+dimEl.addEventListener('click', () => closeExplorer());   // not the event as fromHistory: a click off the window pops its history entry like the close button
 // ───────────────────────────── rain (Web Audio) ─────────────────────────────
 // audio/rain.mp3 (a 15 s clip) decoded once and looped seamlessly: two alternating sources, each fading in over the
 // last second of the other (equal-power crossfade), so the seam never clicks. Autoplays on load where the browser
@@ -2977,7 +2978,7 @@ function cycleAccent() {
 }
 
 addEventListener('keydown', e => {
-  if (TERM.open) return;   // the shell has the keyboard (handled in capture, above)
+  if (TERM.open || MODE.agent || switching) return;   // the shell has the keyboard (handled in capture, above); the index, the setup and a switch under way leave the room's keys alone
   if (e.key === 'Escape' && explorer.open) { e.preventDefault(); closeExplorer(); return; }
   if (e.key === 'Escape' && hintFocus) { e.preventDefault(); leaveFocus(); return; }   // up close on the dog or the note: back to the zone's shot
   if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
@@ -3139,7 +3140,7 @@ function startReveal() {
 // rules, the whole room in one scroll) at #/agent. The setup utility (MODE.style 'bios': a POST screen, then tabs, an item pane,
 // item-specific help, a key legend and the dialogs a BIOS asks before it lets you go) is not a dress of it any more: root opens it
 // from the shell (`bios`), at #/setup, which a reload does not reopen; its Exit goes back to the room, and the pill hides meanwhile.
-const MODE = { agent: false, style: 'index', paused: false, posted: false };
+const MODE = { agent: false, style: 'index', paused: false, posted: false, back: null };   // back: the shot foldRoom kept for the room's return
 const agentEl = document.getElementById('agent'), indexEl = agentEl.querySelector('.index'), biosEl = agentEl.querySelector('.bios'), modeEl = document.getElementById('mode');
 const SITE_URL = MCP_URL.replace(/\/mcp$/, ''), INSTALL_LINE = 'claude mcp add --transport http theroom ' + MCP_URL;
 const ABOUT = {
@@ -3166,6 +3167,7 @@ function setMode(agent, style = 'index', { push = true, replace = false } = {}) 
   style = agent && style === 'bios' ? 'bios' : 'index';
   const was = MODE.agent, wasStyle = MODE.style;
   if (agent && !was) foldRoom();
+  restCamera();   // under the shut CRT (or straight from history), before the loop parks or picks up again
   MODE.agent = agent; MODE.style = style;
   rootEl.dataset.mode = agent ? 'agent' : 'human'; rootEl.toggleAttribute('data-bios', style === 'bios');   // setup: the pill steps away
   agentEl.hidden = !agent; modeEl.classList.add('on');
@@ -3173,7 +3175,8 @@ function setMode(agent, style = 'index', { push = true, replace = false } = {}) 
   placeModeThumb();
   try { if (style !== 'bios') localStorage.setItem('theroom.mode', agent ? 'agent' : 'human'); } catch {}
   const href = agent ? (style === 'bios' ? '#/setup' : '#/agent') : hrefOf(nav.zone), state = agent ? { agent: style } : { zone: nav.zone };
-  if (replace) history.replaceState(state, '', href);
+  const stale = push && (history.state?.term || history.state?.insp || history.state?.agent === 'bios');   // the folded shell's or window's own entry, or setup's (nothing to come back to): the view takes its place instead of stacking on it
+  if (replace || stale) history.replaceState(state, '', href);
   else if (push && (location.hash || '#/') !== href) history.pushState(state, '', href);
   document.title = agent ? `Luiz Cordeiro · theRoom · ${style === 'bios' ? 'setup' : 'index'}` : (nav.zone === 'home' ? 'Luiz Cordeiro · theRoom' : `Luiz Cordeiro · ${ZONES[nav.zone].label}`);
   if (agent) { if (was && wasStyle !== style) teardownBios(); showStyle(!was || wasStyle !== style); }
@@ -3184,11 +3187,22 @@ function showStyle(fresh) {
   if (MODE.style === 'index') { renderIndex(); agentEl.scrollTop = 0; }
   else { if (fresh) { B.accent0 = CONFIG.accent.name; B.tab = 0; B.item = 0; B.sub = null; B.dialog = null; } roomMdFetch().catch(() => {}); if (fresh && !MODE.posted && MOTION) runPost(); else renderBios(); }
 }
-// leaving the room: fold whatever is open, so nothing lit stays above the switch
+// leaving the room: fold whatever is open, so nothing lit stays above the switch. The way back the shell or the window held is kept, and
+// restCamera puts the camera there once the CRT is shut: the room comes back as it was before either opened, not framed on a closed screen
+// (where every window opened after would have taken that screen for its own way back)
 function foldRoom() {
+  const back = TERM.open ? TERM.back : camTween.back;   // camTween.back: a window open, or one still on its way
   if (TERM.open) leaveTerminal({ tween: false, fromHistory: true });
-  if (explorer.open) { camTween.back = null; closeExplorer(true); }
+  camTween.back = null; camTween.onMid = null;   // a window on its way never opens
+  if (explorer.open) closeExplorer(true);
+  if (back) MODE.back = back;
   openTally(false); openMenu(false); hideHint();
+}
+function restCamera() {   // the shot foldRoom kept, at once
+  const s = MODE.back; if (!s) return; MODE.back = null;
+  camTween.active = false;
+  camState.position.copy(s.position); camState.target.copy(s.target); camState.zoom = s.zoom;
+  setFreeHome(s.position, s.target, s.zoom); holdControls();   // free look picks it up from there on the next frame
 }
 // A user-made switch goes through the CRT: off (the old view), swap, on (the new one). History and boot go straight to
 // setMode. A request that lands mid-switch is not dropped: the latest target wins at the swap, and one that arrives after
@@ -3205,11 +3219,13 @@ function switchMode(agent, style) {
 }
 function runSwitch() {
   switching = true; crtEl.className = 'on off';
-  if (pending?.agent && !MODE.agent) foldRoom();
+  const folded = pending?.agent && !MODE.agent; if (folded) foldRoom();
   setTimeout(() => {
-    const t = pending; pending = null;
-    try { if (t && !sameAs(t)) setMode(t.agent, t.style); }   // the back button may have got there first
+    const t = pending; pending = null; let swapped = false;
+    try { if (t && !sameAs(t)) { setMode(t.agent, t.style); swapped = true; } }   // the back button may have got there first
     finally {
+      restCamera();   // a switch called off mid-way still put the shell away: the room opens on its way back
+      if (folded && !swapped && (history.state?.term || history.state?.insp)) history.back();   // and the shell's or window's entry goes with it
       crtEl.className = 'on onn';
       setTimeout(() => { crtEl.className = ''; switching = false; if (pending && !sameAs(pending)) runSwitch(); else pending = null; }, 600);
     }
