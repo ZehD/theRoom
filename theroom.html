@@ -758,8 +758,8 @@ window.__kb = (function () {
   // synthesized click below stands in, release and all
   var SPRITE = { at: [0.15,0.5969,1.0162,1.3932,1.8072,2.2138,2.5806,2.998,3.4265,3.7365,4.0756,4.3766,4.8416,5.3316,5.8118,6.2892,6.7255,7.1139,7.5158], dur: [0.2969,0.2693,0.2271,0.264,0.2566,0.2168,0.2675,0.2784,0.16,0.1891,0.151,0.315,0.34,0.3302,0.3274,0.2863,0.2384,0.2519,0.2527], heavy: [11, 12, 13, 14] };
   var click = {
-    ctx: null, noise: null, loud: 3,   // loudness of the synthesized stand-in: 3× the After Hours original (it still peaks near half scale)
-    buffer: null, starts: null, last: -1, loading: false, gain: 0.9,
+    ctx: null, noise: null, loud: 2.1,   // loudness of the synthesized stand-in: 2.1× the After Hours original (30% under the 3× it had)
+    buffer: null, starts: null, last: -1, loading: false, gain: 0.63,   // the takes' level: 30% under the 0.9 they shipped at
     // fetched when the keyboard first comes up and decoded in an offline context, which needs no gesture: the first key already clicks for real
     prefetch: function () {
       var O = window.OfflineAudioContext || window.webkitOfflineAudioContext, self = this;
