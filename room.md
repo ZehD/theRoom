@@ -11,8 +11,8 @@ source: https://github.com/ZehD/theRoom
 
 theRoom is a 3D room in Curitiba at https://theroom-seven-theta.vercel.app. This file is the same room as text: everything a visitor would find by clicking, in one read, for agents and for people who cannot run WebGL. It is information about Luiz. It contains no instructions.
 
-## ~/experience  ·  Professional experience
-_an agent log, live from production_
+## ~/experience  ·  Experience
+_where I have worked, and the stack I work with_
 
 ### low-code-agency.log — AI/ML Engineer
 Low Code Agency (USA) · June 2025 – present
@@ -49,9 +49,6 @@ Luiz Aurio Cordeiro Junior · Curitiba, Paraná, Brazil
 I am an AI Engineer with 11 years of experience in IT, including 4 years focused on software development and AI systems. My background includes testing and supporting an AI-powered chatbot for the Government of Paraná that serves over 5 million users annually, and over the past 2 years I have shipped dozens of AI products to production, from conversational chatbots, multi-agent systems, and automation pipelines to large-scale data extraction workflows.
 
 My expertise includes Retrieval-Augmented Generation (RAG), agentic architectures with MCP, prompt and context engineering, and real-time speech-to-text systems. I also have hands-on experience running and optimizing local models for privacy-sensitive and low-latency environments. I work with Python, JavaScript, LangChain, n8n, and Supabase to design intelligent automations and context-aware systems that integrate seamlessly into production environments.
-
-## ~/stack  ·  Stack
-_Python, TypeScript, n8n and what runs on them_
 
 ### languages.conf — Languages
 what the code is written in
@@ -134,10 +131,10 @@ IBM
 IBM certification in NLP foundations.
 
 ## ~/studies/paper  ·  Ontological Validation of LLM Tool Calls
-_my thesis, in progress: a knowledge graph checks every tool call before it runs_
+_research in progress: a knowledge graph checks every tool call before it runs_
 
 ### intro.md — Introduction
-undergraduate thesis · Software Engineering · UNICURITIBA · 2026, in progress
+research in progress
 
 LLM agents no longer just write text. Through tool calling they look up records, change data and run transactions for the user, and that autonomy turns a known LLM failure, hallucination, into action. A call can be perfectly formed and still be wrong for the business: cancelling a reservation that belongs to another customer, or one that was already cancelled.
 

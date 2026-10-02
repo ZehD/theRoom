@@ -33,8 +33,8 @@ of two dresses, switchable from inside either:
 
 - **index** (`#/agent`): the plain-text mirror. Dotted keys, sections under rules, the whole room in one scroll,
   the visitor book and the machine endpoints at the end.
-- **bios** (`#/agent/bios`): the setup utility. A POST screen the first time, then tabs (Main, Experience, Stack,
-  Certs, Studies, Shelf, Sound, Desk, Exit), an item pane with item-specific help, and a key legend. Keys work
+- **bios** (`#/agent/bios`): the setup utility. A POST screen the first time, then tabs (Main, Experience, Certs,
+  Studies, Shelf, Sound, Desk, Exit; the stack sits inside Experience), an item pane with item-specific help, and a key legend. Keys work
   like the real thing: arrows, Enter opens a ▶ item, +/- changes a value (Phosphor and Rain are live settings
   of the room), Esc jumps to Exit, F9 loads defaults, F10 asks before it lets you out. Everything is also
   tappable.

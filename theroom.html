@@ -1101,7 +1101,7 @@ const CONFIG = {
   // tween.near: a long near keeps the lens back where nothing stands in front, so the near plane doesn't slice the desk or the floor.
   // How each lights up on hover (group.userData.hover) and where its chip hangs are wired in buildAfterHours.
   inspectables: [
-    { id: 'monitor-left',  label: 'professional experience', cmd: 'experience', title: 'Professional experience', line: 'an agent log, live from production', phase: 1, view: { dir: [-0.27, 0, 0.96], near: 3 },   // square on to the screen (the monitor turns -.28); nothing stands before it, so the lens stays back and the desk stays whole
+    { id: 'monitor-left',  label: 'experience', cmd: 'experience', title: 'Experience', line: 'where I have worked, and the stack I work with', phase: 1, view: { dir: [-0.27, 0, 0.96], near: 3 },   // square on to the screen (the monitor turns -.28); nothing stands before it, so the lens stays back and the desk stays whole
       explorer: { path: '~/experience', files: [
         { name: 'low-code-agency.log', title: 'AI/ML Engineer', meta: 'Low Code Agency (USA) · June 2025 – present', bullets: [
           'Create and integrate AI agents to perform dynamic, context-aware tasks across workflows.',
@@ -1126,17 +1126,15 @@ const CONFIG = {
           'Contributed to incident resolution and monitoring of the CORE orchestration service, which routes citizen messages across NLP, flow, and fallback search systems in real time.',
           'Supported integrations with WhatsApp as a citizen service channel, operating on a proprietary messaging infrastructure developed in-house to ensure data sovereignty and compliance with government data policies.'
         ] },
-        { name: 'summary.txt', title: 'Personal summary', meta: 'Luiz Aurio Cordeiro Junior · Curitiba, Paraná, Brazil', text: 'I am an AI Engineer with 11 years of experience in IT, including 4 years focused on software development and AI systems. My background includes testing and supporting an AI-powered chatbot for the Government of Paraná that serves over 5 million users annually, and over the past 2 years I have shipped dozens of AI products to production, from conversational chatbots, multi-agent systems, and automation pipelines to large-scale data extraction workflows.', text2: 'My expertise includes Retrieval-Augmented Generation (RAG), agentic architectures with MCP, prompt and context engineering, and real-time speech-to-text systems. I also have hands-on experience running and optimizing local models for privacy-sensitive and low-latency environments. I work with Python, JavaScript, LangChain, n8n, and Supabase to design intelligent automations and context-aware systems that integrate seamlessly into production environments.' }
-      ] } },
-    { id: 'monitor-right', label: 'terminal', title: 'Terminal', line: 'a shell into the room: cd, ls, help', phase: 1, terminal: true },
-    { id: 'rack',          label: 'stack', title: 'Stack', line: 'Python, TypeScript, n8n and what runs on them', phase: 1, view: { dir: [0, 0, 1] },   // face on: the lens sits in front of the fans
-      explorer: { path: '~/stack', files: [
+        { name: 'summary.txt', title: 'Personal summary', meta: 'Luiz Aurio Cordeiro Junior · Curitiba, Paraná, Brazil', text: 'I am an AI Engineer with 11 years of experience in IT, including 4 years focused on software development and AI systems. My background includes testing and supporting an AI-powered chatbot for the Government of Paraná that serves over 5 million users annually, and over the past 2 years I have shipped dozens of AI products to production, from conversational chatbots, multi-agent systems, and automation pipelines to large-scale data extraction workflows.', text2: 'My expertise includes Retrieval-Augmented Generation (RAG), agentic architectures with MCP, prompt and context engineering, and real-time speech-to-text systems. I also have hands-on experience running and optimizing local models for privacy-sensitive and low-latency environments. I work with Python, JavaScript, LangChain, n8n, and Supabase to design intelligent automations and context-aware systems that integrate seamlessly into production environments.' },
         { name: 'languages.conf', control: 'rack', title: 'Languages', meta: 'what the code is written in', bullets: ['Python', 'Java', 'SQL', 'JavaScript', 'TypeScript', 'C/C++'] },
         { name: 'frameworks.conf', control: 'rack', title: 'Frameworks and tools', meta: 'the working set', bullets: ['FastAPI', 'LangChain', 'LangGraph', 'n8n', 'CrewAI', 'PySpark', 'Git', 'Docker', 'Pandas', 'NumPy', 'Matplotlib'] },
         { name: 'ai-data.conf', control: 'rack', title: 'AI and data', meta: 'models, retrieval, agents', bullets: ['Machine Learning', 'Neural Networks', 'NLP', 'Tokenization', 'Vector Databases (Pinecone, Supabase pgvector)', 'RAG pipelines', 'Embedding generation', 'Prompt engineering', 'Claude Agent SDK'] },
         { name: 'cloud-db.conf', control: 'rack', title: 'Cloud and databases', meta: 'where it runs and what it stores', bullets: ['PostgreSQL', 'MySQL', 'Supabase', 'SQLAlchemy', 'Google Cloud Platform (GCP)', 'Amazon Web Services (AWS)'] },
         { name: 'process.conf', control: 'rack', title: 'Project and collaboration', meta: 'how the work gets shipped', bullets: ['Agile methodologies', 'Scrum', 'Kanban', 'JIRA', 'CI/CD workflows'] }
       ] } },
+    { id: 'monitor-right', label: 'terminal', title: 'Terminal', line: 'a shell into the room: cd, ls, help', phase: 1, terminal: true },
+    { id: 'rack',          label: 'stack', hint: true, opens: 'monitor-left', at: 'languages.conf', phase: 1, view: { dir: [0, 0, 1] } },   // the tower: the stack now lives in experience; a click glides here and opens it at the languages
     { id: 'cert-frame',    label: 'certifications', title: 'CCA-F', line: 'Claude Certified Architect (Foundations), IBM certs', phase: 1, view: { dir: [0, 0, 1] },   // small, on the back wall (faces +z)
       explorer: { path: '~/certifications', files: [
         { name: 'claude-certified-architect-foundations.pdf', title: 'Claude Certified Architect (Foundations)', meta: 'Anthropic', control: 'spin', spin: 'cert', items: [['Claude Certified Architect', 'Foundations · Anthropic']], text: 'Claude Certified Architect, Foundations level.' },
@@ -1144,9 +1142,9 @@ const CONFIG = {
         { name: 'ibm-llm-data-preparation.pdf', title: 'LLM data preparation', meta: 'IBM', control: 'spin', spin: 'cert', items: [['LLM data preparation', 'IBM']], text: 'IBM certification in LLM data preparation.' },
         { name: 'ibm-nlp-foundations.pdf', title: 'NLP foundations', meta: 'IBM', control: 'spin', spin: 'cert', items: [['NLP foundations', 'IBM']], text: 'IBM certification in NLP foundations.' }
       ] } },
-    { id: 'whiteboard',    label: 'studies', title: 'Ontological Validation of LLM Tool Calls', line: 'my thesis, in progress: a knowledge graph checks every tool call before it runs', phase: 1, view: { dir: [1, 0, 0] },   // the whiteboard on the left wall and the paper taped under it; the near plane cuts the chair out
+    { id: 'whiteboard',    label: 'studies', title: 'Ontological Validation of LLM Tool Calls', line: 'research in progress: a knowledge graph checks every tool call before it runs', phase: 1, view: { dir: [1, 0, 0] },   // the whiteboard on the left wall and the paper taped under it; the near plane cuts the chair out
       explorer: { path: '~/studies/paper', files: [
-        { name: 'intro.md', title: 'Introduction', meta: 'undergraduate thesis · Software Engineering · UNICURITIBA · 2026, in progress', control: 'graph', text: 'LLM agents no longer just write text. Through tool calling they look up records, change data and run transactions for the user, and that autonomy turns a known LLM failure, hallucination, into action. A call can be perfectly formed and still be wrong for the business: cancelling a reservation that belongs to another customer, or one that was already cancelled.', text2: 'Schema validation only checks the shape of a call, and an LLM reviewer checks it with another model that can make mistakes of its own. Neither one represents the domain (which entities exist, how they relate, which business rules apply) in a formal, machine-checkable form. This work puts an ontology, held in a knowledge graph with the current state, in front of every call and validates the call with SHACL before it runs.' },
+        { name: 'intro.md', title: 'Introduction', meta: 'research in progress', control: 'graph', text: 'LLM agents no longer just write text. Through tool calling they look up records, change data and run transactions for the user, and that autonomy turns a known LLM failure, hallucination, into action. A call can be perfectly formed and still be wrong for the business: cancelling a reservation that belongs to another customer, or one that was already cancelled.', text2: 'Schema validation only checks the shape of a call, and an LLM reviewer checks it with another model that can make mistakes of its own. Neither one represents the domain (which entities exist, how they relate, which business rules apply) in a formal, machine-checkable form. This work puts an ontology, held in a knowledge graph with the current state, in front of every call and validates the call with SHACL before it runs.' },
         { name: 'abstract.md', title: 'Abstract', meta: 'A Knowledge Graph Approach to Hallucination Reduction', text: 'Tool calls generated by LLM agents can pass schema validation and still break the domain: they cite entities that do not exist, link entities that are not related, act on a state that does not allow the action, or ignore a business rule. This work models a delimited domain as an ontology, writes its rules as SHACL shapes over a knowledge graph that also holds the current state, and validates every call against it before execution. A blocked call goes back to the agent with the reason, as feedback.', text2: 'Research question: to what extent does validating tool calls against a domain ontology, represented as a knowledge graph, reduce the occurrence of hallucinations not detected by syntactic schema validation in LLM-based agents?' },
         { name: 'error-types.txt', title: 'What the layer catches', meta: 'calls that pass the schema and still break the domain', bullets: ['Existence: the entity the call cites exists (no reservation R99).', 'Relation: the entities are linked the way the call assumes (the reservation belongs to this customer).', 'State: the current state allows the action (a cancelled reservation cannot be cancelled again).', 'Business rule: the values meet the policy, like a deadline that has not passed (SHACL-SPARQL).', 'The baseline already covers invented tools and malformed arguments: a tool registry plus JSON Schema.', 'Out of scope: intent hallucinations, calls that are valid in the domain but not what the user wanted.'] },
         { name: 'evaluation.txt', title: 'Evaluation', meta: 'the same agents, with and without the layer', text: 'A controlled experiment on the airline domain of τ²-bench, whose customer service policy is the source of the rules. Each rule will be traced from its policy excerpt to a SHACL shape, and tested with one case that passes and one that violates it. The baseline is a tool registry plus JSON Schema; the treatment adds the SHACL layer over the graph.', text2: 'The agents are compared on hallucination rate, task success rate and computational cost, with one proprietary and one open-weight model. Hallucinations are counted per call and classified by the root-cause rule, so a cascade is not counted twice. The research follows Design Science, with the experiment designed after Wohlin et al.', text3: 'A lesson from the prototype: OWL describes, SHACL validates. With RDFS inference on, a range axiom made the reasoner conclude that a reservation which does not exist was a reservation, so the validator runs with inference off.' },
@@ -2206,7 +2204,7 @@ function renderExplorer() {
   const ex = explorer.insp.explorer, files = ex.files, f = files[explorer.index];
   exPath.innerHTML = `<b>luiz@theroom:</b>${esc(ex.path)}`;
   exList.innerHTML = files.map((file, i) => { const m = file.name.match(/^(.*?)(\.[^.]+)?$/); return `<button type="button" class="row" role="option" data-i="${i}" aria-selected="${i === explorer.index}" tabindex="${i === explorer.index ? 0 : -1}"><span class="perm">-rw-r--r--</span><span class="name">${esc(m[1])}<span class="ext">${esc(m[2] || '')}</span></span></button>`; }).join('');
-  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.control === 'spin' ? spinHtml(f) : ''}${f.control === 'rack' ? rackHtml(f) : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets && f.control !== 'rack' ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}${f.control === 'graph' ? graphHtml() : ''}`;
+  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.control === 'spin' ? spinHtml(f) : ''}${f.control === 'rack' ? rackHtml(f) : ''}${f.control === 'graph' ? graphHtml() : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets && f.control !== 'rack' ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}`;
   if (f.control === 'visitors') loadVisitors(exPreview.querySelector('ul'));
   if (f.control === 'spin') {   // each turn starts with the back to the viewer: swap to the next item then, unseen
     const stage = exPreview.querySelector('.stage'), el = stage.querySelector('.spin'); spinShow(stage, f.items[0]);
@@ -2287,10 +2285,10 @@ function selectFile(i, focus = true) {
   if (focus) row.focus({ preventScroll: true });
   if (exList.scrollWidth > exList.clientWidth) exList.scrollTo({ left: Math.max(0, row.offsetLeft - exList.offsetLeft - 8), behavior: 'smooth' });   // the phone tab strip follows the selection
 }
-function openExplorer(insp) {
+function openExplorer(insp, at = null) {
   if (!insp?.explorer) return;
   clearTimeout(explorer.timer);
-  explorer.open = true; explorer.insp = insp; explorer.index = 0;
+  explorer.open = true; explorer.insp = insp; explorer.index = Math.max(0, insp.explorer.files.findIndex(f => f.name === at));
   setHover(null); hover.pointer.set(2, 2);
   renderExplorer();
   exEl.hidden = false; exEl.getBoundingClientRect();
@@ -2367,12 +2365,12 @@ function viewFor(insp) {
   const fill = v.fill ?? CONFIG.tween.inspectFill, zoom = fill * Math.min((camera.top - camera.bottom) / (2 * h || 1), (camera.right - camera.left) / (2 * w || 1));
   return { position: c.clone().addScaledVector(dir, depth + (v.near ?? CONFIG.tween.near)), target: c, zoom };
 }
-function inspect(insp) {
+function inspect(insp, { via = null, at = null } = {}) {   // via: frame that object instead; at: open on that file
   if (!insp?.explorer) return;
-  const view = viewFor(insp); if (!view) return openExplorer(insp);
+  const view = viewFor(via || insp); if (!view) return openExplorer(insp, at);
   if (!camTween.back) camTween.back = shot(camState);
   if (!history.state?.insp) history.pushState({ insp: insp.id, zone: nav.zone }, '', location.href);   // back closes the window
-  tweenCamera(view, () => openExplorer(insp));
+  tweenCamera(view, () => openExplorer(insp, at));
 }
 // ───────────────────────────── terminal (the CRT) ─────────────────────────────
 // The CRT in the middle of the desk is a shell. A click on it (or its menu word) glides the camera up to the screen and the room's
@@ -2605,6 +2603,7 @@ let hintFocus = null;   // the hint-only object (the dog, the note) the camera g
 function focusObject(insp) {
   if (insp.secret) foundSecret(insp.secret);
   if (insp.terminal) return enterTerminal();
+  if (insp.opens) return inspect(CONFIG.inspectables.find(i => i.id === insp.opens), { via: insp, at: insp.at });   // the tower: framed itself, the window is experience's
   if (insp.explorer) return inspect(insp);
   const view = viewFor(insp); if (view) { hintFocus = insp; tweenCamera(view); }
 }
@@ -3139,7 +3138,7 @@ const MACHINE = [
   ['visitors', SITE_URL + '/api/visitors', 'the visitor book as JSON'],
   ['source', 'https://github.com/ZehD/theRoom', 'this page, the functions, the generator']
 ];
-const SECTION_KEY = { 'monitor-left': 'experience', rack: 'stack', 'cert-frame': 'certifications', whiteboard: 'studies', shelf: 'shelf', turntable: 'sound' };
+const SECTION_KEY = { 'monitor-left': 'experience', 'cert-frame': 'certifications', whiteboard: 'studies', shelf: 'shelf', turntable: 'sound' };
 const roomSections = () => CONFIG.inspectables.filter(i => i.explorer && !i.hint && !i.terminal && SECTION_KEY[i.id]).map(i => ({ key: SECTION_KEY[i.id], title: i.title, line: i.line, path: i.explorer.path, files: i.explorer.files }));
 const secretsCount = () => { const f = secretsFound(); return SECRETS.filter(k => f.has(k)).length; };
 const agentOfUrl = () => { const m = /^#\/agent(?:\/(bios|index))?\/?$/.exec(location.hash); return m ? (m[1] || 'index') : null; };
@@ -3301,7 +3300,6 @@ function biosTabs() {
       { label: 'Machine Endpoints', sub: () => ({ title: 'For agents and crawlers', lines: MACHINE.flatMap(([k, v, d]) => [`${k.toUpperCase().padEnd(10)} ${v}`, `${''.padEnd(10)} ${d}`, '']) }), help: 'The room as text: room.md, llms.txt, the MCP server and how to install it.' }
     ] },
     { name: 'Experience', help: ex.line + '.', items: fileItems(ex.files.filter(f => f.name !== 'summary.txt')) },
-    { name: 'Stack', help: by('stack').line + '.', items: fileItems(by('stack').files) },
     { name: 'Certs', help: by('certifications').line + '.', items: fileItems(by('certifications').files) },
     { name: 'Studies', help: by('studies').line + '.', items: [{ label: 'Paper', value: 'in progress', help: by('studies').title + '.' }, ...fileItems(by('studies').files)] },
     { name: 'Shelf', help: by('shelf').line + '.', items: fileItems(by('shelf').files) },
