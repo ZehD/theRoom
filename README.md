@@ -27,24 +27,21 @@ All three share the texture — dark scanlines that cut the glow into rows, a be
 off-centre vignette, a slow roll — and the same three brightnesses: the shell prefix is furniture, the question
 is live, what you type and the cursor are the hottest thing on screen. A wrong answer makes the tube flinch.
 
-Below that, a pill at the bottom edge of the page. **Human** is the room. **Agent** leaves it: the render loop parks, the
-chrome hides, and the same content (the page's `inspectables`, the one source of truth) comes back as text in one
-of two dresses, switchable from inside either:
+Below that, a pill at the bottom edge of the page; a phosphor thumb slides to the chosen side. **Human** is the room.
+**Agent** leaves it: the render loop parks, the chrome hides, and the same content (the page's `inspectables`, the one
+source of truth) comes back as text, the **index** (`#/agent`): the plain-text mirror. Dotted keys, sections under
+rules, the whole room in one scroll, the visitor book and the machine endpoints at the end. It opens on the MCP: a
+"connect your agent" box (URL, install line, tools, room.md and a button that copies the whole `room.md` to the
+clipboard). A switch made by hand goes through a CRT power-off and power-on (two black panels close to a phosphor
+line, the line collapses, the view swaps, and it plays backwards); history and reload go straight to the view.
 
-- **index** (`#/agent`): the plain-text mirror. Dotted keys, sections under rules, the whole room in one scroll,
-  the visitor book and the machine endpoints at the end.
-- **bios** (`#/agent/bios`): the setup utility. A POST screen the first time, then tabs (Main, Experience, Certs,
-  Studies, Shelf, Sound, Desk, Exit; the stack sits inside Experience), an item pane with item-specific help, and a key legend. Keys work
-  like the real thing: arrows, Enter opens a ▶ item, +/- changes a value (Phosphor and Rain are live settings
-  of the room), Esc jumps to Exit, F9 loads defaults, F10 asks before it lets you out. Everything is also
-  tappable.
-
-Both open on the MCP: the index starts with a "connect your agent" box (URL, install line, tools, room.md and a
-button that copies the whole `room.md` to the clipboard), and the BIOS Main tab's first rows are the server and
-the same copy action. A switch made by hand goes through a CRT power-off and power-on
-(two black panels close to a phosphor line, the line collapses, the view swaps, and it plays backwards);
-history and reload go straight to the view. The last choice is kept in `localStorage`, so a reload lands
-where you left; the URL is shareable either way.
+**Setup** is root's. In the shell, `su` (or `sudo su`) and the password on the post-it make you root, which is the
+third secret; root then has `phosphor` (the accent strip) and `bios`, which powers the setup utility on through the
+CRT: a POST screen the first time, then tabs (Main, Experience, Certs, Studies, Shelf, Sound, Desk, Exit), an item
+pane with item-specific help, and a key legend. Keys work like the real thing: arrows, Enter opens a ▶ item, +/-
+changes a value (Phosphor and Rain are live settings of the room), Esc jumps to Exit, F9 loads defaults, F10 asks
+before it lets you out, back to the room. Everything is also tappable. It sits at `#/setup`, which a reload does not
+reopen, and the pill steps away while it is up.
 
 ## The keyboard
 
