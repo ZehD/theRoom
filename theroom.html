@@ -325,7 +325,13 @@
   #mode.on { opacity: 1; }
   #mode button { appearance: none; font: 11px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.06em; color: var(--phosphor-dim); background: transparent; border: 0; border-radius: 999px; padding: 9px 16px 8px; cursor: pointer; }
   #mode button:hover { color: var(--phosphor); }
-  #mode button[aria-pressed="true"] { background: var(--phosphor); color: var(--ink); }
+  /* the thumb: one phosphor body behind both words that slides to the chosen one with a little overshoot; the word over it turns ink as
+     it arrives. data-on follows the click at once (a hand-made switch only presses the button after the CRT has gone dark) */
+  #mode::before { content: ""; position: absolute; top: 3px; bottom: 3px; left: 0; width: var(--thumb-w, 0px); transform: translateX(var(--thumb-x, 0px)); border-radius: 999px; background: var(--phosphor); box-shadow: 0 0 14px color-mix(in srgb, var(--phosphor) 40%, transparent), inset 0 1px 0 color-mix(in srgb, var(--phosphor-bloom) 55%, transparent); }
+  #mode.ready::before { transition: transform 460ms cubic-bezier(.34, 1.4, .5, 1), width 460ms cubic-bezier(.34, 1.4, .5, 1); }
+  #mode button { position: relative; z-index: 1; transition: color 220ms ease 90ms; }
+  #mode[data-on="human"] button[data-mode="human"], #mode[data-on="agent"] button[data-mode="agent"] { color: var(--ink); }
+  @media (prefers-reduced-motion: reduce) { #mode.ready::before, #mode button { transition: none; } }
   #mode button:focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: 2px; }
   #reset { bottom: calc(66px + env(safe-area-inset-bottom)); }
   #root[data-mode="agent"] :is(#room, #vignette, #top, #explorer, #dim, #chip, #reset, #hint, #exit, #accent, #toast, #boot, #fps, #hud) { display: none !important; }
@@ -3124,6 +3130,7 @@ function setMode(agent, style = MODE.style, { push = true, replace = false } = {
   rootEl.dataset.mode = agent ? 'agent' : 'human';
   agentEl.hidden = !agent; modeEl.classList.add('on');
   for (const b of modeEl.querySelectorAll('button')) b.setAttribute('aria-pressed', String((b.dataset.mode === 'agent') === agent));
+  placeModeThumb();
   try { localStorage.setItem('theroom.mode', agent ? 'agent' : 'human'); localStorage.setItem('theroom.agent', style); } catch {}
   const href = agent ? (style === 'bios' ? '#/agent/bios' : '#/agent') : hrefOf(nav.zone), state = agent ? { agent: style } : { zone: nav.zone };
   if (replace) history.replaceState(state, '', href);
@@ -3168,7 +3175,15 @@ function runSwitch() {
     }
   }, 570);
 }
-modeEl.addEventListener('click', e => { const b = e.target.closest('button[data-mode]'); if (b) switchMode(b.dataset.mode === 'agent'); });
+modeEl.addEventListener('click', e => { const b = e.target.closest('button[data-mode]'); if (b) { placeModeThumb(b); switchMode(b.dataset.mode === 'agent'); } });   // the thumb leaves at the click
+// the pill's thumb under the chosen word (the pressed one unless told); it lands without a slide the first time, and re-measures when the
+// words change width (the pixel font arriving)
+function placeModeThumb(b = modeEl.querySelector('button[aria-pressed="true"]')) {
+  if (!b) return;
+  modeEl.style.setProperty('--thumb-x', b.offsetLeft + 'px'); modeEl.style.setProperty('--thumb-w', b.offsetWidth + 'px'); modeEl.dataset.on = b.dataset.mode;
+  if (!modeEl.classList.contains('ready')) requestAnimationFrame(() => requestAnimationFrame(() => modeEl.classList.add('ready')));
+}
+placeModeThumb(); new ResizeObserver(() => placeModeThumb(modeEl.querySelector(`button[data-mode="${modeEl.dataset.on}"]`) || undefined)).observe(modeEl);
 agentEl.addEventListener('click', e => {
   const jump = e.target.closest('[data-jump]'); if (jump) { e.preventDefault(); indexEl.querySelector('#ix-' + jump.dataset.jump)?.scrollIntoView({ behavior: MOTION ? 'smooth' : 'auto', block: 'start' }); return; }
   const st = e.target.closest('[data-style]'); if (st) { e.preventDefault(); switchMode(true, st.dataset.style); return; }
