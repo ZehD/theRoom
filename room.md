@@ -174,7 +174,7 @@ AI engineer · Curitiba, Paraná, Brazil
 
 11 years in IT, the last 4 building software and AI systems. Days go to agents, RAG pipelines and automations that have to survive production; nights go to this shelf.
 
-Outside work I read science fiction and fantasy, play board games with friends, paint Warhammer miniatures and watch a lot of films, mostly sci-fi and noir.
+Outside work I read science fiction and fantasy, play board games with friends, paint Warhammer miniatures and watch a lot of films and series, mostly sci-fi and noir. I also study mixology, and I am always up for trying a fancy drink.
 
 theRoom is a real place in Curitiba, where it rains most afternoons. The dog is real too.
 
@@ -194,9 +194,10 @@ The ones I love, read more than once:
 ### tabletop.txt — Tabletop
 top shelf, heaviest boxes first
 
-- Twilight Struggle — the one game I would keep if I could keep one.
-- Puerto Rico — twenty years old and still the tightest euro on the shelf.
-- Terraforming Mars, Brass: Birmingham, Agricola — for the long Sunday sessions.
+- Dune: Imperium with the hardcore friends: deck-building, worker placement and nobody going easy on anybody.
+- Puerto Rico for a friendlier start: easy to teach, and after more than twenty years still one of the tightest games on the shelf.
+- Codenames when the point is just to have fun.
+- Eclipse once a year: the whole galaxy and an eight-hour session.
 
 ### painting.txt — Painting
 Warhammer, one squad at a time
@@ -206,11 +207,11 @@ Warhammer, one squad at a time
 - A game now and then, whenever the table clears of board games.
 
 ### cinema.txt — Cinema
-sci-fi and noir, old and new
+films and series, mostly sci-fi and noir
 
-- Blade Runner is my favourite film. Science fiction and noir are the two genres I keep coming back to, and it is both.
-- The classics: Akira Kurosawa and Ingmar Bergman.
-- The new classics: Christopher Nolan and Denis Villeneuve, who took Blade Runner up again with 2049.
+If you like science fiction, we will probably get along. Blade Runner and The Matrix are two gems of sci-fi noir for me, and Blade Runner is probably my favourite film. My favourite series is a hard call between The Expanse (the books are even better) and the first season of True Detective.
+
+Almost anything by Nolan or Villeneuve will get me to the cinema. There is still plenty of love for older films too, Kurosawa and Bergman, and I would happily rewatch Akira or any Studio Ghibli film. Tell me your favourites through let's talk.
 
 ## ~/sound  ·  Turntable
 _rain on the window, records on the deck_
