@@ -32,20 +32,6 @@
   #room { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
   /* a soft inset shade over the room, under the chrome */
   #vignette { position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 140px 35px color-mix(in srgb, var(--room-shade, #03070c) 31%, transparent); }
-  /* the opening's status (After Hours): the stage it is in, a progress hairline (--p, 0..1) and a way out, bottom centre where the
-     view pill lands once it is over. In the room's phosphor, so an accent recolours it with everything else. */
-  #opening { --p: 0; position: fixed; left: 50%; bottom: calc(26px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 5; width: 240px; display: flex; flex-direction: column; align-items: center; gap: 12px; font: 12px/1.5 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: 0.04em; color: var(--phosphor-dim); transition: opacity 400ms linear; }
-  #opening.done { opacity: 0; pointer-events: none; }
-  #opening .cap { display: flex; align-items: center; gap: 10px; white-space: nowrap; color: var(--phosphor); text-shadow: 0 0 12px color-mix(in srgb, var(--phosphor) 20%, transparent); }
-  #opening .cap i { width: 5px; height: 5px; border: 1px solid var(--phosphor-bloom); transform: rotate(45deg); box-shadow: 0 0 9px color-mix(in srgb, var(--phosphor) 45%, transparent); }
-  #opening .track { width: 172px; height: 1px; background: color-mix(in srgb, var(--moss) 85%, transparent); }
-  #opening .track span { display: block; height: 100%; background: var(--phosphor); box-shadow: 0 0 8px color-mix(in srgb, var(--phosphor) 60%, transparent); transform: scaleX(var(--p)); transform-origin: left; }
-  #opening .skip { appearance: none; min-height: 34px; min-width: 100px; border: 0; background: transparent; color: var(--phosphor-dim); font: inherit; letter-spacing: 0.04em; cursor: pointer; transition: color 200ms; }
-  #opening .skip span { margin-left: 7px; opacity: 0.7; }
-  #opening .skip:hover { color: var(--phosphor-bloom); }
-  #opening .skip:focus-visible { outline: 1px solid var(--phosphor); outline-offset: 3px; }
-  #root[data-touch] #opening .skip { min-height: 44px; }
-  @media (prefers-reduced-motion: reduce) { #opening { transition: none; } }
   .hud { position: fixed; right: 16px; font: 12px/1.5 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor); background: var(--soil); border: 1px solid var(--moss); padding: 8px 10px; white-space: pre; pointer-events: none; margin: 0; }
   #fps { top: calc(var(--top-h, 52px) + 16px); }
   #hud { top: calc(var(--top-h, 52px) + 56px); }
@@ -292,7 +278,11 @@
   #hint li::before { content: "\00B7"; color: var(--phosphor); }
   @media (prefers-reduced-motion: reduce) { #hint { transition: opacity 320ms linear; transform: translate(-50%, 0); } }
   /* exit shell: touch screens have no Esc; sits under the bar, clear of the keyboard */
-  #exit { position: fixed; right: 12px; top: calc(var(--top-h, 52px) + 12px); appearance: none; font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); background: var(--phosphor); border: 1px solid var(--phosphor); padding: 12px 16px; cursor: pointer; border-radius: 0; white-space: nowrap; z-index: 2; }
+  #exit { position: fixed; right: 12px; top: calc(var(--top-h, 52px) + 12px); appearance: none; display: inline-flex; align-items: center; gap: 9px; min-height: 44px; box-sizing: border-box; font: 11px/1 Silkscreen, VT323, ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.06em; color: var(--phosphor); background: var(--ink); border: 1px solid var(--moss); border-radius: 999px; padding: 12px 19px 11px 15px; cursor: pointer; white-space: nowrap; z-index: 2; box-shadow: 0 0 0 3px var(--ink); -webkit-tap-highlight-color: transparent; }   /* the pill of reset view, with a × where reset has its ↺ */
+  #exit::before { content: "\00D7"; font: 17px/1 VT323, ui-monospace, monospace; color: var(--phosphor-bloom); }
+  #exit:hover, #exit:active { background: var(--phosphor); color: var(--ink); border-color: var(--phosphor); }
+  #exit:hover::before, #exit:active::before { color: var(--ink); }
+  #exit:focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) { #top { transition: none; } #top .logo svg .c, #top nav a[aria-current="true"]::after { animation: none; } }
   /* phones and short frames: a 48px bar (the logo left, the current word and a ">_" button right); the button drops the menu under
      the bar as a column of prompt lines, "> word", the current one bright with a blinking block cursor. A tap on a word closes it. */
@@ -339,7 +329,7 @@
   #mode button[aria-pressed="true"] { background: var(--phosphor); color: var(--ink); }
   #mode button:focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: 2px; }
   #reset { bottom: calc(66px + env(safe-area-inset-bottom)); }
-  #root[data-mode="agent"] :is(#room, #vignette, #top, #explorer, #dim, #chip, #reset, #hint, #exit, #accent, #toast, #boot, #opening, #fps, #hud) { display: none !important; }
+  #root[data-mode="agent"] :is(#room, #vignette, #top, #explorer, #dim, #chip, #reset, #hint, #exit, #accent, #toast, #boot, #fps, #hud) { display: none !important; }
   #agent { position: fixed; inset: 0; overflow: auto; -webkit-overflow-scrolling: touch; background: var(--ink); color: var(--phosphor); z-index: 3; }
   /* the switch: a CRT powering off and on. Two black panels close from the edges to one bright line, the line collapses, the
      view swaps under the black, and the same plays backwards. The pill stays above it. */
@@ -666,7 +656,6 @@
 <div id="boot" aria-hidden="true">booting theRoom<i></i></div>
 <canvas id="room" tabindex="-1"></canvas>
 <div id="vignette" aria-hidden="true"></div>
-<div id="opening" hidden><div class="cap" role="status"><i aria-hidden="true"></i><span data-stage>preparing the room</span></div><div class="track" aria-hidden="true"><span></span></div><button type="button" class="skip">skip intro <span aria-hidden="true">&#8629;</span></button></div>
 <pre id="fps" class="hud" hidden></pre>
 <pre id="hud" class="hud" hidden></pre>
 <div id="chip" role="status" aria-live="polite"><div class="box"><span class="label"></span><i aria-hidden="true"></i></div></div>
@@ -3006,13 +2995,12 @@ async function init() {
 // A construction pass over the real room (After Hours' room-opening.ts, 2026-10-02: its 3.9 s timeline, played OPENING_SPEED times faster). A floor lattice and the edges of every
 // object trace in as blue wire, the floor first and then upward; each object grows up from its base; at 3 s (timeline) the two screens open out of
 // a line and the monitor light comes up; at 3.5 s the overlays arrive (rain, steam, the hover glows). Nothing is rebuilt: the pass hides
-// and scales the real meshes and puts every one back when it ends. #opening names the stage over a progress hairline, with "skip intro"
-// (Esc too); reduced motion lands on the finished room. The shadows are cast by the empty room until the end, then once by the real one.
+// and scales the real meshes and puts every one back when it ends. No caption over it; Esc skips it, and reduced motion lands on the
+// finished room. The shadows are cast by the empty room until the end, then once by the real one.
 const OPENING_S = 3.9, OPENING_SPEED = 1.5, smooth01 = v => { const k = Math.min(1, Math.max(0, v)); return k * k * (3 - 2 * k); };
-const openingEl = document.getElementById('opening');
 let opening = null;
 function createOpening(onComplete) {
-  let complete = false, startedAt = null, lastStage = '', overlaysOn = false;
+  let complete = false, startedAt = null, overlaysOn = false;
   const screens = ['monitor-right', 'monitor-left'].map(id => ROOM.root.getObjectByName(id)?.getObjectByName('screen')).filter(Boolean);
   const screenStates = screens.map(mesh => ({ mesh, scale: mesh.scale.clone(), visible: mesh.visible }));
   const light = ROOM.monitorLight, lightIntensity = light.intensity;
@@ -3021,7 +3009,6 @@ function createOpening(onComplete) {
   const viewDir = camera.position.clone().sub(new THREE.Vector3(0, 1.65, 0)).normalize(), up = new THREE.Vector3(0, 1, 0);
   const bounds = new THREE.Box3(), size = new THREE.Vector3(), center = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3();
   const e0 = new THREE.Vector3(), e1 = new THREE.Vector3(), delta = new THREE.Vector3(), offset = new THREE.Vector3();
-  const stageEl = openingEl.querySelector('[data-stage]');
   const shown = o => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };
   // camera-facing ribbons (real triangles), cut in 36 cm pieces; each piece joins the bucket of its start time: the lattice from the
   // centre out, the rest by height and then left to right
@@ -3076,7 +3063,7 @@ function createOpening(onComplete) {
   function finish() {
     if (complete) return; complete = true;
     restore(); overlay.removeFromParent(); for (const w of wires) { w.geometry.dispose(); w.material.dispose(); } wires.length = 0;
-    revealRoom(true); openingEl.style.setProperty('--p', '1');
+    revealRoom(true);
     onComplete();
   }
   function update(ms) {
@@ -3084,9 +3071,6 @@ function createOpening(onComplete) {
     if (startedAt === null) startedAt = ms;
     const t = (ms - startedAt) / 1000 * OPENING_SPEED;   // seconds on the authored timeline
     if (t >= OPENING_S) { finish(); return; }
-    const stage = t < 0.8 ? 'tracing geometry' : t < 2.95 ? 'building the room' : 'turning on the lights';
-    if (stage !== lastStage) { lastStage = stage; stageEl.textContent = stage; }
-    openingEl.style.setProperty('--p', String(t / OPENING_S));
     for (const p of pieces) {
       const k = smooth01((t - p.start) / p.duration);
       p.mesh.visible = k > 0; p.mesh.scale.copy(p.scale); p.mesh.position.copy(p.position);
@@ -3101,17 +3085,13 @@ function createOpening(onComplete) {
   else finish();
   return { update, finish, get complete() { return complete; } };
 }
-openingEl.querySelector('.skip').addEventListener('click', () => opening?.finish());
 addEventListener('keydown', e => { if (e.key === 'Escape' && opening && !opening.complete) { e.preventDefault(); opening.finish(); } });   // Esc skips it
 matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', e => { if (e.matches) opening?.finish(); });
 let revealStarted = false;
 function startReveal() {
   if (revealStarted) return; revealStarted = true;
-  openingEl.hidden = !MOTION;
   opening = createOpening(() => {
     loaded = true; renderer.shadowMap.needsUpdate = true;   // until now the shadows were cast by the empty room
-    if (openingEl.contains(document.activeElement)) canvas.focus({ preventScroll: true });
-    openingEl.classList.add('done'); setTimeout(() => { openingEl.hidden = true; }, 400);
     setTimeout(showIntro, CONFIG.intro.delay);
   });
   tick();
