@@ -3002,12 +3002,12 @@ async function init() {
   // the opening waits for the gate: a human starts it (startReveal); an agent leaves the room unbuilt until the pill brings a human in
 }
 // ───────────────────────────── the opening (After Hours) ─────────────────────────────
-// A 3.9 s construction pass over the real room (After Hours' room-opening.ts, 2026-10-02). A floor lattice and the edges of every
-// object trace in as blue wire, the floor first and then upward; each object grows up from its base; at 3 s the two screens open out of
+// A construction pass over the real room (After Hours' room-opening.ts, 2026-10-02: its 3.9 s timeline, played OPENING_SPEED times faster). A floor lattice and the edges of every
+// object trace in as blue wire, the floor first and then upward; each object grows up from its base; at 3 s (timeline) the two screens open out of
 // a line and the monitor light comes up; at 3.5 s the overlays arrive (rain, steam, the hover glows). Nothing is rebuilt: the pass hides
 // and scales the real meshes and puts every one back when it ends. #opening names the stage over a progress hairline, with "skip intro"
 // (Esc too); reduced motion lands on the finished room. The shadows are cast by the empty room until the end, then once by the real one.
-const OPENING_S = 3.9, smooth01 = v => { const k = Math.min(1, Math.max(0, v)); return k * k * (3 - 2 * k); };
+const OPENING_S = 3.9, OPENING_SPEED = 1.5, smooth01 = v => { const k = Math.min(1, Math.max(0, v)); return k * k * (3 - 2 * k); };
 const openingEl = document.getElementById('opening');
 let opening = null;
 function createOpening(onComplete) {
@@ -3081,7 +3081,7 @@ function createOpening(onComplete) {
   function update(ms) {
     if (complete) return;
     if (startedAt === null) startedAt = ms;
-    const t = (ms - startedAt) / 1000;
+    const t = (ms - startedAt) / 1000 * OPENING_SPEED;   // seconds on the authored timeline
     if (t >= OPENING_S) { finish(); return; }
     const stage = t < 0.8 ? 'tracing geometry' : t < 2.95 ? 'building the room' : 'turning on the lights';
     if (stage !== lastStage) { lastStage = stage; stageEl.textContent = stage; }

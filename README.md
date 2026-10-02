@@ -8,7 +8,7 @@ Live at https://theroom-seven-theta.vercel.app
 
 The page opens on a black terminal in the room's accent (the same choice the room makes: `?accent=`, then the
 last one, then blue) with one prompt, `are you human? [yes/no]`, and a typed answer: `yes` or `y` is a human and
-starts the room's opening (After Hours: a 3.9 s construction pass, the floor lattice and every object's edges
+starts the room's opening (After Hours: a 2.6 s construction pass, the floor lattice and every object's edges
 tracing in as blue wire while the room grows up from the floor, the screens powering on last; "skip intro" or Esc
 ends it); `no` or `n` is an agent and powers the agent view on through the CRT;
 anything else gets an error line and the prompt again. No buttons: the room's own keyboard docks under the
