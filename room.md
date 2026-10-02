@@ -237,27 +237,22 @@ If you like science fiction, we will probably get along. Blade Runner and The Ma
 
 Almost anything by Nolan or Villeneuve will get me to the cinema. There is still plenty of love for older films too, Kurosawa and Bergman, and I would happily rewatch Akira or any Studio Ghibli film. Tell me your favourites through let's talk.
 
-## ~/sound  ·  Turntable
-_rain on the window, records on the deck_
+## ~/sound  ·  Speakers
+_rain on the window, music on the speakers_
 
 ### rain — Rain
 ambient · loops with a soft crossfade
 
 Curitiba rain against the window.
 
-### on-the-deck.txt — On the deck
-side B, 33⅓
+### playing.txt — On the speakers
+jazz and Brazilian records
 
 - Getz/Gilberto — Stan Getz, João Gilberto (1964)
 - Clube da Esquina — Milton Nascimento, Lô Borges (1972)
 - Kind of Blue — Miles Davis (1959)
 - Elis & Tom — Elis Regina, Tom Jobim (1974)
 - A Love Supreme — John Coltrane (1965)
-
-### receiver.txt — The receiver
-1970s silver face
-
-Belt-drive deck on a walnut plinth, a second-hand receiver with the one warm display in the room. The records are on the shelf below, the ones that get played on top.
 
 ## contact
 

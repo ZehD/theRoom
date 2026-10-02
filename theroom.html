@@ -1033,8 +1033,8 @@ const CONFIG = {
     // whole room stays in front of the lens; distance never changes the picture, only zoom does. `portrait` = the shot on tall frames: a phone's
     // frame is 12.4 m across and ~27 m tall at zoom 1, so it zooms further in, as far as the zone's subject still fits across.
     presets: {
-      home:     { position: [9.92, 9.32, 13.89],  target: [-0.08, 1.97, -0.11], zoom: 1.3, route: '/',        label: 'home',   // After Hours' angle, closer: the room's contents (shelves to window, the deck to the dog) fill the band between the bar and the pill; bare wall tops and the floor's front edge crop
-                  portrait: { position: [10.545, 9.33, 13.435], target: [0.545, 1.98, -0.565], zoom: 2.2 } },   // phones: the desk, the window and the dog big; the bookcase's and the tower's outer edges and the left wall crop (a drag brings them in)
+      home:     { position: [9.92, 9.32, 13.89],  target: [-0.08, 1.97, -0.11], zoom: 1.3, route: '/',        label: 'home',   // After Hours' angle, closer: the room's contents (shelves to window, the dog to the tower) fill the band between the bar and the pill; bare wall tops and the floor's front edge crop
+                  portrait: { position: [9.103, 9.33, 14.465], target: [-0.897, 1.98, 0.465], zoom: 1.7 } },   // phones: the desk and Tito in his corner; the window's and the tower's outer edges crop (a drag brings them in)
       work:     { position: [5.7, 8.83, 14.76],   target: [0.55, 2.05, -1.9],  zoom: 2.5, route: '/work',     label: 'work',     portrait: { zoom: 3.6 } },   // the CRT, the portrait monitor, the desk
       projects: { position: [5.43, 10.06, 14.55], target: [3, 0.75, -1.5],     zoom: 3.2, route: '/projects', label: 'projects', portrait: { zoom: 5.5 } },   // the tower (Stack)
       about:    { position: [1.78, 8.53, 14.84],  target: [-3.37, 1.75, -1.82], zoom: 2.1, route: '/about',   label: 'about',   portrait: { zoom: 4.3 } },   // the bookcase
@@ -1057,9 +1057,8 @@ const CONFIG = {
   motion: {
     log: { interval: 800 },
     cursor: { interval: 500 },
-    // After Hours: the tower LED re-rolls every `led` s; the dog breathes over `dog.breath` s and lifts his head every dog.lift s (random in range);
-    // the record label turns at `record` rad/s
-    led: 0.25, dog: { breath: 4.8, amp: 0.012, lift: [25, 40] }, record: 0.45
+    // After Hours: the tower LED re-rolls every `led` s; the dog breathes over `dog.breath` s and lifts his head every dog.lift s (random in range)
+    led: 0.25, dog: { breath: 4.8, amp: 0.012, lift: [25, 40] }
   },
   // Accent: the whole palette (and surface tones) is re-derived from the green spec palette by rotating
   // hue in OKLCH, keeping lightness and chroma (chroma reduced only where sRGB can't reach it).
@@ -1153,11 +1152,10 @@ const CONFIG = {
         { name: 'mcp.txt', title: 'The room, for agents', meta: 'one URL, no auth, nothing to click', text: 'The whole room is one document over MCP: an agent calls whoami and gets the desk, the tower, the wall and the shelf in one read. It can leave a note (leave_message) and see who came by before it (visitors).', bullets: ['https://theroom-seven-theta.vercel.app/mcp', 'claude mcp add --transport http theroom https://theroom-seven-theta.vercel.app/mcp', 'claude.ai: Settings, Connectors, Add custom connector, paste the URL', 'the same room as plain text: /room.md'] },
         { name: 'leave-a-message.txt', title: 'Leave a message', meta: 'the tray on the desk', text: 'Ask your agent to leave a message in theRoom: who you are, how Luiz can answer, what it is about. It lands on this desk and nowhere public. Three a day per visitor; the dog needs his sleep.' }
       ] } },
-    { id: 'turntable',     label: 'sound', title: 'Turntable', line: 'rain on the window, records on the deck', phase: 1, view: { dir: [0.5, 0.75, 0.55], near: 3 },   // from above: the deck, the record, the sleeve against the wall
+    { id: 'speakers',      label: 'sound', title: 'Speakers', line: 'rain on the window, music on the speakers', phase: 1, view: { dir: [0, 0.3, 1], near: 3 },   // the pair on the desk, framed from the front
       explorer: { path: '~/sound', files: [
         { name: 'rain', title: 'Rain', meta: 'ambient · loops with a soft crossfade', text: 'Curitiba rain against the window.', control: 'rain' },
-        { name: 'on-the-deck.txt', title: 'On the deck', meta: 'side B, 33⅓', bullets: ['Getz/Gilberto — Stan Getz, João Gilberto (1964)', 'Clube da Esquina — Milton Nascimento, Lô Borges (1972)', 'Kind of Blue — Miles Davis (1959)', 'Elis & Tom — Elis Regina, Tom Jobim (1974)', 'A Love Supreme — John Coltrane (1965)'] },
-        { name: 'receiver.txt', title: 'The receiver', meta: '1970s silver face', text: 'Belt-drive deck on a walnut plinth, a second-hand receiver with the one warm display in the room. The records are on the shelf below, the ones that get played on top.' }
+        { name: 'playing.txt', title: 'On the speakers', meta: 'jazz and Brazilian records', bullets: ['Getz/Gilberto — Stan Getz, João Gilberto (1964)', 'Clube da Esquina — Milton Nascimento, Lô Borges (1972)', 'Kind of Blue — Miles Davis (1959)', 'Elis & Tom — Elis Regina, Tom Jobim (1974)', 'A Love Supreme — John Coltrane (1965)'] }
       ] } },
     { id: 'frenchie',      label: "this is Tito, he's the key", hoverLabel: 'a dog', hint: true, phase: 1, secret: 'dog', view: { dir: [0.45, 0.5, 0.75], near: 2 } },   // no menu word, no shell place; the chip is the clue to the sudo password. Hovered (or tapped once) he is only "a dog"; a click, or the second tap, earns his name, which holds while the camera is up close
     { id: 'robot',         label: 'in construction', hint: true, phase: 1, view: { dir: [0, 0, 1] } },   // the unfinished robot on the floating shelf: hovered it lights and the sparks fly; a click glides close. No menu word, no shell place
@@ -1437,12 +1435,14 @@ function buildAfterHours() {
   noteInk.name = 'ink'; noteInk.userData.ignoreHover = true;
   // the pad: draws nothing, but it is solid to the pick (not transparent), so a press near the note counts. solidBox leaves it out (hitOnly)
   const notePad = plane(0.5, 0.5, 0, 0, 0.004, basic(0x000000, { colorWrite: false, depthWrite: false }), postit); notePad.userData.hitOnly = true;
-  // small desk speakers
+  // the small desk speakers, either side of the screens: together they are Sound (speakers), a group per speaker for its frame
+  const speakers = group('speakers'), speakerUnits = [];
   for (const x of [-1.49, 2.28]) {
-    box(0.25, 0.44, 0.25, x, 1.78, -2.22, dark);
-    cylinder(0.075, 0.075, 0.015, x, 1.76, -2.085, metal, 14).rotation.x = Math.PI / 2;
-    cylinder(0.025, 0.025, 0.019, x, 1.76, -2.073, black, 10).rotation.x = Math.PI / 2;
-    box(0.025, 0.009, 0.008, x, 1.60, -2.089, glow);
+    const unit = group(null, speakers); unit.position.set(x, 1.78, -2.22); speakerUnits.push(unit);
+    box(0.25, 0.44, 0.25, 0, 0, 0, dark, unit);
+    cylinder(0.075, 0.075, 0.015, 0, -0.02, 0.135, metal, 14, unit).rotation.x = Math.PI / 2;
+    cylinder(0.025, 0.025, 0.019, 0, -0.02, 0.147, black, 10, unit).rotation.x = Math.PI / 2;
+    box(0.025, 0.009, 0.008, 0, -0.18, 0.131, glow, unit);
   }
   // headphones hanging from the edge of the desk
   const phones = group(); phones.position.set(2.47, 1.35, -1.55); phones.rotation.y = Math.PI / 2;
@@ -1707,27 +1707,10 @@ function buildAfterHours() {
   box(0.015, 0.15, 0.012, -2.34, 3.626, -3.009, dark).rotation.z = -0.7;
   box(0.012, 0.21, 0.015, -2.477, 3.553, -3.0, dark).rotation.z = 1.83;
 
-  // an old audio cabinet in the foreground, a record still on the turntable, a sleeve leaned against the wall: together, turntable (sound)
-  const sound = group('turntable');
-  const cabinet = group(null, sound); cabinet.position.set(-3.29, 0, 1.79);
-  box(1.31, 0.71, 0.91, 0, 0.4, 0, wood, cabinet);
-  for (const x of [-0.52, 0.52]) for (const z of [-0.33, 0.33]) box(0.07, 0.13, 0.07, x, 0.065, z, metal, cabinet);
-  box(1.15, 0.44, 0.035, 0, 0.39, 0.478, dark, cabinet);
-  for (let i = 0; i < 10; i++) { const rec = box(0.06, 0.36, 0.32, -0.49 + i * 0.079, 0.4, 0.33, bookMats[i % 7], cabinet); if (i > 6) rec.rotation.z = 0.12; }
-  const deck = group(null, cabinet);
-  box(1.16, 0.095, 0.72, 0, 0.812, 0, dark, deck);
-  cylinder(0.255, 0.255, 0.025, -0.17, 0.878, 0.04, black, 40, deck);
-  const recordLabel = cylinder(0.076, 0.076, 0.027, -0.17, 0.88, 0.04, material(0x7b8fa3), 24, deck);
-  cylinder(0.018, 0.018, 0.047, -0.17, 0.897, 0.04, metal, 10, deck);
-  line([[0.41, 0.886, -0.24], [0.44, 0.917, -0.13], [0.21, 0.92, 0.14]], paper, 0.017, deck);
-  box(0.06, 0.037, 0.095, 0.2, 0.92, 0.145, metal, deck);
-  box(0.1, 0.017, 0.045, 0.43, 0.868, 0.23, warm, deck);
-  const sleeve = box(0.66, 0.7, 0.03, -3.77, 1.15, 1.7, material(0x68768b), sound); sleeve.rotation.y = Math.PI / 2; sleeve.rotation.z = -0.08;
-  cylinder(0.2, 0.2, 0.012, -3.738, 1.16, 1.7, dark, 32, sound).rotation.z = Math.PI / 2;   // the disc on its cover
-  // Tito (frenchie), a black-and-white French bulldog, dozing on a floor cushion: an overstuffed cloth pillow with rounded corners,
-  // a soft belly and a worn-in hollow
+  // Tito (frenchie), a black-and-white French bulldog, dozing on a floor cushion in the front-left corner: an overstuffed cloth pillow
+  // with rounded corners, a soft belly and a worn-in hollow
   const cushionMat = material(0x4b586e, { map: grain('#677184'), roughness: 1 });
-  const cushion = group(); cushion.position.set(2.6, 0, 1.49); cushion.rotation.y = 0.12;
+  const cushion = group(); cushion.position.set(-3.15, 0, 1.75); cushion.rotation.y = 0.12;
   const cushionSegments = 32, cushionProfile = [[0.18, 0.028], [0.65, 0.028], [0.88, 0.045], [0.985, 0.105], [1, 0.15], [0.95, 0.23], [0.8, 0.295], [0.65, 0.208], [0.4, 0.18], [0.18, 0.178]];
   const cushionPoint = (angle, radius, height) => {   // a superellipse gives the pillow four soft corners instead of a round rim
     const c = Math.cos(angle), s = Math.sin(angle), irregularity = 1 + 0.018 * Math.sin(angle * 3 + 0.4) + 0.012 * Math.cos(angle * 5);
@@ -1747,7 +1730,7 @@ function buildAfterHours() {
   cushion.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: cushionSegments }, (_, i) => cushionPoint(i / cushionSegments * Math.PI * 2, 1.002, 0.15)), true), 96, 0.008, 5, true), material(0x35435a, { roughness: 1 })));
   const stitchMat = material(0x43536a, { roughness: 1 });
   for (let i = 0; i < 40; i++) { const angle = i / 40 * Math.PI * 2; cushion.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(cushionPoint(angle, 1.005, 0.158), cushionPoint(angle + 0.027, 1.005, 0.158)), 1, 0.0027, 3, false), stitchMat)); }
-  const dog = group('frenchie'); dog.position.set(2.6, 0.19, 1.51); dog.rotation.y = 0.33; dog.scale.setScalar(0.7);
+  const dog = group('frenchie'); dog.position.set(-3.15, 0.19, 1.77); dog.rotation.y = 0.33; dog.scale.setScalar(0.7);
   const dogBody = group(null, dog), dogHead = group(null, dog);
   const furWhite = material(0x65798e), furBlack = material(0x171f2b), earInner = material(0x414957), piedFur = material(0xffffff, { vertexColors: true });
   const whiteCoat = new THREE.Color(0x65798e), blackCoat = new THREE.Color(0x171f2b);
@@ -1801,7 +1784,7 @@ function buildAfterHours() {
   const revealHide = [rainLines, noteInk, notePad, sparks];
   const floorDecal = (w, h, x, y, z, m) => { const p = plane(w, h, x, y, z, m); p.rotation.x = -Math.PI / 2; p.userData.ignoreHover = true; revealHide.push(p); return p; };
   const shadowTex = drawTex(128, 128, c => { const g = c.createRadialGradient(64, 64, 4, 64, 64, 62); g.addColorStop(0, 'rgba(0,0,0,0.42)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, 128, 128); });
-  for (const [w, h, x, z, opacity = 0.8] of [[3.4, 2.4, 0.15, -0.1, 0.65], [2, 1.5, -3.3, 1.8], [1.6, 1.3, 2.6, 1.5], [2.1, 1.7, 3, -1.7], [5.6, 2.6, 0.2, -1.6, 0.45]]) floorDecal(w, h, x, 0.025, z, basic(0x050912, { map: shadowTex, transparent: true, opacity, depthWrite: false }));
+  for (const [w, h, x, z, opacity = 0.8] of [[3.4, 2.4, 0.15, -0.1, 0.65], [1.6, 1.3, -3.15, 1.75], [2.1, 1.7, 3, -1.7], [5.6, 2.6, 0.2, -1.6, 0.45]]) floorDecal(w, h, x, 0.025, z, basic(0x050912, { map: shadowTex, transparent: true, opacity, depthWrite: false }));
   const glowTex = drawTex(128, 128, c => { const g = c.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, 'rgba(88,162,226,0.3)'); g.addColorStop(1, 'rgba(36,102,171,0)'); c.fillStyle = g; c.fillRect(0, 0, 128, 128); });
   floorDecal(3.2, 2.4, 0.1, 0.03, -0.97, basic(0x6596c5, { map: glowTex, transparent: true, opacity: 0.12, depthWrite: false, blending: THREE.AdditiveBlending }));
 
@@ -1830,10 +1813,8 @@ function buildAfterHours() {
   target('shelf', shelf, [0, 3.35, 0.4]); neonFrame('shelf', shelf, 1.525, 3.35, [0, 1.655, 0.405]);
   target('cert-frame', print, [0, 0.73, 0.035]); neonFrame('cert-frame', print, 1.11, 1.38, [0, 0, 0.035]);
   target('whiteboard', wb, [0, 0.66, 0.02]); neonFrame('whiteboard', wb, 1.9, 1.15, [0, 0, 0.03]); neonFrame('whiteboard', sketch, 0.65, 0.45, [0, 0, 0.008]);   // the board and the paper light together
-  const sleeveAnchor = group(null, sound); sleeveAnchor.position.copy(sleeve.position); sleeveAnchor.rotation.copy(sleeve.rotation);
-  target('turntable', sleeveAnchor, [0, 0.38, 0.026]);   // the chip hangs over the sleeve's top edge, above both frames: from the deck's centre it would sit on the sleeve
-  neonFrame('turntable', deck, 1.16, 0.72, [0, 0.865, 0], true); neonFrame('turntable', sleeveAnchor, 0.66, 0.7, [0, 0, 0.026]);   // the sleeve lights with the deck, in a frame of its own
-  target('mug', mug, [-1.0, 1.95, -1.31]); neonFrame('mug', mug, 0.36, 0.26, [-1.035, 1.56, -1.31], true);   // a coaster of light on the desk, like the deck's
+  target('speakers', speakerUnits[0], [0, 0.3, 0.13]); for (const unit of speakerUnits) neonFrame('speakers', unit, 0.25, 0.44, [0, 0, 0.13]);   // both light together; the chip hangs over the left one
+  target('mug', mug, [-1.0, 1.95, -1.31]); neonFrame('mug', mug, 0.36, 0.26, [-1.035, 1.56, -1.31], true);   // a coaster of light on the desk
   target('rack', rack, [3.05, 1.3, -1.23]); neonFrame('rack', rack, 0.69, 1.16, [3.05, 0.58, -1.14]);   // the tower's face, clear of the fan hubs
   target('post-it', postit, [0, 0.16, 0]); neonFrame('post-it', postit, 0.3, 0.3, [0, 0, 0.005]); hot['post-it'].glows.push({ material: noteInk.material, strength: 1 });   // a frame of its own, and the recipe's ink glows
   target('robot', robot, [0, 0.66, 0]); neonFrame('robot', robot, 0.44, 0.64, [0, 0.3, 0.13]);   // the unfinished robot: its frame, and the sparks while lit (lifts)
@@ -1865,7 +1846,7 @@ function buildAfterHours() {
   const steamGeo = new THREE.BufferGeometry(); steamGeo.setAttribute('position', new THREE.BufferAttribute(steamPos, 3));
   const steam = new THREE.Points(steamGeo, new THREE.PointsMaterial({ color: 0x9bb2c5, size: 0.02, transparent: true, opacity: 0.13, depthWrite: false })); steam.userData.ignoreHover = true; root.add(steam);
   revealHide.push(dust, steam);
-  return { root, revealHide, hot, led, monitorLight, recordLabel, dogBody, dogHead, sleepingHeadY,
+  return { root, revealHide, hot, led, monitorLight, dogBody, dogHead, sleepingHeadY,
     dog: { time: 0, lifted: -Infinity, next: lerp(...CONFIG.motion.dog.lift, Math.random()) },
     rain: { lines: rainLines, geo: rainGeo, pos: rainPos, speed: rainSpeed }, dust: { group: dust, motes, time: 0 }, steam: { points: steam, geo: steamGeo, pos: steamPos },
     robot: { eyes: robotEyes, beacon: robotBeacon, sparks, sparkGeo, sparkPos } };
@@ -2036,7 +2017,6 @@ function animate(t, dt) {
   if (d.time >= d.next) { d.lifted = d.time; d.next = d.time + lerp(D.lift[0], D.lift[1], Math.random()); }
   const ph = d.time - d.lifted, lift = ph < 1.5 ? smoothstep(0, 1.5, ph) : ph < 2.4 ? 1 : 1 - smoothstep(0, 2.2, ph - 2.4);
   R.dogHead.position.y = R.sleepingHeadY + lift * 0.13; R.dogHead.rotation.x = 0.07 - lift * 0.17;
-  R.recordLabel.rotation.y = t * M.record;
   const r = R.rain, p = r.pos;   // rain: each streak falls at its own speed and wraps to the top of the pane
   for (let i = 0; i < r.speed.length; i++) { p[i * 6 + 1] -= dt * r.speed[i]; p[i * 6 + 4] -= dt * r.speed[i]; if (p[i * 6 + 1] < 1.05) { p[i * 6 + 1] += 2.47; p[i * 6 + 4] += 2.47; } }
   r.geo.attributes.position.needsUpdate = true;
@@ -2094,7 +2074,7 @@ function frame() {   // one frame: load reveal, motion, glide or free look, rend
 // wired in buildAfterHours) and the chip hangs over its anchor point on a connector line, fading and rising with that light.
 const chipEl = document.getElementById('chip'), chipText = chipEl.querySelector('.label');
 // current: under the pointer (or tapped); shown: what the chip names, which outlives current while its light fades
-const hover = { targets: [], byGroup: new Map(), current: null, shown: null, frame: 0, pointer: new THREE.Vector2(2, 2), moved: false };
+const hover = { targets: [], byGroup: new Map(), current: null, shown: null, frame: 0, pointer: new THREE.Vector2(2, 2), moved: false, menu: null };   // menu: the object a menu word is lighting
 const raycaster = new THREE.Raycaster();
 const _v = new THREE.Vector3();
 function buildHoverTargets() {
@@ -2149,7 +2129,7 @@ function hoverTick(dt) {
   // (the pointer moved just before the click) waits for the shot it lands on, so leaving the note's close-up doesn't light the CRT at home
   const locked = explorer.open || TERM.open || debug.on || camTween.active;
   if (debug.on || (pointers.size && canvas.classList.contains('drag'))) setHover(null);   // a hand turning the room lights nothing; debug lets the last light fade
-  else if (!locked && hover.moved && hover.frame % CONFIG.hover.everyNthFrame === 0) { hover.moved = false; setHover(pickAt(hover.pointer)); }
+  else if (!locked && !hover.menu && hover.moved && hover.frame % CONFIG.hover.everyNthFrame === 0) { hover.moved = false; setHover(pickAt(hover.pointer)); }   // a menu word holds the light
   // up close on the dog (his name: the click earned it) or the robot, the chip holds wherever the pointer went (the glide moved it out from under it)
   if (hintFocus && hintFocus.id !== 'post-it' && !debug.on && !TERM.open && !explorer.open && hover.current?.insp !== hintFocus) setHover(hover.targets.find(tg => tg.insp === hintFocus) || null);
   // t damps toward 1 on the lit object (the hovered one, or the CRT while the shell has the keyboard), fast in and slower out (hover.fade). n damps
@@ -2610,6 +2590,18 @@ function goZone(z, { push = true } = {}) {
   tweenCamera({ position: new THREE.Vector3().fromArray(p.position), target: new THREE.Vector3().fromArray(p.target), zoom: p.zoom ?? 1 });   // free look gets the zone's limits on arrival (orbitLimits)
   return true;
 }
+// a pointer on a menu word lights that word's object as if the pointer were on it in the room (frame, glow, the screen's light, the
+// chip); off the word, the room picks again. Mouse and pen only: on glass the menu is a list under the bar and a tap goes straight there
+navEl.addEventListener('pointerover', e => {
+  if (e.pointerType === 'touch') return;
+  const a = e.target.closest('a[data-insp]'), tg = a && hover.targets.find(t => t.insp.id === a.dataset.insp);
+  if (!tg || explorer.open || TERM.open || debug.on || !loaded) return;
+  hover.menu = tg; setHover(tg);
+});
+navEl.addEventListener('pointerout', e => {
+  const a = e.target.closest('a[data-insp]'); if (!hover.menu || !a || a.contains(e.relatedTarget)) return;
+  hover.menu = null; setHover(null); hover.moved = true;
+});
 navEl.addEventListener('click', e => {
   const a = e.target.closest('a[data-zone], a[data-insp]'); if (!a) return; e.preventDefault();
   if (a.dataset.zone) return goZone(a.dataset.zone);
@@ -3118,7 +3110,7 @@ const MACHINE = [
   ['visitors', SITE_URL + '/api/visitors', 'the visitor book as JSON'],
   ['source', 'https://github.com/ZehD/theRoom', 'this page, the functions, the generator']
 ];
-const SECTION_KEY = { 'monitor-left': 'experience', 'cert-frame': 'certifications', whiteboard: 'studies', shelf: 'shelf', turntable: 'sound' };
+const SECTION_KEY = { 'monitor-left': 'experience', 'cert-frame': 'certifications', whiteboard: 'studies', shelf: 'shelf', speakers: 'sound' };
 const roomSections = () => CONFIG.inspectables.filter(i => i.explorer && !i.hint && !i.terminal && SECTION_KEY[i.id]).map(i => ({ key: SECTION_KEY[i.id], title: i.title, line: i.line, path: i.explorer.path, files: i.explorer.files }));
 const secretsCount = () => { const f = secretsFound(); return SECRETS.filter(k => f.has(k)).length; };
 const agentOfUrl = () => { const m = /^#\/agent(?:\/(bios|index))?\/?$/.exec(location.hash); return m ? (m[1] || 'index') : null; };
