@@ -31,7 +31,20 @@
   #room { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
   /* a soft inset shade over the room, under the chrome */
   #vignette { position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 140px 35px color-mix(in srgb, var(--room-shade, #03070c) 31%, transparent); }
-  #fade { position: fixed; inset: 0; background: var(--ink); opacity: 0; pointer-events: none; }
+  /* the opening's status (After Hours): the stage it is in, a progress hairline (--p, 0..1) and a way out, bottom centre where the
+     view pill lands once it is over. In the room's phosphor, so an accent recolours it with everything else. */
+  #opening { --p: 0; position: fixed; left: 50%; bottom: calc(26px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 5; width: 240px; display: flex; flex-direction: column; align-items: center; gap: 12px; font: 12px/1.5 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: 0.04em; color: var(--phosphor-dim); transition: opacity 400ms linear; }
+  #opening.done { opacity: 0; pointer-events: none; }
+  #opening .cap { display: flex; align-items: center; gap: 10px; white-space: nowrap; color: var(--phosphor); text-shadow: 0 0 12px color-mix(in srgb, var(--phosphor) 20%, transparent); }
+  #opening .cap i { width: 5px; height: 5px; border: 1px solid var(--phosphor-bloom); transform: rotate(45deg); box-shadow: 0 0 9px color-mix(in srgb, var(--phosphor) 45%, transparent); }
+  #opening .track { width: 172px; height: 1px; background: color-mix(in srgb, var(--moss) 85%, transparent); }
+  #opening .track span { display: block; height: 100%; background: var(--phosphor); box-shadow: 0 0 8px color-mix(in srgb, var(--phosphor) 60%, transparent); transform: scaleX(var(--p)); transform-origin: left; }
+  #opening .skip { appearance: none; min-height: 34px; min-width: 100px; border: 0; background: transparent; color: var(--phosphor-dim); font: inherit; letter-spacing: 0.04em; cursor: pointer; transition: color 200ms; }
+  #opening .skip span { margin-left: 7px; opacity: 0.7; }
+  #opening .skip:hover { color: var(--phosphor-bloom); }
+  #opening .skip:focus-visible { outline: 1px solid var(--phosphor); outline-offset: 3px; }
+  #root[data-touch] #opening .skip { min-height: 44px; }
+  @media (prefers-reduced-motion: reduce) { #opening { transition: none; } }
   .hud { position: fixed; right: 16px; font: 12px/1.5 "IBM Plex Mono", ui-monospace, monospace; color: var(--phosphor); background: var(--soil); border: 1px solid var(--moss); padding: 8px 10px; white-space: pre; pointer-events: none; margin: 0; }
   #fps { top: calc(var(--top-h, 52px) + 16px); }
   #hud { top: calc(var(--top-h, 52px) + 56px); }
@@ -325,7 +338,7 @@
   #mode button[aria-pressed="true"] { background: var(--phosphor); color: var(--ink); }
   #mode button:focus-visible { outline: 2px solid var(--phosphor-bloom); outline-offset: 2px; }
   #reset { bottom: calc(66px + env(safe-area-inset-bottom)); }
-  #root[data-mode="agent"] :is(#room, #vignette, #top, #explorer, #dim, #chip, #reset, #hint, #exit, #accent, #toast, #boot, #fade, #fps, #hud) { display: none !important; }
+  #root[data-mode="agent"] :is(#room, #vignette, #top, #explorer, #dim, #chip, #reset, #hint, #exit, #accent, #toast, #boot, #opening, #fps, #hud) { display: none !important; }
   #agent { position: fixed; inset: 0; overflow: auto; -webkit-overflow-scrolling: touch; background: var(--ink); color: var(--phosphor); z-index: 3; }
   /* the switch: a CRT powering off and on. Two black panels close from the edges to one bright line, the line collapses, the
      view swaps under the black, and the same plays backwards. The pill stays above it. */
@@ -652,7 +665,7 @@
 <div id="boot" aria-hidden="true">booting theRoom<i></i></div>
 <canvas id="room" tabindex="-1"></canvas>
 <div id="vignette" aria-hidden="true"></div>
-<div id="fade"></div>
+<div id="opening" hidden><div class="cap" role="status"><i aria-hidden="true"></i><span data-stage>preparing the room</span></div><div class="track" aria-hidden="true"><span></span></div><button type="button" class="skip">skip intro <span aria-hidden="true">&#8629;</span></button></div>
 <pre id="fps" class="hud" hidden></pre>
 <pre id="hud" class="hud" hidden></pre>
 <div id="chip" role="status" aria-live="polite"><div class="box"><span class="label"></span><i aria-hidden="true"></i></div></div>
@@ -1050,7 +1063,7 @@ const CONFIG = {
   tween: { duration: 1000, panelEnterAt: 0.65, inspectFill: 0.55, near: 0.3 },
   // Routing: 'hash' (#/work) while the file is served from a path; 'path' (/work) on the real domain.
   routing: { mode: 'hash' },
-  // Entry: the top bar fades in `delay` ms after the wireframe cut.
+  // Entry: the top bar fades in `delay` ms after the opening ends.
   intro: { delay: 400 },
   motion: {
     log: { interval: 800 },
@@ -1059,8 +1072,6 @@ const CONFIG = {
     // the record label turns at `record` rad/s
     led: 0.25, dog: { breath: 4.8, amp: 0.012, lift: [25, 40] }, record: 0.45
   },
-  // Loading: the wireframe builds up floor to ceiling over `rise` ms (a bright edge leading it), holds `hold` ms, then a cut to ink that fades out over `fade` ms.
-  loading: { rise: 1600, hold: 450, fade: 200 },
   // Accent: the whole palette (and surface tones) is re-derived from the green spec palette by rotating
   // hue in OKLCH, keeping lightness and chroma (chroma reduced only where sRGB can't reach it).
   // dL nudges lightness of the phosphor family for hues that are too pale at green's lightness.
@@ -1217,19 +1228,13 @@ function paletteFor(accent) {
   for (const k of Object.keys(SPEC.tones)) if (k !== 'white') out.tones[k] = shiftHex(SPEC.tones[k], preset.hue, preset.dL);
   return out;
 }
-// The room is drawn in After Hours blue whatever the accent (its screens and the reveal's wire too, in ROOM_PAL); the frame pass then
+// The room is drawn in After Hours blue whatever the accent (its screens and the opening's wire too, in ROOM_PAL); the frame pass then
 // turns the finished picture's hue by roomShift() degrees, and the backdrop behind the transparent canvas turns with it (turnHex)
 const ROOM_HUE = CONFIG.accent.presets.blue.hue, ROOM_PAL = paletteFor('blue').palette;
 function roomShift() { const a = CONFIG.accent.name, p = CONFIG.accent.presets[a], h = p ? (p.hue ?? REF_HUE) : parseFloat(String(a).slice(4)); return Number.isFinite(h) ? h - ROOM_HUE : 0; }
 function turnHex(hex, deg) { const [L, C, h] = hexToOklch(hex); return C < 0.004 || !deg ? hex : oklchToHex(L, C, h + deg); }
 
 // ───────────────────────────── materials & textures ─────────────────────────────
-const MAT = {
-  // loading wireframe: everything above uH is discarded, so a rising uH builds the room up from the floor; uEdge tints the leading 35 cm
-  wire: new THREE.ShaderMaterial({ wireframe: true, uniforms: { uColor: { value: new THREE.Color(ROOM_PAL.phosphorDim) }, uEdge: { value: new THREE.Color(ROOM_PAL.phosphorBloom) }, uH: { value: 0 } },
-    vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
-    fragmentShader: 'uniform vec3 uColor, uEdge; uniform float uH; varying vec3 vW; void main(){ if (vW.y > uH) discard; float e = 1.0 - smoothstep(0.0, 0.35, uH - vW.y); gl_FragColor = vec4(mix(uColor, uEdge, e), 1.0); }' })
-};
 function cnv(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
 function canvasTex(c, repeat) {
   const t = new THREE.CanvasTexture(c);
@@ -1550,6 +1555,95 @@ function buildAfterHours() {
   for (let i = 0; i < 5; i++) box(0.15, 0.008, 0.012, 0.28, 0.235 + i * 0.03, 0.222, dark, shelf);
   cylinder(0.035, 0.035, 0.02, 0.49, 0.285, 0.222, wood, 10, shelf).rotation.x = Math.PI / 2;
   line([[0.40, 0.43, 0.05], [0.49, 0.70, 0.06]], metal, 0.008, shelf);
+  // the miniature-painting corner on top of the bookcase (After Hours, 2026-10-02): a cutting mat, a painted shield knight and a robed
+  // figure, a primed one up on a cork grip, dropper bottles, a cup of brushes and a stained mixing tile. Matte, blue-shifted by the
+  // night. A child of the shelf, so it lights and opens with it. It draws no random numbers, so nothing after it moves
+  const painting = group('miniature-painting-hobby', shelf); painting.position.set(0, 3.315, 0);
+  const paintBlue = material(0x526f8c), paintPlum = material(0x776574), paintTeal = material(0x476c70), paintOchre = material(0x978574);
+  const primer = material(0x7e8e9c), miniSteel = material(0x8094a4, { metalness: 0.08, roughness: 0.8 }), miniTrim = material(0x9b9182);
+  const miniBase = material(0x303943), miniGround = material(0x5e6569), brushWood = material(0x746b64), bristles = material(0x999789);
+  const matTex = drawTex(128, 64, c => {
+    c.fillStyle = '#263f4a'; c.fillRect(0, 0, 128, 64);
+    c.strokeStyle = '#54717a'; c.globalAlpha = 0.4; c.lineWidth = 0.6;
+    for (let x = 5; x < 128; x += 9) { c.beginPath(); c.moveTo(x, 3); c.lineTo(x, 61); c.stroke(); }
+    for (let y = 5; y < 64; y += 9) { c.beginPath(); c.moveTo(3, y); c.lineTo(125, y); c.stroke(); }
+    c.globalAlpha = 0.7;
+    for (const [x, y, w, h, color] of [[34, 47, 3, 2, '#7894a5'], [90, 41, 4, 2, '#7d6d79'], [97, 49, 2, 3, '#9a9386'], [62, 21, 3, 1, '#7894a5']]) { c.fillStyle = color; c.fillRect(x, y, w, h); }
+  });
+  box(1.3, 0.012, 0.65, -0.015, 0.006, 0.012, material(0x314955), painting);
+  plane(1.28, 0.63, -0.015, 0.013, 0.012, material(0xffffff, { map: matTex }), painting).rotation.x = -Math.PI / 2;
+  const miniatureBase = (parent, radius = 0.104) => {
+    cylinder(radius, radius * 0.97, 0.022, 0, 0.011, 0, miniBase, 12, parent);
+    cylinder(radius * 0.9, radius * 0.9, 0.007, 0, 0.025, 0, miniGround, 10, parent);
+    for (const [x, z] of [[-0.062, 0.03], [0.049, -0.041]]) sphere(0.018, x, 0.032, z, miniGround, parent).scale.set(1, 0.55, 0.8);
+  };
+  const armoredMiniature = (x, y, z, scale, unpainted = false) => {
+    const g = group(unpainted ? 'primed-miniature-on-painting-handle' : 'painted-shield-knight', painting);
+    g.position.set(x, y, z); g.scale.setScalar(scale); g.rotation.y = unpainted ? -0.3 : 0.27; miniatureBase(g);
+    const armor = unpainted ? primer : miniSteel, cloth = unpainted ? primer : paintBlue, trim = unpainted ? primer : miniTrim;
+    for (const side of [-1, 1]) {
+      box(0.048, 0.032, 0.078, side * 0.036, 0.047, 0.022, armor, g);
+      cylinder(0.023, 0.027, 0.10, side * 0.036, 0.11, 0, armor, 5, g);
+      sphere(0.036, side * 0.077, 0.222, 0, armor, g).scale.set(1.08, 0.8, 1);
+      box(0.033, 0.087, 0.04, side * 0.093, 0.179, 0.009, armor, g).rotation.z = side * 0.16;
+    }
+    cylinder(0.052, 0.066, 0.095, 0, 0.168, 0, cloth, 6, g);
+    box(0.108, 0.077, 0.076, 0, 0.214, 0, armor, g); box(0.112, 0.013, 0.081, 0, 0.184, 0, trim, g);
+    box(0.105, 0.159, 0.018, 0, 0.163, -0.061, cloth, g).rotation.x = -0.15;   // the cape and the shield give the tiny figure readable, hand-painted shapes
+    sphere(0.051, 0, 0.291, 0, armor, g).scale.set(0.86, 1, 0.86);
+    box(0.063, 0.012, 0.014, 0, 0.294, 0.042, dark, g);
+    box(0.012, 0.078, 0.041, 0, 0.341, -0.015, unpainted ? primer : paintPlum, g).rotation.x = -0.25;
+    const shield = cylinder(0.068, 0.063, 0.018, -0.112, 0.183, 0.052, cloth, 6, g); shield.rotation.x = Math.PI / 2; shield.rotation.z = 0.12;
+    box(0.014, 0.081, 0.008, -0.112, 0.183, 0.065, trim, g); box(0.066, 0.012, 0.009, -0.112, 0.187, 0.066, trim, g);
+    box(0.012, 0.195, 0.014, 0.116, 0.241, 0.031, armor, g).rotation.z = -0.11;
+    box(0.057, 0.009, 0.022, 0.107, 0.173, 0.031, trim, g); sphere(0.019, 0.105, 0.157, 0.031, armor, g);
+    return g;
+  };
+  armoredMiniature(-0.225, 0.015, 0.175, 1);
+  const robed = group('painted-robed-miniature', painting); robed.position.set(-0.50, 0.015, -0.06); robed.rotation.y = 0.34; miniatureBase(robed, 0.11);
+  cylinder(0.042, 0.084, 0.197, 0, 0.136, 0, paintPlum, 7, robed);
+  box(0.013, 0.156, 0.014, -0.025, 0.144, 0.05, miniTrim, robed).rotation.z = 0.16;
+  sphere(0.04, 0, 0.271, 0.008, material(0x999d9c), robed);
+  cylinder(0.009, 0.028, 0.07, 0, 0.244, 0.04, primer, 5, robed);
+  cylinder(0.101, 0.101, 0.013, 0, 0.299, 0, paintBlue, 8, robed);
+  cylinder(0, 0.074, 0.136, -0.014, 0.37, -0.012, paintBlue, 7, robed).rotation.z = 0.16;
+  line([[-0.055, 0.211, 0], [-0.1, 0.178, 0.016]], paintPlum, 0.027, robed);
+  line([[0.047, 0.211, 0], [0.089, 0.221, 0.026]], paintPlum, 0.026, robed);
+  cylinder(0.009, 0.012, 0.353, 0.108, 0.20, 0.032, brushWood, 6, robed).rotation.z = -0.06;
+  sphere(0.025, 0.119, 0.38, 0.032, paintTeal, robed);
+  // a cork painting grip holds the unfinished figure above the loose supplies
+  cylinder(0.073, 0.061, 0.115, 0.018, 0.072, -0.215, material(0x80796a), 9, painting);
+  cylinder(0.078, 0.078, 0.016, 0.018, 0.137, -0.215, dark, 10, painting);
+  armoredMiniature(0.018, 0.145, -0.215, 0.74, true);
+  const bottleShell = material(0x8e9da6), bottleLabel = material(0x687d8b), bottleCap = material(0x293b4d);
+  const paintBottle = (x, z, pigment, turn = 0) => {
+    const g = group('acrylic-dropper-bottle', painting); g.position.set(x, 0.015, z); g.rotation.y = turn;
+    cylinder(0.041, 0.043, 0.139, 0, 0.074, 0, bottleShell, 9, g);
+    cylinder(0.024, 0.041, 0.033, 0, 0.16, 0, bottleShell, 9, g);
+    cylinder(0.0417, 0.0417, 0.065, 0, 0.088, 0, bottleLabel, 9, g);
+    box(0.044, 0.046, 0.008, 0, 0.089, 0.041, pigment, g);
+    cylinder(0.019, 0.022, 0.031, 0, 0.189, 0, bottleShell, 8, g);
+    cylinder(0.027, 0.027, 0.062, 0, 0.225, 0, bottleCap, 9, g);
+    for (const side of [-1, 1]) box(0.006, 0.045, 0.008, side * 0.014, 0.225, 0.026, metal, g);
+    cylinder(0.021, 0.021, 0.005, 0, 0.258, 0, pigment, 9, g);
+  };
+  paintBottle(0.165, -0.256, paintBlue, -0.13); paintBottle(0.303, -0.24, paintPlum, 0.12);
+  paintBottle(0.439, -0.275, paintTeal, -0.04); paintBottle(0.56, -0.23, paintOchre, 0.16);
+  paintBottle(0.28, -0.068, primer, -0.18);
+  const brushCup = group('used-brush-cup', painting); brushCup.position.set(0.50, 0.016, 0.16);
+  const cupMat = material(0x637d8d), cupMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.072, 0.20, 10, 1, true), cupMat);
+  cupMesh.position.y = 0.10; cupMesh.castShadow = cupMesh.receiveShadow = true; brushCup.add(cupMesh);
+  cylinder(0.075, 0.069, 0.014, 0, 0.008, 0, cupMat, 10, brushCup); cylinder(0.078, 0.078, 0.008, 0, 0.157, 0, dark, 10, brushCup);
+  const cupRim = new THREE.Mesh(new THREE.TorusGeometry(0.088, 0.009, 4, 12), cupMat); cupRim.position.y = 0.20; cupRim.rotation.x = Math.PI / 2; brushCup.add(cupRim);
+  for (const [x, z, h, tilt, color] of [[-0.033, -0.014, 0.59, -0.19, paintPlum], [0.013, 0.021, 0.49, 0.10, brushWood], [0.033, -0.02, 0.64, 0.22, paintBlue]]) {
+    const brush = group(null, brushCup); brush.position.set(x, 0.075, z); brush.rotation.z = tilt; brush.rotation.x = -0.08;
+    cylinder(0.009, 0.012, h * 0.73, 0, h * 0.365, 0, color, 6, brush);
+    cylinder(0.013, 0.01, h * 0.13, 0, h * 0.795, 0, miniSteel, 6, brush);
+    cylinder(0.001, 0.013, h * 0.14, 0, h * 0.93, 0, bristles, 5, brush);
+  }
+  const tile = group(null, painting); tile.position.set(0.12, 0.024, 0.287); tile.rotation.y = -0.12;   // a stained mixing tile in front of the bottles
+  box(0.255, 0.012, 0.12, 0, 0, 0, material(0x87959e), tile);
+  for (const [x, z, m] of [[-0.08, -0.017, paintBlue], [-0.027, 0.02, paintPlum], [0.033, -0.019, paintTeal], [0.082, 0.016, paintOchre]]) cylinder(0.018, 0.021, 0.004, x, 0.009, z, m, 7, tile);
 
   // the floating shelf over the monitors: books, a plant, a miniature robot
   box(2.81, 0.075, 0.47, -0.66, 3.59, -2.91, wood);
@@ -1715,7 +1809,7 @@ function buildAfterHours() {
   const sleepingHeadY = neckPivot.y - 0.095;
   dogHead.position.set(0, sleepingHeadY, neckPivot.z + 0.025); dogHead.rotation.x = 0.07;
 
-  // Everything below is a transparent overlay (or points and lines) that the wireframe reveal would draw wrong: revealHide hides it until the cut.
+  // Everything below is a transparent overlay (or points and lines): revealHide holds it back until the opening's last stage.
   // Soft contact shadows under the big pieces, and a pool of screen light under the desk
   const revealHide = [rainLines, noteInk, notePad, sparks];
   const floorDecal = (w, h, x, y, z, m) => { const p = plane(w, h, x, y, z, m); p.rotation.x = -Math.PI / 2; p.userData.ignoreHover = true; revealHide.push(p); return p; };
@@ -1849,7 +1943,6 @@ function buildPost(renderer, scene, camera) {
 
 // ───────────────────────────── scene setup ─────────────────────────────
 const canvas = document.getElementById('room');
-const fade = document.getElementById('fade');
 const fpsEl = document.getElementById('fps');
 const hudEl = document.getElementById('hud');
 
@@ -1884,7 +1977,7 @@ const controls = new OrbitControls(camera, canvas);
 { const K = CONFIG.camera.orbit; Object.assign(controls, { enabled: false, enableDamping: true, dampingFactor: K.damping, enablePan: false, rotateSpeed: K.rotateSpeed, zoomSpeed: K.zoomSpeed, mouseButtons: { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE } }); }
 // Who has the camera: OrbitControls in free look, the glide (camState) otherwise. Its update() clamps azimuth, polar and zoom on every call and
 // ignores `enabled`, so it never runs while a glide, a window, the shell or a close-up (the dog, the note) holds the shot. Debug roams free.
-const freeLook = () => debug.on || !(camTween.active || explorer.open || TERM.open || hintFocus);
+const freeLook = () => debug.on || !(!loaded || camTween.active || explorer.open || TERM.open || hintFocus);   // still being built: the camera holds its shot
 function holdControls() {   // the glide takes over: drop the damping OrbitControls still had in hand, so it can't coast on when it gets the camera back
   controls.enabled = false; controls._sphericalDelta.set(0, 0, 0); controls._panOffset.set(0, 0, 0); controls._scale = 1;
 }
@@ -1941,7 +2034,7 @@ let grid;
 
 // ───────────────────────────── tick ─────────────────────────────
 const clock = { last: performance.now(), elapsedTime: 0, getDelta() { const now = performance.now(), dt = (now - this.last) / 1000; this.last = now; this.elapsedTime += dt; return dt; } };
-let ledAt = 0, logAt = 0, cursorAt = 0, fpsFrames = 0, fpsAt = 0, fps = 0, loaded = false, loadT0 = 0, frameNo = 0;
+let ledAt = 0, logAt = 0, cursorAt = 0, fpsFrames = 0, fpsAt = 0, fps = 0, loaded = false, frameNo = 0;
 
 // the After Hours motion, plus the screens: the agent log scrolls, both cursors blink. Reduced motion never calls it (build() draws the cursors solid)
 function animate(t, dt) {
@@ -1989,11 +2082,8 @@ function updateDust() {
 function tick() { if (MODE.agent) { MODE.paused = true; return; } requestAnimationFrame(tick); frame(); }   // agent mode parks the loop; setMode restarts it
 function frame() {   // one frame: load reveal, motion, glide or free look, render, hover. Exposed on window.__theroom so a throttled tab can still be stepped
   const dt = Math.min(0.1, clock.getDelta()), t = clock.elapsedTime;
-  if (!loaded) {   // wireframe build-up: the reveal height sweeps floor to the top of the walls, eased in and out
-    const p = MOTION ? Math.min(1, (performance.now() - loadT0) / CONFIG.loading.rise) : 1, e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
-    MAT.wire.uniforms.uH.value = 0.01 + (CONFIG.room.height + 0.05) * e;
-  }
-  if (MOTION) animate(t, dt);
+  if (opening && !opening.complete) opening.update(performance.now());   // the construction pass; the room's own motion waits for it
+  if (MOTION && loaded) animate(t, dt);
   stepTween();
   if (freeLook()) { if (!controls.enabled) freeControls(); controls.update(); readControls(); }   // OrbitControls moves the camera; the shot follows it
   else {   // a glide, a window, the shell or a close-up: the camera follows the shot
@@ -2034,7 +2124,7 @@ function buildHoverTargets() {
 // Up close on the dog or the note (hintFocus) only that object counts: the CRT fills the note's whole close-up, and anything else is "off it"
 // (the shell opened from the menu over a close-up still takes clicks on its screen)
 function pickAt(ndc) {
-  if (!ROOM) return null;
+  if (!ROOM || !loaded) return null;   // nothing to point at while the room is being built
   raycaster.setFromCamera(ndc, camera);
   for (const { object: o } of raycaster.intersectObject(ROOM.root, true)) {
     if (!o.isMesh || o.userData.ignoreHover || [].concat(o.material)[0]?.transparent) continue;
@@ -2583,7 +2673,7 @@ addEventListener('popstate', () => {
   if (explorer.open) { closeExplorer(true); return; }
   const z = zoneOfUrl(); if (z !== nav.zone) goZone(z, { push: false });
 });
-// entry: the top bar fades in over the room once the wireframe cut is done
+// entry: the top bar fades in over the room once the opening is done
 function showIntro() { topEl.classList.add('on'); modeEl.classList.add('on'); if (TOUCH) showHint(); }
 // on glass, a line on how to move the room comes up with the bar and goes on the first touch of the room, or after nine seconds
 const hintEl = document.getElementById('hint'); let hintTimer = 0;
@@ -2807,7 +2897,7 @@ function build() {
   renderer.shadowMap.needsUpdate = true;   // one shadow render per build (autoUpdate is off)
   buildHoverTargets();
 }
-// the overlays that would draw wrong as wire stay hidden until the cut; reduced motion keeps the steam off (unanimated, it hangs in a column)
+// the overlays stay hidden until the opening's last stage; reduced motion keeps the steam off (unanimated, it hangs in a column)
 function revealRoom(on) { for (const o of ROOM.revealHide) o.visible = on && !(o === ROOM.steam.points && !MOTION); }
 // tear the room down: every geometry, material and texture once (the unit box, the dust quad and the ear are shared), and the
 // lights' shadow maps (the key's is 2048²)
@@ -2910,24 +3000,121 @@ async function init() {
   const topH = () => document.documentElement.style.setProperty('--top-h', topEl.offsetHeight + 'px');
   topH(); new ResizeObserver(topH).observe(topEl);
 
-  // loading: wireframe builds up for rise ms, holds hold ms, then a cut to ink that fades out over fade ms. It waits for the
-  // gate's answer: `no` starts it; `yes` leaves the room dark until the pill brings a human in.
-  scene.overrideMaterial = MAT.wire;
+  // the opening waits for the gate: a human starts it (startReveal); an agent leaves the room unbuilt until the pill brings a human in
 }
+// ───────────────────────────── the opening (After Hours) ─────────────────────────────
+// A 3.9 s construction pass over the real room (After Hours' room-opening.ts, 2026-10-02). A floor lattice and the edges of every
+// object trace in as blue wire, the floor first and then upward; each object grows up from its base; at 3 s the two screens open out of
+// a line and the monitor light comes up; at 3.5 s the overlays arrive (rain, steam, the hover glows). Nothing is rebuilt: the pass hides
+// and scales the real meshes and puts every one back when it ends. #opening names the stage over a progress hairline, with "skip intro"
+// (Esc too); reduced motion lands on the finished room. The shadows are cast by the empty room until the end, then once by the real one.
+const OPENING_S = 3.9, smooth01 = v => { const k = Math.min(1, Math.max(0, v)); return k * k * (3 - 2 * k); };
+const openingEl = document.getElementById('opening');
+let opening = null;
+function createOpening(onComplete) {
+  let complete = false, startedAt = null, lastStage = '', overlaysOn = false;
+  const screens = ['monitor-right', 'monitor-left'].map(id => ROOM.root.getObjectByName(id)?.getObjectByName('screen')).filter(Boolean);
+  const screenStates = screens.map(mesh => ({ mesh, scale: mesh.scale.clone(), visible: mesh.visible }));
+  const light = ROOM.monitorLight, lightIntensity = light.intensity;
+  const pieces = [], overlay = new THREE.Group(); overlay.name = 'room-construction';
+  const buckets = Array.from({ length: 16 }, () => []), edgeCache = new Map();
+  const viewDir = camera.position.clone().sub(new THREE.Vector3(0, 1.65, 0)).normalize(), up = new THREE.Vector3(0, 1, 0);
+  const bounds = new THREE.Box3(), size = new THREE.Vector3(), center = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3();
+  const e0 = new THREE.Vector3(), e1 = new THREE.Vector3(), delta = new THREE.Vector3(), offset = new THREE.Vector3();
+  const stageEl = openingEl.querySelector('[data-stage]');
+  const shown = o => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };
+  // camera-facing ribbons (real triangles), cut in 36 cm pieces; each piece joins the bucket of its start time: the lattice from the
+  // centre out, the rest by height and then left to right
+  const wire = (from, to, thick = 0.011, grid = false) => {
+    delta.subVectors(to, from); const len = delta.length(); if (len < 0.025) return;
+    offset.crossVectors(delta, viewDir); if (offset.lengthSq() < 1e-5) offset.crossVectors(delta, up);
+    offset.normalize().multiplyScalar(thick / 2);
+    const parts = Math.max(1, Math.ceil(len / 0.36)), { x: ox, y: oy, z: oz } = offset;
+    for (let i = 0; i < parts; i++) {
+      e0.copy(from).lerp(to, i / parts); e1.copy(from).lerp(to, (i + 1) / parts);
+      const x = (e0.x + e1.x) / 2, y = (e0.y + e1.y) / 2, z = (e0.z + e1.z) / 2;
+      const delay = grid ? 0.03 + Math.hypot(x, z) * 0.045 : 0.16 + Math.max(0, y) * 0.39 + (x + 4.3) * 0.016;
+      buckets[Math.min(15, Math.floor(delay / 0.14))].push(e0.x - ox, e0.y - oy, e0.z - oz, e1.x - ox, e1.y - oy, e1.z - oz, e1.x + ox, e1.y + oy, e1.z + oz,
+        e0.x - ox, e0.y - oy, e0.z - oz, e1.x + ox, e1.y + oy, e1.z + oz, e0.x + ox, e0.y + oy, e0.z + oz);
+    }
+  };
+  if (MOTION) {
+    for (let x = -4.2; x <= 4.21; x += 0.7) wire(a.set(x, 0.012, -3.3), b.set(x, 0.012, 3.3), 0.012, true);   // the lattice, with a few diagonals like an unfinished mesh
+    for (let z = -3.3; z <= 3.31; z += 0.66) wire(a.set(-4.2, 0.012, z), b.set(4.2, 0.012, z), 0.012, true);
+    for (let i = 0; i < 12; i++) for (let j = 0; j < 10; j += 2) { const x = -4.2 + i * 0.7, z = -3.3 + j * 0.66; wire(a.set(x, 0.013, z), b.set(x + 0.7, 0.013, z + 0.66), 0.008, true); }
+    scene.updateMatrixWorld(true);
+    ROOM.root.traverse(o => {
+      if (!o.isMesh || o.userData.ignoreHover || screens.includes(o) || !shown(o)) return;
+      const m = Array.isArray(o.material) ? o.material[0] : o.material; if (m.opacity < 0.01) return;
+      o.geometry.computeBoundingBox(); if (!o.geometry.boundingBox) return;
+      bounds.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld); bounds.getSize(size); bounds.getCenter(center);
+      const floor = bounds.max.y < 0.17, wall = size.y > 1.8 && Math.min(size.x, size.z) < 0.3, spread = (center.x + 4.3) * 0.018 + (center.z + 3.4) * 0.012;
+      pieces.push({ mesh: o, position: o.position.clone(), scale: o.scale.clone(), visible: o.visible,
+        start: m.transparent ? 2.75 : floor ? 0.66 + spread : 0.82 + Math.max(0, bounds.min.y) * 0.38 + spread,
+        duration: wall ? 1.7 : floor ? 0.28 : 0.38, anchored: !m.transparent && Math.abs(o.rotation.x) < 0.01 && Math.abs(o.rotation.z) < 0.01 });
+      if (!m.transparent && Math.max(size.x, size.y, size.z) > 0.19 && size.x + size.y + size.z > 0.35) {   // keys, dust and paint pots stay out of the wire, so it reads
+        let edges = edgeCache.get(o.geometry); if (!edges) { edges = new THREE.EdgesGeometry(o.geometry, 27); edgeCache.set(o.geometry, edges); }
+        const v = edges.attributes.position;
+        for (let i = 0; i < v.count; i += 2) wire(a.fromBufferAttribute(v, i).applyMatrix4(o.matrixWorld), b.fromBufferAttribute(v, i + 1).applyMatrix4(o.matrixWorld));
+      }
+    });
+  }
+  edgeCache.forEach(g => g.dispose());
+  const wires = buckets.flatMap((v, i) => {
+    if (!v.length) return [];
+    const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+    const material = new THREE.MeshBasicMaterial({ color: 0x75b5df, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, toneMapped: false });
+    const mesh = new THREE.Mesh(geometry, material); mesh.userData.ignoreHover = true; mesh.visible = false; overlay.add(mesh);
+    return [{ mesh, geometry, material, start: i * 0.14 }];
+  });
+  scene.add(overlay);
+  function restore() {
+    for (const p of pieces) { p.mesh.position.copy(p.position); p.mesh.scale.copy(p.scale); p.mesh.visible = p.visible; }
+    for (const s of screenStates) { s.mesh.scale.copy(s.scale); s.mesh.visible = s.visible; }
+    light.intensity = lightIntensity;
+  }
+  function finish() {
+    if (complete) return; complete = true;
+    restore(); overlay.removeFromParent(); for (const w of wires) { w.geometry.dispose(); w.material.dispose(); } wires.length = 0;
+    revealRoom(true); openingEl.style.setProperty('--p', '1');
+    onComplete();
+  }
+  function update(ms) {
+    if (complete) return;
+    if (startedAt === null) startedAt = ms;
+    const t = (ms - startedAt) / 1000;
+    if (t >= OPENING_S) { finish(); return; }
+    const stage = t < 0.8 ? 'tracing geometry' : t < 2.95 ? 'building the room' : 'turning on the lights';
+    if (stage !== lastStage) { lastStage = stage; stageEl.textContent = stage; }
+    openingEl.style.setProperty('--p', String(t / OPENING_S));
+    for (const p of pieces) {
+      const k = smooth01((t - p.start) / p.duration);
+      p.mesh.visible = k > 0; p.mesh.scale.copy(p.scale); p.mesh.position.copy(p.position);
+      if (p.anchored && k < 1) { const f = 0.035 + k * 0.965; p.mesh.scale.y *= f; p.mesh.position.y += p.mesh.geometry.boundingBox.min.y * p.scale.y * (1 - f); }   // grows up from its base
+    }
+    for (const w of wires) { w.material.opacity = 0.62 * smooth01((t - w.start) / 0.3) * (1 - smooth01((t - w.start - 0.66) / 0.9)); w.mesh.visible = w.material.opacity > 0.005; }
+    screenStates.forEach(({ mesh, scale, visible }, i) => { const k = smooth01((t - 3.02 - i * 0.14) / 0.46); mesh.visible = visible && k > 0; mesh.scale.copy(scale); mesh.scale.y *= Math.max(0.009, k); });
+    light.intensity = lightIntensity * smooth01((t - 3.02) / 0.68);
+    if (!overlaysOn && t > 3.5) { overlaysOn = true; revealRoom(true); }
+  }
+  if (MOTION) { for (const p of pieces) p.mesh.visible = false; for (const s of screenStates) s.mesh.visible = false; light.intensity = 0; }
+  else finish();
+  return { update, finish, get complete() { return complete; } };
+}
+openingEl.querySelector('.skip').addEventListener('click', () => opening?.finish());
+addEventListener('keydown', e => { if (e.key === 'Escape' && opening && !opening.complete) { e.preventDefault(); opening.finish(); } });   // Esc skips it
+matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', e => { if (e.matches) opening?.finish(); });
 let revealStarted = false;
 function startReveal() {
   if (revealStarted) return; revealStarted = true;
-  loadT0 = performance.now(); tick();
-  setTimeout(() => {
-    loaded = true;
-    scene.overrideMaterial = null;
-    revealRoom(true);
-    if (MOTION) {
-      fade.style.transition = 'none'; fade.style.opacity = '1'; fade.getBoundingClientRect();
-      requestAnimationFrame(() => requestAnimationFrame(() => { fade.style.transition = `opacity ${CONFIG.loading.fade}ms linear`; fade.style.opacity = '0'; }));
-    }
+  openingEl.hidden = !MOTION;
+  opening = createOpening(() => {
+    loaded = true; renderer.shadowMap.needsUpdate = true;   // until now the shadows were cast by the empty room
+    if (openingEl.contains(document.activeElement)) canvas.focus({ preventScroll: true });
+    openingEl.classList.add('done'); setTimeout(() => { openingEl.hidden = true; }, 400);
     setTimeout(showIntro, CONFIG.intro.delay);
-  }, MOTION ? CONFIG.loading.rise + CONFIG.loading.hold : CONFIG.loading.hold);
+  });
+  tick();
 }
 // ───────────────────────────── human / agent ─────────────────────────────
 // The pill at the bottom edge. AGENT leaves the room: the loop parks, the chrome hides, and the same content
