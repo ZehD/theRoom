@@ -174,57 +174,43 @@ AI engineer · Curitiba, Paraná, Brazil
 
 11 years in IT, the last 4 building software and AI systems. Days go to agents, RAG pipelines and automations that have to survive production; nights go to this shelf.
 
-Off the clock it is board games with friends, classic cinema with the lights off, science fiction by the stack, and a paint desk of Warhammer miniatures that never quite gets tidy.
+Outside work I read science fiction and fantasy, play board games with friends, paint Warhammer miniatures and watch a lot of films, mostly sci-fi and noir.
 
 theRoom is a real place in Curitiba, where it rains most afternoons. The dog is real too.
 
-### now-reading.txt — Now reading
-bookmark at page 212
+### books.txt — Books
+reading now, and the ones I love
 
-- AI Engineering — Chip Huyen. Third pass, this time with a notebook.
-- The Dark Forest — Cixin Liu. Rereading the trilogy, slower.
-- Perdido Street Station — China Miéville. The one I lend to people and never get back.
+Reading now: Perdido Street Station by China Miéville, The Dark Forest by Cixin Liu (rereading the trilogy, slower) and AI Engineering by Chip Huyen (a third pass, this time with a notebook).
 
-### favourites.txt — Read more than once
-the fiction row, eye level
+The ones I love, read more than once:
 
 - The Lord of the Rings, every few years since school.
 - The Three-Body Problem and the two that follow.
 - Perdido Street Station, The Scar, The City & the City.
-- Dune, Neuromancer, Hyperion, Blindsight.
+- Dune, Neuromancer, Hyperion.
+- The Horus Heresy series.
 
-### table.txt — On the table
+### tabletop.txt — Tabletop
 top shelf, heaviest boxes first
 
 - Twilight Struggle — the one game I would keep if I could keep one.
 - Puerto Rico — twenty years old and still the tightest euro on the shelf.
 - Terraforming Mars, Brass: Birmingham, Agricola — for the long Sunday sessions.
 
-### paint-desk.txt — The paint desk
+### painting.txt — Painting
 Warhammer, one squad at a time
 
 - Miniatures are the slow hobby: assemble, prime, base coat, wash, edge highlight, repeat until the squad looks like a squad.
 - Mostly Warhammer. The backlog of grey plastic is a running joke at home.
 - A game now and then, whenever the table clears of board games.
 
-### matinee.txt — Classic cinema
-lights off, no second screen
+### cinema.txt — Cinema
+sci-fi and noir, old and new
 
-- Old films watched the old way: one sitting, no phone in hand.
-- Noir, westerns, the studio-era greats. Pacing that trusts you to pay attention.
-- Rewatched more often than anything new.
-
-### stack.log — The reference row
-academic, pale spines
-
-Clean Code and The Pragmatic Programmer for how to write it, Designing Data-Intensive Applications for where it runs, Speech and Language Processing and Deep Learning for why the models do what they do. AI Engineering ties the row together.
-
-### off-shelf.txt — Off the shelf
-the rest of the room
-
-- Vinyl on the turntable, mostly jazz and Brazilian records from the 60s and 70s.
-- A telescope by the window for the rare clear night.
-- A French bulldog asleep on his cushion, breathing slowly.
+- Blade Runner is my favourite film. Science fiction and noir are the two genres I keep coming back to, and it is both.
+- The classics: Akira Kurosawa and Ingmar Bergman.
+- The new classics: Christopher Nolan and Denis Villeneuve, who took Blade Runner up again with 2049.
 
 ## ~/sound  ·  Turntable
 _rain on the window, records on the deck_
