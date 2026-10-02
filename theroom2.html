@@ -1035,7 +1035,7 @@ const CONFIG = {
     // frame is 12.4 m across and ~27 m tall at zoom 1, so it zooms further in, as far as the zone's subject still fits across.
     presets: {
       home:     { position: [9.92, 9.32, 13.89],  target: [-0.08, 1.97, -0.11], zoom: 1.3, route: '/',        label: 'home',   // After Hours' angle, closer: the room's contents (shelves to window, the dog to the tower) fill the band between the bar and the pill; bare wall tops and the floor's front edge crop
-                  portrait: { position: [9.103, 9.33, 14.465], target: [-0.897, 1.98, 0.465], zoom: 1.7 } },   // phones: the desk and Tito in his corner; the window's and the tower's outer edges crop (a drag brings them in)
+                  portrait: { position: [9.103, 9.33, 14.465], target: [-0.897, 1.98, 0.465], zoom: 1.7 } },   // phones: the desk, the bookcase and Tito by the rug; the window's and the tower's outer edges crop (a drag brings them in)
       work:     { position: [5.7, 8.83, 14.76],   target: [0.55, 2.05, -1.9],  zoom: 2.5, route: '/work',     label: 'work',     portrait: { zoom: 3.6 } },   // the CRT, the portrait monitor, the desk
       projects: { position: [5.43, 10.06, 14.55], target: [3, 0.75, -1.5],     zoom: 3.2, route: '/projects', label: 'projects', portrait: { zoom: 5.5 } },   // the tower (Stack)
       about:    { position: [1.78, 8.53, 14.84],  target: [-3.37, 1.75, -1.82], zoom: 2.1, route: '/about',   label: 'about',   portrait: { zoom: 4.3 } },   // the bookcase
@@ -1708,10 +1708,10 @@ function buildAfterHours() {
   box(0.015, 0.15, 0.012, -2.34, 3.626, -3.009, dark).rotation.z = -0.7;
   box(0.012, 0.21, 0.015, -2.477, 3.553, -3.0, dark).rotation.z = 1.83;
 
-  // Tito (frenchie), a black-and-white French bulldog, dozing on a floor cushion in the front-left corner: an overstuffed cloth pillow
+  // Tito (frenchie), a black-and-white French bulldog, dozing on a floor cushion by the rug, between the bookcase and the chair: an overstuffed cloth pillow
   // with rounded corners, a soft belly and a worn-in hollow
   const cushionMat = material(0x4b586e, { map: grain('#677184'), roughness: 1 });
-  const cushion = group(); cushion.position.set(-3.15, 0, 1.75); cushion.rotation.y = 0.12;
+  const cushion = group(); cushion.position.set(-2.4, 0, 0.1); cushion.rotation.y = 0.12;
   const cushionSegments = 32, cushionProfile = [[0.18, 0.028], [0.65, 0.028], [0.88, 0.045], [0.985, 0.105], [1, 0.15], [0.95, 0.23], [0.8, 0.295], [0.65, 0.208], [0.4, 0.18], [0.18, 0.178]];
   const cushionPoint = (angle, radius, height) => {   // a superellipse gives the pillow four soft corners instead of a round rim
     const c = Math.cos(angle), s = Math.sin(angle), irregularity = 1 + 0.018 * Math.sin(angle * 3 + 0.4) + 0.012 * Math.cos(angle * 5);
@@ -1731,7 +1731,7 @@ function buildAfterHours() {
   cushion.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: cushionSegments }, (_, i) => cushionPoint(i / cushionSegments * Math.PI * 2, 1.002, 0.15)), true), 96, 0.008, 5, true), material(0x35435a, { roughness: 1 })));
   const stitchMat = material(0x43536a, { roughness: 1 });
   for (let i = 0; i < 40; i++) { const angle = i / 40 * Math.PI * 2; cushion.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(cushionPoint(angle, 1.005, 0.158), cushionPoint(angle + 0.027, 1.005, 0.158)), 1, 0.0027, 3, false), stitchMat)); }
-  const dog = group('frenchie'); dog.position.set(-3.15, 0.19, 1.77); dog.rotation.y = 0.33; dog.scale.setScalar(0.7);
+  const dog = group('frenchie'); dog.position.set(-2.4, 0.19, 0.12); dog.rotation.y = 0.33; dog.scale.setScalar(0.7);
   const dogBody = group(null, dog), dogHead = group(null, dog);
   const furWhite = material(0x65798e), furBlack = material(0x171f2b), earInner = material(0x414957), piedFur = material(0xffffff, { vertexColors: true });
   const whiteCoat = new THREE.Color(0x65798e), blackCoat = new THREE.Color(0x171f2b);
@@ -1785,7 +1785,7 @@ function buildAfterHours() {
   const revealHide = [rainLines, noteInk, notePad, sparks];
   const floorDecal = (w, h, x, y, z, m) => { const p = plane(w, h, x, y, z, m); p.rotation.x = -Math.PI / 2; p.userData.ignoreHover = true; revealHide.push(p); return p; };
   const shadowTex = drawTex(128, 128, c => { const g = c.createRadialGradient(64, 64, 4, 64, 64, 62); g.addColorStop(0, 'rgba(0,0,0,0.42)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, 128, 128); });
-  for (const [w, h, x, z, opacity = 0.8] of [[3.4, 2.4, 0.15, -0.1, 0.65], [1.6, 1.3, -3.15, 1.75], [2.1, 1.7, 3, -1.7], [5.6, 2.6, 0.2, -1.6, 0.45]]) floorDecal(w, h, x, 0.025, z, basic(0x050912, { map: shadowTex, transparent: true, opacity, depthWrite: false }));
+  for (const [w, h, x, z, opacity = 0.8] of [[3.4, 2.4, 0.15, -0.1, 0.65], [1.6, 1.3, -2.4, 0.1], [2.1, 1.7, 3, -1.7], [5.6, 2.6, 0.2, -1.6, 0.45]]) floorDecal(w, h, x, 0.025, z, basic(0x050912, { map: shadowTex, transparent: true, opacity, depthWrite: false }));
   const glowTex = drawTex(128, 128, c => { const g = c.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, 'rgba(88,162,226,0.3)'); g.addColorStop(1, 'rgba(36,102,171,0)'); c.fillStyle = g; c.fillRect(0, 0, 128, 128); });
   floorDecal(3.2, 2.4, 0.1, 0.03, -0.97, basic(0x6596c5, { map: glowTex, transparent: true, opacity: 0.12, depthWrite: false, blending: THREE.AdditiveBlending }));
 
