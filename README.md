@@ -40,7 +40,7 @@ then: find the dog, find the note, access the root. The dog's label names the ke
 the recipe.
 
 **Setup** is root's. In the shell, `su` (or `sudo su`) and the key, `tito` (any case), make you root, which is the
-third secret; root then has `phosphor` (the accent strip) and `bios`, which powers the setup utility on through the
+third secret; root is shown one door at a time: the welcome says `phosphor` (the accent strip), and once that has run, `bios`, which powers the setup utility on through the
 CRT: a POST screen the first time, then tabs (Main, Experience, Stack, Certs, Studies, Shelf, Sound, Desk, Exit), an item
 pane with item-specific help, and a key legend. Keys work like the real thing: arrows, Enter opens a ▶ item, +/-
 changes a value (Phosphor and Rain are live settings of the room), Esc jumps to Exit, F9 loads defaults, F10 asks
