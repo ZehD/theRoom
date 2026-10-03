@@ -77,7 +77,7 @@ statically at `/room.md` (with `/llms.txt` pointing at it). `api/mcp.ts` serves 
 | Tool | What it does |
 |------|--------------|
 | `whoami` | returns `room.md`, plus which visitor number you are |
-| `visitors` | the visitor book: the last agents that connected, newest first (client and time; never message contents) |
+| `visitors` | the visitor book: the last agents that connected, newest first (client and time; never message contents), and how many humans walked into the page |
 | `leave_message` | leaves a private note on the desk: name, contact, message; three a day per visitor |
 
 and two resources, `theroom://room.md` and `theroom://visitors`. Install in Claude Code:
@@ -108,7 +108,17 @@ works, `visitors` says nobody is counting, `leave_message` says nothing was save
 **Upstash for Redis** from the Vercel Marketplace on the `theroom` project (Storage, Create database); it
 injects `KV_REST_API_URL` and `KV_REST_API_TOKEN` (or set `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
 by hand), then redeploy. Keys: `theroom:visits` (last 50), `theroom:visits:total`, `theroom:messages`
-(last 200, private; read them in the Upstash console), `theroom:rl:*` (rate limits).
+(last 200, private; read them in the Upstash console), `theroom:rl:*` (rate limits), `theroom:humans:total`,
+`theroom:humans:day:<UTC date>` and `theroom:humans:seen:*` (below).
+
+**Humans.** The book counts human visits too. When a human walks into the room (the gate's yes, or a link straight in),
+the page signs it with `POST /api/visitors`: once a UTC day per browser, never from an automated browser
+(`navigator.webdriver`), and the server counts one visit per address (an IPv6 address by its /64) per UTC day, at most 20 a
+day from one network block (an IPv4 /24, an IPv6 /48). A visit is an address-day, not a person: someone who comes back
+tomorrow counts again, an office behind one address counts once. All it keeps is the total, today's count and, for two
+days, a short unsalted hash of the address (and of its block), only to tell a reload from a new visit. The mug's
+`visitors.log`, the shell's `who`, the index and setup show the count above the agents; the `visitors` tool and the
+`theroom://visitors` resource report it too.
 
 Message forwarding is optional (the form and `leave_message` both use it), set any of them and redeploy:
 

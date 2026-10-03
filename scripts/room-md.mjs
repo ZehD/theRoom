@@ -59,7 +59,7 @@ export function renderRoom(list) {
   }
   out.push('## contact');
   out.push('');
-  out.push(`The mug on the desk says "let's talk". Over MCP, the \`leave_message\` tool leaves a note on the desk; Luiz reads them. The \`visitors\` tool lists the agents that came by before you. Connect at ${SITE}/mcp (Streamable HTTP, no auth):`);
+  out.push(`The mug on the desk says "let's talk". Over MCP, the \`leave_message\` tool leaves a note on the desk; Luiz reads them. The \`visitors\` tool lists the agents that came by before you, and counts the page's human visits. Connect at ${SITE}/mcp (Streamable HTTP, no auth):`);
   out.push('');
   out.push('```');
   out.push(`claude mcp add --transport http theroom ${SITE}/mcp`);

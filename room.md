@@ -255,7 +255,7 @@ Probably post-punk: Joy Division, New Order, The Cure. Or a modern indie band, l
 
 ## contact
 
-The mug on the desk says "let's talk". Over MCP, the `leave_message` tool leaves a note on the desk; Luiz reads them. The `visitors` tool lists the agents that came by before you. Connect at https://theroom-seven-theta.vercel.app/mcp (Streamable HTTP, no auth):
+The mug on the desk says "let's talk". Over MCP, the `leave_message` tool leaves a note on the desk; Luiz reads them. The `visitors` tool lists the agents that came by before you, and counts the page's human visits. Connect at https://theroom-seven-theta.vercel.app/mcp (Streamable HTTP, no auth):
 
 ```
 claude mcp add --transport http theroom https://theroom-seven-theta.vercel.app/mcp
