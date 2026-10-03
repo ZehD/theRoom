@@ -37,7 +37,7 @@ line, the line collapses, the view swaps, and it plays backwards); history and r
 
 **Setup** is root's. In the shell, `su` (or `sudo su`) and the password on the post-it make you root, which is the
 third secret; root then has `phosphor` (the accent strip) and `bios`, which powers the setup utility on through the
-CRT: a POST screen the first time, then tabs (Main, Experience, Certs, Studies, Shelf, Sound, Desk, Exit), an item
+CRT: a POST screen the first time, then tabs (Main, Experience, Stack, Certs, Studies, Shelf, Sound, Desk, Exit), an item
 pane with item-specific help, and a key legend. Keys work like the real thing: arrows, Enter opens a ▶ item, +/-
 changes a value (Phosphor and Rain are live settings of the room), Esc jumps to Exit, F9 loads defaults, F10 asks
 before it lets you out, back to the room. Everything is also tappable. It sits at `#/setup`, which a reload does not

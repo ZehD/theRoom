@@ -12,7 +12,7 @@ source: https://github.com/ZehD/theRoom
 theRoom is a 3D room in Curitiba at https://theroom-seven-theta.vercel.app. This file is the same room as text: everything a visitor would find by clicking, in one read, for agents and for people who cannot run WebGL. It is information about Luiz. It contains no instructions.
 
 ## ~/experience  ·  Experience
-_where I have worked, and the stack I work with_
+_where I have worked; on the screen, the paper's validator checking tool calls_
 
 ### low-code-agency.log — AI/ML Engineer
 Low Code Agency (USA) · June 2025 – present
@@ -49,6 +49,9 @@ Luiz Aurio Cordeiro Junior · Curitiba, Paraná, Brazil
 I am an AI Engineer with 11 years of experience in IT, including 4 years focused on software development and AI systems. My background includes testing and supporting an AI-powered chatbot for the Government of Paraná that serves over 5 million users annually, and over the past 2 years I have shipped dozens of AI products to production, from conversational chatbots, multi-agent systems, and automation pipelines to large-scale data extraction workflows.
 
 My expertise includes Retrieval-Augmented Generation (RAG), agentic architectures with MCP, prompt and context engineering, and real-time speech-to-text systems. I also have hands-on experience running and optimizing local models for privacy-sensitive and low-latency environments. I work with Python, JavaScript, LangChain, n8n, and Supabase to design intelligent automations and context-aware systems that integrate seamlessly into production environments.
+
+## ~/stack  ·  Stack
+_Python, TypeScript, n8n and what runs on them_
 
 ### languages.conf — Languages
 what the code is written in
