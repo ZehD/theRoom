@@ -1161,7 +1161,7 @@ const CONFIG = {
   // tween.near: a long near keeps the lens back where nothing stands in front, so the near plane doesn't slice the desk or the floor.
   // How each lights up on hover (group.userData.hover) and where its chip hangs are wired in buildAfterHours.
   inspectables: [
-    { id: 'monitor-left',  label: 'experience', cmd: 'experience', title: 'Experience', line: 'where I have worked, and the stack I work with', phase: 1, view: { dir: [-0.27, 0, 0.96], near: 3 },   // square on to the screen (the monitor turns -.28); nothing stands before it, so the lens stays back and the desk stays whole
+    { id: 'monitor-left',  label: 'experience', cmd: 'experience', title: 'Experience', line: 'where I have worked; on the screen, the paper\'s validator checking tool calls', phase: 1, view: { dir: [-0.27, 0, 0.96], near: 3 },   // square on to the screen (the monitor turns -.28); nothing stands before it, so the lens stays back and the desk stays whole
       explorer: { path: '~/experience', files: [
         { name: 'low-code-agency.log', title: 'AI/ML Engineer', meta: 'Low Code Agency (USA) · June 2025 – present', bullets: [
           'Create and integrate AI agents to perform dynamic, context-aware tasks across workflows.',
@@ -1186,15 +1186,17 @@ const CONFIG = {
           'Contributed to incident resolution and monitoring of the CORE orchestration service, which routes citizen messages across NLP, flow, and fallback search systems in real time.',
           'Supported integrations with WhatsApp as a citizen service channel, operating on a proprietary messaging infrastructure developed in-house to ensure data sovereignty and compliance with government data policies.'
         ] },
-        { name: 'summary.txt', title: 'Personal summary', meta: 'Luiz Aurio Cordeiro Junior · Curitiba, Paraná, Brazil', text: 'I am an AI Engineer with 11 years of experience in IT, including 4 years focused on software development and AI systems. My background includes testing and supporting an AI-powered chatbot for the Government of Paraná that serves over 5 million users annually, and over the past 2 years I have shipped dozens of AI products to production, from conversational chatbots, multi-agent systems, and automation pipelines to large-scale data extraction workflows.', text2: 'My expertise includes Retrieval-Augmented Generation (RAG), agentic architectures with MCP, prompt and context engineering, and real-time speech-to-text systems. I also have hands-on experience running and optimizing local models for privacy-sensitive and low-latency environments. I work with Python, JavaScript, LangChain, n8n, and Supabase to design intelligent automations and context-aware systems that integrate seamlessly into production environments.' },
+        { name: 'summary.txt', title: 'Personal summary', meta: 'Luiz Aurio Cordeiro Junior · Curitiba, Paraná, Brazil', text: 'I am an AI Engineer with 11 years of experience in IT, including 4 years focused on software development and AI systems. My background includes testing and supporting an AI-powered chatbot for the Government of Paraná that serves over 5 million users annually, and over the past 2 years I have shipped dozens of AI products to production, from conversational chatbots, multi-agent systems, and automation pipelines to large-scale data extraction workflows.', text2: 'My expertise includes Retrieval-Augmented Generation (RAG), agentic architectures with MCP, prompt and context engineering, and real-time speech-to-text systems. I also have hands-on experience running and optimizing local models for privacy-sensitive and low-latency environments. I work with Python, JavaScript, LangChain, n8n, and Supabase to design intelligent automations and context-aware systems that integrate seamlessly into production environments.' }
+      ] } },
+    { id: 'monitor-right', label: 'terminal', title: 'Terminal', line: 'a shell into the room: cd, ls, help', phase: 1, terminal: true },
+    { id: 'rack',          label: 'stack', title: 'Stack', line: 'Python, TypeScript, n8n and what runs on them', phase: 1, view: { dir: [0, 0, 1] },   // face on: the lens sits in front of the fans
+      explorer: { path: '~/stack', files: [
         { name: 'languages.conf', control: 'rack', title: 'Languages', meta: 'what the code is written in', bullets: ['Python', 'Java', 'SQL', 'JavaScript', 'TypeScript', 'C/C++'] },
         { name: 'frameworks.conf', control: 'rack', title: 'Frameworks and tools', meta: 'the working set', bullets: ['FastAPI', 'LangChain', 'LangGraph', 'n8n', 'CrewAI', 'PySpark', 'Git', 'Docker', 'Pandas', 'NumPy', 'Matplotlib'] },
         { name: 'ai-data.conf', control: 'rack', title: 'AI and data', meta: 'models, retrieval, agents', bullets: ['Machine Learning', 'Neural Networks', 'NLP', 'Tokenization', 'Vector Databases (Pinecone, Supabase pgvector)', 'RAG pipelines', 'Embedding generation', 'Prompt engineering', 'Claude Agent SDK'] },
         { name: 'cloud-db.conf', control: 'rack', title: 'Cloud and databases', meta: 'where it runs and what it stores', bullets: ['PostgreSQL', 'MySQL', 'Supabase', 'SQLAlchemy', 'Google Cloud Platform (GCP)', 'Amazon Web Services (AWS)'] },
         { name: 'process.conf', control: 'rack', title: 'Project and collaboration', meta: 'how the work gets shipped', bullets: ['Agile methodologies', 'Scrum', 'Kanban', 'JIRA', 'CI/CD workflows'] }
       ] } },
-    { id: 'monitor-right', label: 'terminal', title: 'Terminal', line: 'a shell into the room: cd, ls, help', phase: 1, terminal: true },
-    { id: 'rack',          label: 'stack', hint: true, opens: 'monitor-left', at: 'languages.conf', phase: 1, view: { dir: [0, 0, 1] } },   // the tower: the stack now lives in experience; a click glides here and opens it at the languages
     { id: 'cert-frame',    label: 'certifications', title: 'CCA-F', line: 'Claude Certified Architect (Foundations), IBM certs', phase: 1, view: { dir: [0, 0, 1] },   // small, on the back wall (faces +z)
       explorer: { path: '~/certifications', files: [
         { name: 'claude-certified-architect-foundations.pdf', title: 'Claude Certified Architect (Foundations)', meta: 'Anthropic', control: 'spin', spin: 'cert', items: [['Claude Certified Architect', 'Foundations · Anthropic']], text: 'Claude Certified Architect, Foundations level.' },
@@ -1302,40 +1304,51 @@ function canvasTex(c, repeat) {
 const pal = CONFIG.palette;
 const TEX = {};
 
-// The agent log the portrait monitor scrolls: one random trace line per push.
-const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
-const LOG = {
-  agent: [
-    () => `tool_call get_weather(city="Curitiba") ... ok ${ri(90, 240)} ms`,
-    () => `retrieval ${ri(2, 6)} docs ... ${ri(120, 320)} ms`,
-    () => `guardrail pii_scan ... pass`,
-    () => `tool_call query_sql(orders_7d) ... ok ${ri(40, 120)} ms`,
-    () => `llm claude ... ${ri(600, 1800)} tok ${ri(400, 900)} ms`,
-    () => `memory write session#${ri(0x100, 0xfff).toString(16)} ... ok`,
-    () => `tool_call send_whatsapp(+55 41) ... ok ${ri(200, 400)} ms`,
-    () => `eval faithfulness ${(0.88 + Math.random() * 0.11).toFixed(2)}`,
-    () => `handoff human_review ... queued`,
-    () => `retry 1/3 timeout ... ok ${ri(300, 700)} ms`
-  ]
-};
+// The portrait monitor runs the paper's prototype (TCC prototipo/validador.py, its output in English) on a loop: each tool call goes through the tool registry (L1), its JSON
+// Schema (L2) and the SHACL shapes over the knowledge graph (L3), and is executed or blocked, its reasons going back to the agent as
+// feedback (the first layer that fails says why). The eight scenarios and their verdicts are the prototype's own output: R50 is C7's active
+// reservation; R42 is another customer's, R99 does not exist, R51 is already cancelled, R60's cancellation deadline passed before the call. S2-S5 pass the baseline (L1 + L2) and only the graph
+// catches them, the semantic residue the research measures; with RDFS inference on, S3 loses its R1 (the open-world trap).
+const VALIDATOR = (() => {
+  const row = (k, v) => `  ${k} ${'.'.repeat(18 - k.length - v.length)} ${v}`;   // 22 columns; no line passes 24, a little under what the screen holds
+  const run = (head, call, args, [l1, l2, l3], why, verdict) => [head, `> ${call}`, `  ${args}`, row('L1 registry', l1), row('L2 schema', l2), row('L3 SHACL', l3), ...why.map(w => '  ' + w), verdict, ''];
+  const PASS = '  PASS -> would execute', BLOCK = n => `  BLOCK @L${n} -> feedback`;   // the prototype only checks; a block names the layer whose reasons go back
+  return [
+    '$ python validator.py', '',
+    ...run('S1 valid call', 'cancel_reservation', 'R50  customer C7', ['ok', 'ok', 'ok'], [], PASS),
+    ...run("S2 someone else's", 'cancel_reservation', 'R42  customer C7', ['ok', 'ok', 'FAIL'], ['R3 C7 not the holder'], BLOCK(3)),
+    ...run('S3 no such reservation', 'cancel_reservation', 'R99  customer C7', ['ok', 'ok', 'FAIL'], ['R1 R99 does not exist', 'R3 C7 not the holder'], BLOCK(3)),
+    ...run('S4 already cancelled', 'cancel_reservation', 'R51  customer C7', ['ok', 'ok', 'FAIL'], ['R4 R51 not active'], BLOCK(3)),
+    ...run('S5 deadline passed', 'cancel_reservation', 'R60  customer C7', ['ok', 'ok', 'FAIL'], ['R5 deadline expired'], BLOCK(3)),
+    ...run('S6 invented argument', 'cancel_reservation', 'R50 C7 +full_refund', ['ok', 'FAIL', 'FAIL'], ['extra arg full_refund', 'R0 undeclared arg'], BLOCK(2)),
+    ...run('S7 invented tool', 'refund_reservation', 'R50  customer C7', ['FAIL', 'n/a', 'n/a'], ['not in the registry'], BLOCK(1)),
+    ...run('S8 wrong type', 'cancel_reservation', '50  customer C7', ['ok', 'FAIL', 'FAIL'], ['50 is not a string', 'R1 R3 fail too'], BLOCK(2)),
+    'residue: S2 S3 S4 S5', '  pass L1 + L2,', '  only the graph sees', '',
+    'trap: rdfs inference on', '  S3 loses R1, keeps R3', '  -> inference stays off', ''
+  ];
+})();
+const toneOf = l => /FAIL$|BLOCK/.test(l) ? 'ember' : /PASS/.test(l) ? 'phosphorBloom' : null;   // a fail reads red, a pass bright, the rest phosphor
 // a screen's hover lift (lit 0..1): the CRT (MeshBasic) scales its stored base tint; the portrait screen, lit by its own emissive map, scales that
 function screenColor(m, lit) { const k = 1 + CONFIG.hover.screenBoost * lit; if (m.userData.base) m.color.copy(m.userData.base).multiplyScalar(k); else m.emissiveIntensity = m.userData.emissive * k; }
 // word wrap to `cols` characters (a word longer than a row runs off the edge)
 function wrapCols(s, cols) { const out = []; let line = ''; for (const w of String(s).split(' ')) { if (line && (line + ' ' + w).length > cols) { out.push(line); line = w; } else line = line ? line + ' ' + w : w; } out.push(line); return out; }
-// Screen textures. Two kinds: a log feed (gen = line generators; animate() pushes one every log.interval) and a shell
+// Screen textures. Two kinds: a log feed (gen = line generators, or script = lines played in order on a loop; animate() pushes one every
+// log.interval; tone(line) may name a palette colour for it) and a shell
 // (shell = SHELL: the transcript plus the line being typed, drawn under a prompt with a block cursor). scale multiplies the
 // w×h base grid (256×160 unless given); a scaled texture gets mipmaps so it reads calmly from across the room and crisp up close.
 // A narrow feed keeps `rows` lines and wraps each at `wrap` columns. bg = the glass (ink unless given); scan = faint scanlines every 3 px.
 class Terminal {
   constructor(gen, opts = {}) {
     const S = this.S = opts.scale || 1; this.W = opts.w || 256; this.H = opts.h || 160; this.rows = opts.rows || 10; this.wrap = opts.wrap || 0; this.bg = opts.bg; this.scan = !!opts.scan;
+    this.script = opts.script || null; this.at = opts.start || 0; this.tone = opts.tone || null;
     [this.c, this.x] = cnv(this.W * S, this.H * S); this.tex = canvasTex(this.c); this.gen = gen; this.cursor = true; this.stamp = opts.stamp !== false;
     this.shell = opts.shell || null; this.lines = this.shell ? this.shell.lines : [];
     if (S > 1) { this.tex.generateMipmaps = true; this.tex.minFilter = THREE.LinearMipmapLinearFilter; }
-    if (this.gen) while (this.lines.length < this.rows) this.push();
+    if (this.gen || this.script) while (this.lines.length < this.rows) this.push();
     this.draw();
   }
   push() {
+    if (this.script) { this.lines.push(this.script[this.at++ % this.script.length]); while (this.lines.length > this.rows) this.lines.shift(); return; }   // a script is set to the screen's width already (wrapping would eat its indents)
     if (!this.gen) return; const g = this.gen[Math.floor(Math.random() * this.gen.length)], l = this.stamp ? stamp() + ' ' + g() : g();
     this.lines.push(...(this.wrap ? wrapCols(l, this.wrap) : [l])); while (this.lines.length > this.rows) this.lines.shift();
   }
@@ -1343,7 +1356,12 @@ class Terminal {
     const x = this.x, F = this.shell ? (CONFIG.terminal.font || 1) : 1, S = this.S * F, lh = 14 * S, n = this.lines.length, T = CONFIG.terminal, sh = this.shell, pw = sh?.mode === 'password';   // F: larger shell glyphs on touch screens
     x.fillStyle = this.bg || ROOM_PAL.ink; x.fillRect(0, 0, this.W * S, this.H * S);
     x.font = (14 * S) + 'px VT323, monospace'; x.textBaseline = 'top';
-    this.lines.forEach((l, i) => { const dim = sh ? [T.prompt, T.rootPrompt, T.sudoPrompt].some(p => l.startsWith(p)) : i < n - 4; x.fillStyle = dim ? ROOM_PAL.phosphorDim : ROOM_PAL.phosphor; x.fillText(l, 5 * S, 4 * S + i * lh); });
+    this.lines.forEach((l, i) => {
+      const dim = sh ? [T.prompt, T.rootPrompt, T.sudoPrompt].some(p => l.startsWith(p)) : i < n - 4, tone = !sh && this.tone?.(l);
+      x.fillStyle = tone ? ROOM_PAL[tone] : dim ? ROOM_PAL.phosphorDim : ROOM_PAL.phosphor; x.globalAlpha = tone && dim ? 0.6 : 1;   // a toned line keeps its colour as it scrolls up, quieter
+      x.fillText(l, 5 * S, 4 * S + i * lh);
+    });
+    x.globalAlpha = 1;
     let cx = 5 * S; const cy = 4 * S + n * lh, at = sh && !pw ? Math.min(sh.caret ?? sh.input.length, sh.input.length) : 0;
     if (sh) {   // the live line: dim prompt (ember for root), bright input (hidden while sudo asks for a password), then the cursor at the caret
       const P = pw ? T.sudoPrompt : sh.root ? T.rootPrompt : T.prompt;
@@ -1361,7 +1379,8 @@ class Terminal {
 
 function buildTextures() {
   // the room's two screens: navy glass with faint scanlines, the After Hours look, in the chrome's phosphor
-  TEX.termL = new Terminal(LOG.agent, { w: 160, h: 228, rows: 15, wrap: 24, scale: 2, bg: '#0e2438', scan: true });   // the portrait screen: the agent log, wrapped to its narrow column
+  // the portrait screen: the paper's validator at work, in its narrow column. Held still (reduced motion), it shows S1 passing and S2 blocked
+  TEX.termL = new Terminal(null, { script: VALIDATOR, start: MOTION ? 0 : VALIDATOR.indexOf("S2 someone else's") - 3, tone: toneOf, stamp: false, w: 160, h: 228, rows: 15, scale: 2, bg: '#0e2438', scan: true });
   TEX.termR = new Terminal(null, { scale: CONFIG.terminal.scale * (devicePixelRatio >= 1.5 ? 2 : 1), shell: SHELL, bg: '#122940', scan: true });   // the shell; its transcript lives in SHELL and survives a rebuild. Dense screens get a sharper texture
   // post-it: the root recipe in the owner's hand, a pen (Caveat), dark ink on warm paper, every line a little crooked and the KEY
   // underlined twice. Drawn twice: paper + ink, and ink alone (the hover glow layer). 256 px, smooth-filtered with mipmaps: a hand, not pixels
@@ -1469,7 +1488,7 @@ function buildAfterHours() {
   label('SONY', 0.16, 0.05, -0.59, 0.308, 0.242, '#93a2ab', '#283340', crt);
   for (let i = 0; i < 8; i++) box(0.016, 0.29, 0.006, 0.89, 0.76, -0.27 + i * 0.041, black, crt).rotation.y = Math.PI / 2;
   const monitorLight = light(0x74baff, 3.8, 4.5, 0.15, 2.32, -1.46);
-  // the portrait monitor (monitor-left, by id) shows the agent log. After Hours drew a loss curve here from 42 values of the
+  // the portrait monitor (monitor-left, by id) runs the paper's validator (VALIDATOR). After Hours drew a loss curve here from 42 values of the
   // stream; they are burnt so everything after still lands where it did
   for (let i = 0; i < 42; i++) rnd();
   const second = group('monitor-left'); second.position.set(1.59, 1.54, -2.16); second.rotation.y = -0.28;
@@ -2076,7 +2095,7 @@ let grid;
 const clock = { last: performance.now(), elapsedTime: 0, getDelta() { const now = performance.now(), dt = (now - this.last) / 1000; this.last = now; this.elapsedTime += dt; return dt; } };
 let ledAt = 0, logAt = 0, cursorAt = 0, fpsFrames = 0, fpsAt = 0, fps = 0, loaded = false, frameNo = 0;
 
-// the After Hours motion, plus the screens: the agent log scrolls, both cursors blink. Reduced motion never calls it (build() draws the cursors solid)
+// the After Hours motion, plus the screens: the validator's run scrolls, both cursors blink. Reduced motion never calls it (build() draws the cursors solid)
 function animate(t, dt) {
   const M = CONFIG.motion, R = ROOM;
   if (t - logAt > M.log.interval / 1000) { logAt = t; TEX.termL.push(); TEX.termL.draw(); }
@@ -2779,7 +2798,6 @@ let hintFocus = null;   // the hint-only object (the dog, the note) the camera g
 function focusObject(insp) {
   if (insp.secret) foundSecret(insp.secret);
   if (insp.terminal) return enterTerminal();
-  if (insp.opens) return inspect(CONFIG.inspectables.find(i => i.id === insp.opens), { via: insp, at: insp.at });   // the tower: framed itself, the window is experience's
   if (insp.explorer) return inspect(insp);
   const view = viewFor(insp); if (view) { hintFocus = insp; tweenCamera(view); }
 }
@@ -3318,7 +3336,7 @@ const MACHINE = [
   ['visitors', SITE_URL + '/api/visitors', 'the visitor book as JSON'],
   ['source', 'https://github.com/ZehD/theRoom', 'this page, the functions, the generator']
 ];
-const SECTION_KEY = { 'monitor-left': 'experience', 'cert-frame': 'certifications', whiteboard: 'studies', shelf: 'shelf', speakers: 'sound' };
+const SECTION_KEY = { 'monitor-left': 'experience', rack: 'stack', 'cert-frame': 'certifications', whiteboard: 'studies', shelf: 'shelf', speakers: 'sound' };
 const roomSections = () => CONFIG.inspectables.filter(i => i.explorer && !i.hint && !i.terminal && SECTION_KEY[i.id]).map(i => ({ key: SECTION_KEY[i.id], title: i.title, line: i.line, path: i.explorer.path, files: i.explorer.files }));
 const secretsCount = () => { const f = secretsFound(); return SECRETS.filter(k => f.has(k)).length; };
 const agentOfUrl = () => /^#\/agent(?:\/index)?\/?$/.test(location.hash) ? 'index' : null;   // the index; setup has no URL to come back to
@@ -3502,6 +3520,7 @@ function biosTabs() {
       { label: 'Machine Endpoints', sub: () => ({ title: 'For agents and crawlers', lines: MACHINE.flatMap(([k, v, d]) => [`${k.toUpperCase().padEnd(10)} ${v}`, `${''.padEnd(10)} ${d}`, '']) }), help: 'The room as text: room.md, llms.txt, the MCP server and how to install it.' }
     ] },
     { name: 'Experience', help: ex.line + '.', items: fileItems(ex.files.filter(f => f.name !== 'summary.txt')) },
+    { name: 'Stack', help: by('stack').line + '.', items: fileItems(by('stack').files) },
     { name: 'Certs', help: by('certifications').line + '.', items: fileItems(by('certifications').files) },
     { name: 'Studies', help: by('studies').line + '.', items: [{ label: 'Paper', value: 'in progress', help: by('studies').title + '.' }, ...fileItems(by('studies').files)] },
     { name: 'Shelf', help: by('shelf').line + '.', items: fileItems(by('shelf').files) },
@@ -3602,7 +3621,7 @@ function runPost() {
     'Memory Test : 5000000 citizens served ........ OK', '',
     'Detecting devices ...',
     '  CRT .............. shell, luiz@theroom',
-    '  Side monitor ..... agent log, live',
+    '  Side monitor ..... validator, looping',
     '  Tower ............ 2 fans, link OK',
     '  Wall ............. 1 paper pinned, in progress',
     '  Shelf ............ books, boxes, one squad of grey plastic',
