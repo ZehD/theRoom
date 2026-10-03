@@ -35,7 +35,11 @@ rules, the whole room in one scroll, the visitor book and the machine endpoints 
 clipboard). A switch made by hand goes through a CRT power-off and power-on (two black panels close to a phosphor
 line, the line collapses, the view swaps, and it plays backwards); history and reload go straight to the view.
 
-**Setup** is root's. In the shell, `su` (or `sudo su`) and the password on the post-it make you root, which is the
+**Secrets.** Three, counted beside the logo; hovering the count (a tap on glass) lists each one found, or its clue until
+then: find the dog, find the note, access the root. The dog's label names the key (`tito`), the post-it on the wall has
+the recipe.
+
+**Setup** is root's. In the shell, `su` (or `sudo su`) and the key, `tito` (any case), make you root, which is the
 third secret; root then has `phosphor` (the accent strip) and `bios`, which powers the setup utility on through the
 CRT: a POST screen the first time, then tabs (Main, Experience, Stack, Certs, Studies, Shelf, Sound, Desk, Exit), an item
 pane with item-specific help, and a key legend. Keys work like the real thing: arrows, Enter opens a ▶ item, +/-

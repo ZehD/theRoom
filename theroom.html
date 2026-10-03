@@ -271,12 +271,12 @@
   #top .tally.all .count { opacity: 1; color: var(--phosphor-bloom); text-shadow: 0 0 8px var(--phosphor-bloom); }
   #top .tally:hover .count, #top .tally.open .count { opacity: 1; }
   #top .tally .found { display: none; position: absolute; left: 50%; transform: translateX(-50%); top: 100%; margin: 1px 0 0; padding: 10px 16px 12px; list-style: none; background: var(--soil); border: 1px solid var(--moss); border-top: 0; font: 11px/1.8 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: 0.02em; white-space: nowrap; }
-  #top .tally .found::before { content: "found so far"; display: block; margin-bottom: 4px; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--phosphor-dim); }
+  #top .tally .found::before { content: "secrets"; display: block; margin-bottom: 4px; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--phosphor-dim); }
   #top .tally .found li { display: grid; grid-template-columns: 1.5ch auto; gap: 8px; }
   #top .tally .found li i { font-style: normal; color: var(--phosphor-dim); }
   #top .tally .found li.yes { color: var(--phosphor-bloom); }
   #top .tally .found li.yes i { color: var(--phosphor); }
-  #top .tally .found li.no { color: var(--phosphor-dim); }
+  #top .tally .found li.no { color: var(--phosphor); opacity: 0.85; white-space: nowrap; }   /* not found yet: the clue, readable */
   #top .tally.open .found { display: block; }
   @media (hover: hover) and (pointer: fine) { #top .tally:hover .found, #top .tally:focus-within .found { display: block; } }
   @keyframes cur-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
@@ -1161,7 +1161,7 @@ const CONFIG = {
   // types into it. scale multiplies the 256×160 screen texture; cols/rows = its text grid; maxInput = typed chars on the prompt line.
   // fillPortrait = fill on tall frames; keyboard = the frame fraction a phone keyboard is assumed to leave visible until the browser reports it;
   // touch = overrides on coarse-pointer devices: fewer, larger characters on the shell screen (font multiplies the glyph size)
-  terminal: { fill: 0.78, fillPortrait: 0.92, keyboard: 0.55, touch: { cols: 30, rows: 7, maxInput: 14, font: 1.35 }, prompt: 'luiz@theroom:~$ ', rootPrompt: 'root@theroom:~# ', sudoPrompt: '[sudo] password for luiz: ', password: 'Tito', scale: 1.5, cols: 42, rows: 9, maxInput: 24 },
+  terminal: { fill: 0.78, fillPortrait: 0.92, keyboard: 0.55, touch: { cols: 30, rows: 7, maxInput: 14, font: 1.35 }, prompt: 'luiz@theroom:~$ ', rootPrompt: 'root@theroom:~# ', sudoPrompt: '[sudo] password for luiz: ', password: 'tito', scale: 1.5, cols: 42, rows: 9, maxInput: 24 },
   // Inspectables: id = object group name, label = hover chip and menu word, cmd = the shell's name for it (defaults to the label).
   // view.dir = the side a click looks at it from (world axes; the glide frames it square along that line). fill and near override tween.inspectFill and
   // tween.near: a long near keeps the lens back where nothing stands in front, so the near plane doesn't slice the desk or the floor.
@@ -1238,7 +1238,7 @@ const CONFIG = {
         { name: 'keyboard', title: 'Keyboard', meta: 'the click of the room\'s keys', text: 'The keyboard that comes up whenever the room takes typing clicks like a mechanical one. Turn it off or down here; the speaker on its case mutes it too.', control: 'keys' },   // a setting, not content: out of the index, the setup's file list and room.md
         { name: 'playing.txt', title: 'On the speakers', meta: 'post-punk, mostly', text: 'Probably post-punk: Joy Division, New Order, The Cure. Or a modern indie band, like Interpol or Arctic Monkeys.' }
       ] } },
-    { id: 'frenchie',      label: "this is Tito, he's the key", hoverLabel: 'a dog', hint: true, phase: 1, secret: 'dog', view: { dir: [0.45, 0.5, 0.75], near: 2 } },   // no menu word, no shell place; the chip is the clue to the sudo password. Hovered (or tapped once) he is only "a dog"; a click, or the second tap, earns his name, which holds while the camera is up close
+    { id: 'frenchie',      label: "this is tito, he's the key", hoverLabel: 'a dog', hint: true, phase: 1, secret: 'dog', view: { dir: [0.45, 0.5, 0.75], near: 2 } },   // no menu word, no shell place; the chip is the clue to the sudo password. Hovered (or tapped once) he is only "a dog"; a click, or the second tap, earns his name, which holds while the camera is up close
     { id: 'robot',         label: 'in construction', hint: true, phase: 1, view: { dir: [0, 0, 1] } },   // the unfinished robot on the floating shelf: hovered it lights and the sparks fly; a click glides close. No menu word, no shell place
     { id: 'post-it',       label: 'a post-it', hint: true, phase: 1, secret: 'note', view: { dir: [0, 0, 1] } }   // hover only; a click glides close enough to read it
   ],
@@ -2612,7 +2612,7 @@ function shellGo(name) {   // an object by its shell name, id or any word of its
   if (ZONES[name]) { goZone(name); return true; }
   return false;
 }
-// the usual unix reflexes get an answer from the room; `sudo su` (password Tito, the dog) turns the prompt red
+// the usual unix reflexes get an answer from the room; `sudo su` (password tito, the dog, in any case) turns the prompt red
 const REFLEX = {
   pwd: () => '/home/luiz/theroom  (the real one is in Curitiba)',
   cat: () => 'cat: no cats here. the dog is asleep on his cushion.',
@@ -2625,7 +2625,7 @@ function shellRun(raw) {
   const T = CONFIG.terminal;
   if (SHELL.mode === 'password') {   // the typed line was a password: never echoed
     SHELL.mode = null; shellPrint(T.sudoPrompt);
-    if (raw === T.password) { SHELL.root = true; SHELL.tries = 0; shellPrint('welcome, root. Tito is still asleep on his cushion. try: bios, phosphor'); foundSecret('root'); }
+    if (raw.trim().toLowerCase() === T.password) { SHELL.root = true; SHELL.tries = 0; shellPrint('welcome, root. Tito is still asleep on his cushion. try: bios, phosphor'); foundSecret('root'); }   // tito, Tito or TITO: the dog answers to all of them
     else if (++SHELL.tries >= 3) { SHELL.tries = 0; shellPrint('sudo: 3 incorrect password attempts'); }
     else { shellPrint('Sorry, try again.'); SHELL.mode = 'password'; }
     return;
@@ -2861,17 +2861,18 @@ navEl.addEventListener('click', e => {
   if (TERM.open) return terminalTo(insp);
   focusObject(insp);
 });
-// secrets: the note, the dog, and root. A click on either object or a root login toasts the tally; unique finds survive a reload.
-const SECRETS = ['note', 'dog', 'root'], toastEl = document.getElementById('toast'); let toastTimer = 0;
+// secrets: the dog, the note, and root. A click on either object or a root login toasts the tally; unique finds survive a reload.
+const SECRETS = ['dog', 'note', 'root'], toastEl = document.getElementById('toast'); let toastTimer = 0;
 function toast(text) { toastEl.textContent = text; toastEl.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('on'), 2600); }
 const tallyEl = document.getElementById('tally'), tallyBtn = tallyEl.querySelector('.count'), tallyList = tallyEl.querySelector('.found');
-const SECRET_NAMES = { note: 'the post-it', dog: 'Tito, the key', root: 'root' };   // how a found secret is named in the list; the rest stay ???
+const SECRET_NAMES = { dog: 'tito, the key', note: 'the post-it', root: 'root' };   // how a found secret is named in the list
+const SECRET_HINTS = { dog: 'find the dog', note: 'find the note', root: 'access the root' };   // and the clue it shows until then
 function secretsFound() { try { return new Set(JSON.parse(localStorage.getItem('theroom.secrets') || '[]')); } catch { return new Set(); } }
 // the tally beside the logo: "n/3 secrets found" (phones drop the word) and, under it, the list; set on load from the saved finds, refreshed on each new one
 function updateTally(found = secretsFound()) {
   const n = SECRETS.filter(k => found.has(k)).length;
   tallyBtn.innerHTML = `<b>${n}</b>/${SECRETS.length} secrets<i> found</i>`; tallyEl.classList.toggle('all', n === SECRETS.length);
-  tallyList.innerHTML = SECRETS.map(k => found.has(k) ? `<li class="yes"><i>&#10003;</i>${SECRET_NAMES[k]}</li>` : `<li class="no"><i>&middot;</i>???</li>`).join('');
+  tallyList.innerHTML = SECRETS.map(k => found.has(k) ? `<li class="yes"><i>&#10003;</i>${SECRET_NAMES[k]}</li>` : `<li class="no"><i>&middot;</i>${SECRET_HINTS[k]}</li>`).join('');
 }
 updateTally();
 // on glass there is no hover: a tap on the count drops the list, a tap anywhere else (or Escape) folds it. Mice get it on hover from the CSS.
