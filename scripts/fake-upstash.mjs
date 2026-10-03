@@ -22,7 +22,9 @@ function run(cmd) {
       if (up.includes('NX') && live(k)) return null;
       const ex = up.indexOf('EX'); store.set(k, { v, exp: ex >= 0 ? Date.now() + Number(opts[ex + 1]) * 1000 : undefined }); return 'OK';
     }
-    case 'INCR': { const e = live(a[0]); const n = (Number(e?.v) || 0) + 1; store.set(a[0], { v: String(n) }); return n; }
+    case 'INCR': { const e = live(a[0]); const n = (Number(e?.v) || 0) + 1; store.set(a[0], { v: String(n), exp: e?.exp }); return n; }
+    case 'MGET': return a.map(k => { const e = live(k); return e && !Array.isArray(e.v) ? e.v : null; });
+    case 'EXPIRE': { const e = live(a[0]); if (!e) return 0; e.exp = Date.now() + Number(a[1]) * 1000; return 1; }
     case 'LPUSH': { const e = live(a[0]) ?? { v: [] }; e.v = [...a.slice(1).reverse(), ...e.v]; store.set(a[0], e); return e.v.length; }
     case 'LTRIM': { const e = live(a[0]); if (e) e.v = e.v.slice(Number(a[1]), Number(a[2]) + 1); return 'OK'; }
     case 'LRANGE': { const e = live(a[0]); if (!e) return []; const stop = Number(a[2]); return e.v.slice(Number(a[1]), stop < 0 ? undefined : stop + 1); }
@@ -33,14 +35,17 @@ function run(cmd) {
     default: throw new Error(`ERR unknown command '${name}'`);
   }
 }
-const answer = cmd => { try { return { result: run(cmd) }; } catch (e) { return { error: e.message }; } };
+// Like Upstash, strings come back base64-encoded when the client asks (Upstash-Encoding: base64, the @upstash/redis default), "OK" excepted;
+// numbers and nulls as they are. Without this, a multi-digit count decodes to garbage on the client.
+const b64 = v => typeof v === 'string' ? (v === 'OK' ? v : Buffer.from(v, 'utf8').toString('base64')) : Array.isArray(v) ? v.map(b64) : v;
+const answer = (cmd, enc) => { try { const result = run(cmd); return { result: enc ? b64(result) : result }; } catch (e) { return { error: e.message }; } };
 
 createServer(async (req, res) => {
   let body = ''; for await (const c of req) body += c;
   let out;
   try {
-    const parsed = JSON.parse(body || '[]');
-    out = req.url.startsWith('/pipeline') ? parsed.map(answer) : req.url.startsWith('/multi-exec') ? parsed.map(answer) : answer(parsed);
+    const parsed = JSON.parse(body || '[]'), enc = String(req.headers['upstash-encoding'] || '').toLowerCase() === 'base64';
+    out = req.url.startsWith('/pipeline') || req.url.startsWith('/multi-exec') ? parsed.map(c => answer(c, enc)) : answer(parsed, enc);
   } catch (e) { out = { error: 'ERR bad request: ' + e.message }; }
   res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(out));
 }).listen(Number(process.env.PORT) || 3199, '127.0.0.1', () => console.log(`fake upstash at http://127.0.0.1:${Number(process.env.PORT) || 3199}`));

@@ -1230,7 +1230,7 @@ const CONFIG = {
     { id: 'mug',           label: "let's talk", cmd: 'talk', title: "Let's talk", line: 'leave a message on the desk, and see who came by', phase: 1, view: { dir: [0.3, 0.45, 1], fill: 0.3, near: 3 },   // the desk corner: the mug and the notebook
       explorer: { path: '~/desk', files: [
         { name: 'leave-a-message', title: 'Leave a message', meta: 'straight to Luiz, never public', control: 'note' },   // a form (noteHtml); the room's keyboard types into it
-        { name: 'visitors.log', title: 'Who came by', meta: 'agents that connected to the room over MCP, newest first', control: 'visitors', bullets: ['asking the desk...'] },
+        { name: 'visitors.log', title: 'Who came by', meta: 'human visits to the room, and the agents that connected over MCP, newest first', control: 'visitors', bullets: ['asking the desk...'] },
         { name: 'mcp.txt', title: 'The room, for agents', meta: 'one URL, no auth, nothing to click', text: 'The whole room is one document over MCP: an agent calls whoami and gets the desk, the tower, the wall and the shelf in one read. It can leave a note too (leave_message: who is asking, how to answer, what about) and see who came by before it (visitors).', bullets: ['https://theroom-seven-theta.vercel.app/mcp', 'claude mcp add --transport http theroom https://theroom-seven-theta.vercel.app/mcp', 'claude.ai: Settings, Connectors, Add custom connector, paste the URL', 'the same room as plain text: /room.md'] }
       ] } },
     { id: 'speakers',      label: 'sound', title: 'Speakers', line: 'rain on the window, music on the speakers', phase: 1, view: { dir: [0, 0.3, 1], near: 3 },   // the pair on the desk, framed from the front
@@ -2335,14 +2335,30 @@ function rackHtml(f) {
 // the visitor book: the last agents that connected over MCP, from the desk's own function. Kept a short while so the arrow keys and `who` do not re-ask.
 const MCP_URL = 'https://theroom-seven-theta.vercel.app/mcp';
 const API = { visitors: '/api/visitors', message: '/api/message' };
-const VISITORS = { at: 0, data: null };
+const VISITORS = { at: 0, data: null, mine: null };   // mine: the count this visit's own signature came back with
 function fetchVisitors() {
   if (VISITORS.data && performance.now() - VISITORS.at < 30000) return Promise.resolve(VISITORS.data);
-  return fetch(API.visitors).then(r => r.ok ? r.json() : Promise.reject(r.status)).then(d => { VISITORS.data = d; VISITORS.at = performance.now(); return d; });
+  return fetch(API.visitors).then(r => r.ok ? r.json() : Promise.reject(r.status)).then(d => {
+    if (VISITORS.mine && (d.humans?.total ?? -1) < VISITORS.mine.total) d.humans = VISITORS.mine;   // an edge-cached book from before this visit: show the count that has it
+    VISITORS.data = d; VISITORS.at = performance.now(); return d;
+  });
 }
+// the book: the humans who walked in (one per address a day), then the agents and the latest of them
+const humansLine = h => h ? `${h.total} human ${h.total === 1 ? 'visit' : 'visits'}${h.today ? `, ${h.today} today` : ''}.` : null;   // a visit: one address, one UTC day
 const visitorLines = d => !d.open ? ['the visitor book is not open yet. nobody is counting.']
-  : !d.visits.length ? ['nobody yet. the book is open; be the first (type mcp).']
-  : [`${d.total} ${d.total === 1 ? 'agent has' : 'agents have'} come by. the latest:`].concat(d.visits.map(v => `${String(v.t).replace('T', ' ').slice(0, 16)}  ${v.client}  ·  ${v.tool}`));
+  : [humansLine(d.humans)].filter(Boolean).concat(!d.visits.length ? ['no agents yet. the book is open; be the first (type mcp).']
+  : [`${d.total} ${d.total === 1 ? 'agent has' : 'agents have'} come by. the latest:`].concat(d.visits.map(v => `${String(v.t).replace('T', ' ').slice(0, 16)}  ${v.client}  ·  ${v.tool}`)));
+// a human walked in: sign the book, once a day per browser (the server counts once a day per address). An automated browser does not count
+function signBook() {
+  if (navigator.webdriver) return;
+  const day = new Date().toISOString().slice(0, 10);
+  try { if (localStorage.getItem('theroom.visit') === day) return; } catch {}
+  fetch(API.visitors, { method: 'POST', keepalive: true }).then(r => r.ok ? r.json() : null).then(d => {
+    if (!d?.ok) return;
+    try { localStorage.setItem('theroom.visit', day); } catch {}
+    VISITORS.mine = d.humans; if (VISITORS.data) VISITORS.data.humans = d.humans;   // the book on screen counts this visit at once
+  }).catch(() => {});
+}
 function loadVisitors(ul) {
   if (!ul) return;
   fetchVisitors().then(d => { if (ul.isConnected) ul.innerHTML = visitorLines(d).map(l => `<li>${esc(l)}</li>`).join(''); })
@@ -3321,6 +3337,7 @@ matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', e =>
 let revealStarted = false;
 function startReveal() {
   if (revealStarted) return; revealStarted = true;
+  signBook();   // the first human frame of this visit: someone walked in
   opening = createOpening(() => {
     loaded = true; renderer.shadowMap.needsUpdate = true;   // until now the shadows were cast by the empty room
     setTimeout(showIntro, CONFIG.intro.delay);

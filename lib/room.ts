@@ -112,7 +112,7 @@ const v6block = (ip: string): string => {
   return [...a, ...Array(Math.max(0, 8 - a.length - b.length)).fill('0'), ...b].slice(0, 4).join(':') + '::/64';
 };
 export function webCaller(req: Request): Caller {
-  const raw = ipOf(req), ip = raw.includes(':') ? v6block(raw.toLowerCase()) : raw;
+  const plain = ipOf(req).replace(/^::ffff:(?=\d+\.\d+\.\d+\.\d+$)/i, ''), ip = plain.includes(':') ? v6block(plain.toLowerCase()) : plain;   // an IPv4-mapped address is its IPv4
   return { ip, clientName: 'web form', clientVersion: '', label: 'the page', identity: hash(`web|${ip}`) };
 }
 
@@ -176,6 +176,37 @@ export async function listVisits(n = 20): Promise<{ total: number; visits: Visit
   return { total: bookMemo.book.total, visits: bookMemo.book.visits.slice(0, Math.max(1, n)) };
 }
 export const forgetBook = () => { bookMemo = null; };
+
+// ── the humans ───────────────────────────────────────────────────────────────────────────────────
+// People who walked into the room: the page signs the book when a human enters (the gate's yes, or a link straight in). One visit per
+// address per UTC day; all that is kept is the count, today's count and, for two days, a hash of the address so a reload is not a visit.
+// A network block (an IPv4 /24, an IPv6 /48) counts at most BLOCK_DAY visits a day, so a script with a routed block cannot pour in.
+const HUMANS = { total: 'theroom:humans:total', day: 'theroom:humans:day', seen: 'theroom:humans:seen', block: 'theroom:humans:block' };
+const BLOCK_DAY = 20, TWO_DAYS = 172_800;
+const utcDay = () => new Date().toISOString().slice(0, 10);
+const blockOf = (ip: string) => ip.includes(':') ? ip.split(':').slice(0, 3).join(':') : ip.split('.').slice(0, 3).join('.');   // webCaller's ip: a v6 /64 or a v4
+export type Humans = { total: number; today: number };
+let humansMemo: { at: number; day: string; humans: Humans } | null = null;   // like the book: ten seconds per instance, so busted reads cost nothing
+export async function recordHuman(caller: Caller): Promise<Humans | null> {
+  const r = redis(); if (!r) return null;
+  const day = utcDay(), dayKey = `${HUMANS.day}:${day}`;
+  const fresh = (await r.set(`${HUMANS.seen}:${hash(caller.ip)}:${day}`, '1', { nx: true, ex: TWO_DAYS })) === 'OK';
+  if (!fresh) return countHumans();
+  const blockKey = `${HUMANS.block}:${hash(blockOf(caller.ip))}:${day}`;
+  const [inBlock] = await r.pipeline().incr(blockKey).expire(blockKey, TWO_DAYS).exec<[number, number]>();
+  if (Number(inBlock) > BLOCK_DAY) return countHumans();
+  const [total, today] = await r.pipeline().incr(HUMANS.total).incr(dayKey).expire(dayKey, TWO_DAYS).exec<[number, number, number]>();
+  humansMemo = { at: Date.now(), day, humans: { total: Number(total) || 0, today: Number(today) || 0 } };
+  return humansMemo.humans;
+}
+export async function countHumans(): Promise<Humans | null> {
+  const r = redis(); if (!r) return null;
+  const day = utcDay();
+  if (humansMemo && humansMemo.day === day && Date.now() - humansMemo.at < 10_000) return humansMemo.humans;
+  const [total, today] = await r.mget<(string | null)[]>(HUMANS.total, `${HUMANS.day}:${day}`);
+  humansMemo = { at: Date.now(), day, humans: { total: Number(total) || 0, today: Number(today) || 0 } };
+  return humansMemo.humans;
+}
 export const when = (iso: string) => iso.replace('T', ' ').slice(0, 16) + ' UTC';
 
 // ── the message tray ─────────────────────────────────────────────────────────────────────────────
