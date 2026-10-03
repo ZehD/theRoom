@@ -2591,7 +2591,7 @@ function inspect(insp, { via = null, at = null } = {}) {   // via: frame that ob
 // keyboard (window.__kb) slides up under it; from then on either keyboard types into it: cd <place> | ls | clear | exit. Esc, 'exit'
 // or a click off the screen glides back. The transcript lives in SHELL rather than in the texture, so an accent change (or a rebuild)
 // redraws it unchanged. caret = where the block sits in the typed line; hist = the lines run, for ↑ ↓ and `history` (hi: how far back).
-const SHELL = { lines: [], input: '', caret: 0, hist: [], hi: -1, draft: '', solidUntil: 0, root: false, mode: null, tries: 0 };   // mode: null | 'password' (sudo is asking)
+const SHELL = { lines: [], input: '', caret: 0, hist: [], hi: -1, draft: '', solidUntil: 0, root: false, mode: null, tries: 0, lit: false };   // mode: null | 'password' (sudo is asking); lit: phosphor has run, so root is shown bios
 const TERM = { open: false, back: null };
 const PLACES = ['home'].concat(CONFIG.inspectables.filter(i => i.explorer).map(i => i.cmd || i.label.replace(/\s+/g, '-')));
 const shellIn = document.getElementById('shell-in');   // offscreen field that holds focus while the shell is open: its value is the typed line
@@ -2626,7 +2626,7 @@ function shellRun(raw) {
   const T = CONFIG.terminal;
   if (SHELL.mode === 'password') {   // the typed line was a password: never echoed
     SHELL.mode = null; shellPrint(T.sudoPrompt);
-    if (raw.trim().toLowerCase() === T.password) { SHELL.root = true; SHELL.tries = 0; shellPrint('welcome, root. Tito is still asleep on his cushion. try: bios, phosphor'); foundSecret('root'); }   // tito, Tito or TITO: the dog answers to all of them
+    if (raw.trim().toLowerCase() === T.password) { SHELL.root = true; SHELL.tries = 0; shellPrint('welcome, root. Tito is still asleep on his cushion. try: phosphor' + (SHELL.lit ? ', bios' : '')); foundSecret('root'); }   // tito, Tito or TITO: the dog answers to all of them
     else if (++SHELL.tries >= 3) { SHELL.tries = 0; shellPrint('sudo: 3 incorrect password attempts'); }
     else { shellPrint('Sorry, try again.'); SHELL.mode = 'password'; }
     return;
@@ -2641,7 +2641,7 @@ function shellRun(raw) {
     words.shift();
   }
   const [cmd, arg] = words;
-  if (cmd === 'help' || cmd === '?') { shellPrint('cd <place>  ls  who  mcp  clear  exit'); if (SHELL.root) shellPrint('as root: bios  phosphor'); }
+  if (cmd === 'help' || cmd === '?') { shellPrint('cd <place>  ls  who  mcp  clear  exit'); if (SHELL.root) shellPrint('as root: phosphor' + (SHELL.lit ? '  bios' : '')); }   // root's commands come one at a time: bios once phosphor has run
   else if (cmd === 'ls') shellPrint(PLACES.join('  '));
   else if (cmd === 'mcp') { shellPrint('the room, for agents. one URL, no auth:'); shellPrint(MCP_URL); shellPrint('claude mcp add --transport http theroom ' + MCP_URL); }
   else if (cmd === 'who' || cmd === 'w') {   // the visitor book, async: the answer lands on the screen when the desk replies
@@ -2659,11 +2659,12 @@ function shellRun(raw) {
   else if (cmd === 'phosphor') {   // root only: the accent strip. `phosphor` shows it, `phosphor <name>` sets a colour, `phosphor off` hides it
     if (!SHELL.root) return shellPrint('phosphor: permission denied. root can change the room\'s phosphor.');
     const names = Object.keys(CONFIG.accent.presets);
-    if (arg === 'off') { accentEl.hidden = true; return shellPrint('phosphor strip hidden'); }
+    if (arg === 'off') { accentEl.hidden = true; shellPrint('phosphor strip hidden'); if (!SHELL.lit) { SHELL.lit = true; shellPrint('next, try: bios'); } return; }
     if (arg && !names.includes(arg)) return shellPrint('phosphor: no such colour. ' + names.join(' '));
     if (arg) setAccent(arg);
     accentEl.hidden = false;
     shellPrint('phosphor: ' + CONFIG.accent.name + '. strip at the bottom right. ' + names.join(' '));
+    if (!SHELL.lit) { SHELL.lit = true; shellPrint('next, try: bios'); }   // the next door, shown once
   }
   else if (REFLEX[cmd]) shellPrint(REFLEX[cmd](arg));
   else if (!shellGo(cmd)) shellPrint(cmd + ': command not found');
@@ -2720,7 +2721,7 @@ function shellRecall(dir, set) {
 const SHELL_WORDS = ['help', 'ls', 'cd', 'who', 'mcp', 'history', 'clear', 'exit', 'whoami', 'pwd'];
 function shellComplete(v, at, edit) {
   const head = v.slice(0, at), word = /\S*$/.exec(head)[0], before = head.slice(0, head.length - word.length), lead = before.trim().toLowerCase();
-  const pool = !lead ? SHELL_WORDS.concat(SHELL.root ? ['bios', 'phosphor'] : [], PLACES) : /^(cd|go|open)$/.test(lead) ? PLACES : [];   // root's commands only to root
+  const pool = !lead ? SHELL_WORDS.concat(SHELL.root ? ['phosphor'].concat(SHELL.lit ? ['bios'] : []) : [], PLACES) : /^(cd|go|open)$/.test(lead) ? PLACES : [];   // root's commands only to root, bios once phosphor has run
   const hits = [...new Set(pool.filter(c => c.startsWith(word.toLowerCase())))];
   if (!hits.length) return;
   let fill = hits[0]; for (const h of hits) while (!h.startsWith(fill)) fill = fill.slice(0, -1);
