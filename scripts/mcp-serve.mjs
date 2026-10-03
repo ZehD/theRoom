@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Runs the room's functions locally the way Vercel mounts them, so the MCP inspector can drive them before a push.
 //
-//   npm run dev:mcp                      -> http://127.0.0.1:3100/mcp and /api/visitors
+//   npm run dev:mcp                      -> http://127.0.0.1:3100/mcp, /api/visitors and /api/message
 //   npx @modelcontextprotocol/inspector --cli http://127.0.0.1:3100/mcp --method tools/list
 //
 // Needs Node 22+ (it imports the .ts sources directly). Without Upstash variables in the environment the store is
@@ -12,11 +12,12 @@ import { Readable } from 'node:stream';
 
 const mcp = await import('../api/mcp.ts');
 const visitors = await import('../api/visitors.ts');
+const message = await import('../api/message.ts');
 const port = Number(process.env.PORT) || 3100;
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://127.0.0.1:${port}`);
-  const route = url.pathname === '/mcp' || url.pathname === '/api/mcp' ? mcp : url.pathname === '/api/visitors' ? visitors : null;
+  const route = url.pathname === '/mcp' || url.pathname === '/api/mcp' ? mcp : url.pathname === '/api/visitors' ? visitors : url.pathname === '/api/message' ? message : null;
   const fn = route?.[req.method];
   if (!fn) { res.writeHead(route ? 405 : 404); res.end(); return; }
   try {

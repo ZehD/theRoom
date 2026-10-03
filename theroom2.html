@@ -96,6 +96,27 @@
   #explorer .tog[aria-pressed="true"] { background: var(--phosphor); color: var(--ink); border-color: var(--phosphor); }
   #explorer .ctl label { display: flex; align-items: center; gap: 8px; color: var(--phosphor-dim); font-size: 12px; }
   #explorer .ctl input { width: 120px; margin: 0; accent-color: var(--phosphor); }
+  /* desk card: leave a message. Three fields on the ink, a dim key over each; the active one glows. The room's keyboard types into them */
+  #explorer .note { position: relative; display: grid; gap: 12px; max-width: 68ch; margin: 0; }
+  #explorer .note label { display: grid; gap: 5px; color: var(--phosphor-dim); font-size: 12px; }
+  #explorer .note label > span { display: flex; gap: 12px; }
+  #explorer .note label > span::before { content: ">"; margin-right: -4px; }
+  #explorer .note .n { margin-left: auto; font-style: normal; }
+  #explorer .note :is(input, textarea) { appearance: none; display: block; width: 100%; box-sizing: border-box; margin: 0; padding: 9px 11px; font: inherit; font-size: 14px; line-height: 1.5; color: var(--phosphor-bloom); background: var(--ink); border: 1px solid var(--moss); border-radius: 0; caret-color: var(--phosphor); outline: none; transition: border-color 120ms, box-shadow 120ms; }
+  #explorer .note textarea { resize: none; height: 5.1em; }
+  #explorer .note :is(input, textarea)::placeholder { color: var(--phosphor-dim); opacity: 0.7; }
+  #explorer .note :is(input, textarea):is(:focus, .on) { border-color: var(--phosphor); box-shadow: 0 0 0 1px var(--phosphor-dim), 0 0 16px color-mix(in srgb, var(--phosphor) 22%, transparent); }
+  #explorer .note [aria-invalid="true"] { border-color: #FF5A4A; }
+  #explorer .note.soft [data-f] { pointer-events: none; }
+  #explorer .note .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  #explorer .note .send:disabled { opacity: 0.5; cursor: wait; }
+  #explorer .note .ctl { flex-wrap: nowrap; }
+  #explorer .note .out { flex: 1; min-width: 0; font-size: 12px; color: var(--phosphor-dim); }
+  #explorer .note .out.ok { color: var(--phosphor); }
+  #explorer .note .out.err { color: #FF5A4A; }
+  /* while the keyboard is up for the note, the window stands in the frame above it */
+  #root[data-kb="note"] #explorer { top: calc(var(--top-h, 56px) + (100% - var(--top-h, 56px) - var(--kb-h, 0px)) / 2); height: min(var(--ex-h), calc(100% - var(--top-h, 56px) - var(--kb-h, 0px) - 24px)); }
+  #root[data-kb="note"] #explorer .preview > .meta { display: none; }   /* the fields and the send button fit the window over the keys */
   /* studies card: the paper diagram. A full-bleed ink strip; base layers are always drawn, `.lit` copies, dots, cover and cursor
      animate on cue (12 s period: an accepted call, then a rejected one). Static under reduced motion. */
   #explorer .graph { margin: 0 -24px; padding: 8px; border: solid var(--moss); border-width: 1px 0; background: var(--ink); }
@@ -219,6 +240,15 @@
     #explorer .preview { padding: 16px; }
     #explorer .preview h2 { font-size: 20px; }
     #explorer .status { display: none; }
+    #root[data-kb="note"] #explorer { top: var(--top-h, 96px); bottom: var(--kb-h, 0px); height: auto; padding-bottom: 0; }
+    #root[data-kb="note"] #explorer .preview > :is(h2, .meta) { display: none; }   /* a phone's frame above the keys is short: the fields come first */
+  }
+  @container (max-height: 500px) {   /* a phone on its side: the keys take half the frame, so the window takes the rest, over the bar, and gives it all to the fields */
+    #root[data-kb="note"] #explorer, #root[data-kb="note"] #explorer.on { top: 8px; bottom: var(--kb-h, 0px); left: 0; right: 0; width: min(var(--ex-w), 94%); height: auto; margin-inline: auto; transform: none; border-width: 1px; grid-template-rows: 40px minmax(0, 1fr); }
+    #root[data-kb="note"] #explorer .body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+    #root[data-kb="note"] #explorer :is(.list, .status, .preview > h2, .preview > .meta) { display: none; }
+    #root[data-kb="note"] #explorer .preview { padding: 10px 16px; }
+    #root[data-kb="note"] #explorer .note textarea { height: 3.6em; }   /* the box and send fit the strip together */
   }
   [hidden] { display: none !important; }
   /* site chrome: a bar along the top with the name and one link per object in the room. Flat soil, 1px moss rule. */
@@ -1188,11 +1218,11 @@ const CONFIG = {
         { name: 'painting.txt', title: 'Painting', meta: 'Warhammer, one squad at a time', control: 'spin', spin: 'mini', items: [['grey plastic', 'assembled, mould lines scraped'], ['primed', 'black undercoat'], ['base coat', 'two thin coats'], ['wash', 'into the recesses'], ['edge highlights', 'done. next one.']], bullets: ['Miniatures are the slow hobby: assemble, prime, base coat, wash, edge highlight, repeat until the squad looks like a squad.', 'Mostly Warhammer. The backlog of grey plastic is a running joke at home.', 'A game now and then, whenever the table clears of board games.'] },
         { name: 'cinema.txt', title: 'Cinema', meta: 'films and series, mostly sci-fi and noir', text: 'If you like science fiction, we will probably get along. Blade Runner and The Matrix are two gems of sci-fi noir for me, and Blade Runner is probably my favourite film. My favourite series is a hard call between The Expanse (the books are even better) and the first season of True Detective.', text2: 'Almost anything by Nolan or Villeneuve will get me to the cinema. There is still plenty of love for older films too, Kurosawa and Bergman, and I would happily rewatch Akira or any Studio Ghibli film. Tell me your favourites through let\'s talk.' }
       ] } },
-    { id: 'mug',           label: "let's talk", cmd: 'talk', title: 'Curitiba coffee', line: 'a note on the desk, and who came by', phase: 1, view: { dir: [0.3, 0.45, 1], fill: 0.3, near: 3 },   // the desk corner round the mug
+    { id: 'mug',           label: "let's talk", cmd: 'talk', title: "Let's talk", line: 'leave a message on the desk, and see who came by', phase: 1, view: { dir: [0.3, 0.45, 1], fill: 0.3, near: 3 },   // the desk corner: the mug and the notebook
       explorer: { path: '~/desk', files: [
+        { name: 'leave-a-message', title: 'Leave a message', meta: 'straight to Luiz, never public', control: 'note' },   // a form (noteHtml); the room's keyboard types into it
         { name: 'visitors.log', title: 'Who came by', meta: 'agents that connected to the room over MCP, newest first', control: 'visitors', bullets: ['asking the desk...'] },
-        { name: 'mcp.txt', title: 'The room, for agents', meta: 'one URL, no auth, nothing to click', text: 'The whole room is one document over MCP: an agent calls whoami and gets the desk, the tower, the wall and the shelf in one read. It can leave a note (leave_message) and see who came by before it (visitors).', bullets: ['https://theroom-seven-theta.vercel.app/mcp', 'claude mcp add --transport http theroom https://theroom-seven-theta.vercel.app/mcp', 'claude.ai: Settings, Connectors, Add custom connector, paste the URL', 'the same room as plain text: /room.md'] },
-        { name: 'leave-a-message.txt', title: 'Leave a message', meta: 'the tray on the desk', text: 'Ask your agent to leave a message in theRoom: who you are, how Luiz can answer, what it is about. It lands on this desk and nowhere public. Three a day per visitor; the dog needs his sleep.' }
+        { name: 'mcp.txt', title: 'The room, for agents', meta: 'one URL, no auth, nothing to click', text: 'The whole room is one document over MCP: an agent calls whoami and gets the desk, the tower, the wall and the shelf in one read. It can leave a note too (leave_message: who is asking, how to answer, what about) and see who came by before it (visitors).', bullets: ['https://theroom-seven-theta.vercel.app/mcp', 'claude mcp add --transport http theroom https://theroom-seven-theta.vercel.app/mcp', 'claude.ai: Settings, Connectors, Add custom connector, paste the URL', 'the same room as plain text: /room.md'] }
       ] } },
     { id: 'speakers',      label: 'sound', title: 'Speakers', line: 'rain on the window, music on the speakers', phase: 1, view: { dir: [0, 0.3, 1], near: 3 },   // the pair on the desk, framed from the front
       explorer: { path: '~/sound', files: [
@@ -1457,12 +1487,12 @@ function buildAfterHours() {
   box(0.008, 0.008, 0.067, 1.03, 1.663, -1.32, dark);
   line([[1.03, 1.62, -1.4], [1.03, 1.57, -1.67], [0.9, 1.56, -1.76], [0.79, 1.58, -2.15]], black, 0.01);
   line([[0, 1.59, -1.46], [-0.4, 1.56, -1.74], [-0.4, 1.56, -2.6], [-0.4, 0.2, -2.68], [1.8, 0.11, -2.6]], black, 0.015);
-  // the mug (let's talk), a notebook, a pencil: work left unfinished
+  // the mug and the notebook beside it, a pencil on it: let's talk. One object: either lights both and opens the desk
   const mug = group('mug'), mugMat = material(0x8e9caa);
   cylinder(0.115, 0.10, 0.24, -0.98, 1.67, -1.31, mugMat, 12, mug);
   cylinder(0.098, 0.098, 0.007, -0.98, 1.794, -1.31, material(0x272627), 12, mug);
   const handle = new THREE.Mesh(new THREE.TorusGeometry(0.072, 0.021, 5, 10), mugMat); handle.position.set(-1.112, 1.675, -1.31); mug.add(handle);
-  const notebook = group();
+  const notebook = group('mug-notebook', mug);
   box(0.51, 0.021, 0.36, -1.47, 1.58, -1.19, paper, notebook).rotation.y = -0.12;
   for (let i = 0; i < 4; i++) box(0.33 - i * 0.035, 0.003, 0.009, -1.47, 1.595, -1.3 + i * 0.055, metal, notebook).rotation.y = -0.12;
   box(0.32, 0.02, 0.025, -1.3, 1.607, -1.03, material(0x93906c), notebook).rotation.y = 0.4;
@@ -1856,7 +1886,7 @@ function buildAfterHours() {
   target('cert-frame', print, [0, 0.73, 0.035]); neonFrame('cert-frame', print, 1.11, 1.38, [0, 0, 0.035]);
   target('whiteboard', wb, [0, 0.66, 0.02]); neonFrame('whiteboard', wb, 1.9, 1.15, [0, 0, 0.03]); neonFrame('whiteboard', sketch, 0.65, 0.45, [0, 0, 0.008]);   // the board and the paper light together
   target('speakers', speakerUnits[0], [0, 0.3, 0.13]); for (const unit of speakerUnits) neonFrame('speakers', unit, 0.25, 0.44, [0, 0, 0.13]);   // both light together; the chip hangs over the left one
-  target('mug', mug, [-1.0, 1.95, -1.31]); neonFrame('mug', mug, 0.36, 0.26, [-1.035, 1.56, -1.31], true);   // a coaster of light on the desk
+  target('mug', mug, [-1.0, 1.95, -1.31]); neonFrame('mug', mug, 0.96, 0.54, [-1.305, 1.56, -1.197], true);   // a tray of light on the desk round the mug, the notebook and its pencil
   target('rack', rack, [3.05, 1.3, -1.23]); neonFrame('rack', rack, 0.69, 1.16, [3.05, 0.58, -1.14]);   // the tower's face, clear of the fan hubs
   target('post-it', postit, [0, 0.16, 0]); neonFrame('post-it', postit, 0.3, 0.3, [0, 0, 0.005]); hot['post-it'].glows.push({ material: noteInk.material, strength: 1 });   // a frame of its own, and the recipe's ink glows
   target('robot', robot, [0, 0.66, 0]); neonFrame('robot', robot, 0.44, 0.64, [0, 0.3, 0.13]);   // the unfinished robot: its frame, and the sparks while lit (lifts)
@@ -2215,8 +2245,9 @@ function renderExplorer() {
   const ex = explorer.insp.explorer, files = ex.files, f = files[explorer.index];
   exPath.innerHTML = `<b>luiz@theroom:</b>${esc(ex.path)}`;
   exList.innerHTML = files.map((file, i) => { const m = file.name.match(/^(.*?)(\.[^.]+)?$/); return `<button type="button" class="row" role="option" data-i="${i}" aria-selected="${i === explorer.index}" tabindex="${i === explorer.index ? 0 : -1}"><span class="perm">-rw-r--r--</span><span class="name">${esc(m[1])}<span class="ext">${esc(m[2] || '')}</span></span></button>`; }).join('');
-  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.control === 'spin' ? spinHtml(f) : ''}${f.control === 'rack' ? rackHtml(f) : ''}${f.control === 'graph' ? graphHtml() : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets && f.control !== 'rack' ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}`;
+  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.control === 'spin' ? spinHtml(f) : ''}${f.control === 'rack' ? rackHtml(f) : ''}${f.control === 'graph' ? graphHtml() : ''}${f.control === 'note' ? noteHtml() : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets && f.control !== 'rack' ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}`;
   if (f.control === 'visitors') loadVisitors(exPreview.querySelector('ul'));
+  if (f.control === 'note') wireNote(exPreview.querySelector('.note')); else noteRelease();   // another file: the keyboard goes down with the form
   if (f.control === 'spin') {   // each turn starts with the back to the viewer: swap to the next item then, unseen
     const stage = exPreview.querySelector('.stage'), el = stage.querySelector('.spin'); spinShow(stage, f.items[0]);
     el.addEventListener('animationiteration', () => { el.dataset.i = (+el.dataset.i + 1) % f.items.length; spinShow(stage, f.items[+el.dataset.i]); });
@@ -2276,7 +2307,7 @@ function rackHtml(f) {
 }
 // the visitor book: the last agents that connected over MCP, from the desk's own function. Kept a short while so the arrow keys and `who` do not re-ask.
 const MCP_URL = 'https://theroom-seven-theta.vercel.app/mcp';
-const API = { visitors: '/api/visitors' };
+const API = { visitors: '/api/visitors', message: '/api/message' };
 const VISITORS = { at: 0, data: null };
 function fetchVisitors() {
   if (VISITORS.data && performance.now() - VISITORS.at < 30000) return Promise.resolve(VISITORS.data);
@@ -2290,6 +2321,134 @@ function loadVisitors(ul) {
   fetchVisitors().then(d => { if (ul.isConnected) ul.innerHTML = visitorLines(d).map(l => `<li>${esc(l)}</li>`).join(''); })
     .catch(() => { if (ul.isConnected) ul.innerHTML = '<li>the visitor book did not answer.</li>'; });
 }
+// ───────────────────────────── the desk: leave a message ─────────────────────────────
+// The mug's first file is a form: name, email, message, posted to /api/message (the tray the MCP's leave_message fills, forwarded on to
+// Luiz). While a field is active the room's keyboard docks under the window (host 'note') and its caps type into that field. On a desk the
+// physical keys type natively; on glass the fields are read-only (no OS keyboard) and every key, a tablet's hardware ones too, comes
+// through noteKey, at the end of the line. What is typed lives in NOTE, so another file, a closed window or a failed send loses nothing.
+const NOTE = { name: '', email: '', message: '', field: null, sending: false, status: null };   // status: [text, 'ok' | 'err' | '']
+const NOTE_MAX = { name: 80, email: 120, message: 1000 }, NOTE_KEYS = ['name', 'email', 'message'];
+const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]{1,64}@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]{2,}$/;   // the server's, letter for letter
+const noteHost = { name: 'note', onKey: e => noteKey(e) };
+function noteHtml() {
+  const field = (k, hint) => k === 'message'
+    ? `<label><span>message<i class="n" data-n>${NOTE.message.length}/${NOTE_MAX.message}</i></span><textarea data-f="message" maxlength="${NOTE_MAX.message}" placeholder="${hint}"></textarea></label>`
+    : `<label><span>${k}</span><input data-f="${k}" type="text" maxlength="${NOTE_MAX[k]}" placeholder="${hint}" ${k === 'email' ? 'inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false"' : 'autocomplete="name"'}></label>`;
+  return `<form class="note" novalidate>${field('name', 'who is writing')}${field('email', 'where Luiz can answer')}${field('message', 'what about')}`
+    + `<input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">`
+    + `<div class="ctl"><button type="submit" class="tog send">send</button><span class="out" role="status" aria-live="polite"></span></div></form>`;
+}
+const noteFields = () => [...exPreview.querySelectorAll('.note [data-f]')];
+function noteStatus(text, cls = '') {
+  NOTE.status = text ? [text, cls] : null;
+  const out = exPreview.querySelector('.note .out'); if (out) { out.textContent = text; out.className = 'out' + (cls ? ' ' + cls : ''); }
+}
+function wireNote(form) {
+  for (const el of noteFields()) {
+    el.value = NOTE[el.dataset.f];
+    if (SOFT) { el.readOnly = true; el.setAttribute('inputmode', 'none'); }   // glass: the room's keyboard is the only one
+  }
+  if (NOTE.status) noteStatus(...NOTE.status);
+  form.querySelector('.send').disabled = NOTE.sending;
+  form.addEventListener('input', e => {
+    const el = e.target.closest('[data-f]'); if (!el) return;
+    NOTE[el.dataset.f] = el.value; el.removeAttribute('aria-invalid');
+    if (el.dataset.f === 'message') form.querySelector('[data-n]').textContent = `${el.value.length}/${NOTE_MAX.message}`;
+    if (NOTE.status?.[1] === 'err') noteStatus('');
+  });
+  form.addEventListener('submit', e => { e.preventDefault(); noteSend(); });
+  form.addEventListener('focusin', e => { const el = e.target.closest('[data-f]'); if (el) noteFocus(el); });
+  form.addEventListener('focusout', () => setTimeout(() => { if (!SOFT && NOTE.field && !NOTE.field.contains(document.activeElement)) noteRelease(); }));   // a click on the caps keeps the focus (the case refuses it); anywhere else lets the keyboard go
+  form.classList.toggle('soft', SOFT);   // glass: a tap lands on the label (the field takes none) and picks the field, never focusing it
+  // on the click, once the tap is over: picked on the press, the keys came up under the finger and the tap's click landed on whatever the
+  // window had moved there (the dim, or send). preventDefault: a label's click would focus its field
+  form.addEventListener('click', e => { const l = SOFT && e.target.closest('label'); if (l) { e.preventDefault(); noteFocus(l.querySelector('[data-f]')); } });
+  form.addEventListener('mousedown', e => {   // a desk: a press on a caption picks its field without letting go of the keys on the way
+    if (SOFT) return;
+    const l = e.target.closest('label'), el = e.target.closest('[data-f]');
+    if (l && !el) { e.preventDefault(); noteFocus(l.querySelector('[data-f]')); }
+    else if (el && !NOTE.field) noteFocus(el);   // the field still had the caret (a send from the keys put them away): no focusin comes
+  });
+  form.addEventListener('keydown', e => {   // a desk's own keys: Enter steps to the next field (the message keeps its newlines), Cmd/Ctrl+Enter sends
+    if (e.key !== 'Enter' || e.isComposing || e.keyCode === 229) return;   // 229: the Enter that confirms an IME's word (Safari sends it uncomposed)
+    if (e.metaKey || e.ctrlKey) { e.preventDefault(); noteSend(); }
+    else if (e.target.tagName === 'INPUT') { e.preventDefault(); noteStep(e.target, 1); }
+  });
+}
+function noteFocus(el) {
+  if (!el?.isConnected) return;
+  NOTE.field = el; for (const f of noteFields()) f.classList.toggle('on', f === el);
+  if (!SOFT && document.activeElement !== el) el.focus({ preventScroll: true });
+  KB?.show(noteHost);
+  const seen = el.dataset.f === 'message' ? el.closest('.note').querySelector('.ctl') : el;   // the last field brings send into view with it
+  requestAnimationFrame(() => requestAnimationFrame(() => seen.isConnected && seen.scrollIntoView({ block: 'nearest' })));   // once the window has made room for the keys
+}
+function noteRelease() {
+  if (NOTE.field) { NOTE.field.classList.remove('on'); NOTE.field = null; }
+  KB?.hide(noteHost);
+}
+function noteStep(el, d) { const fs = noteFields(), i = fs.indexOf(el); noteFocus(fs[(i + d + fs.length) % fs.length]); }
+// a key from the room's keyboard (or, on glass, any key): typed at the caret on a desk, at the end of the line on glass
+function noteKey(e) {
+  const el = NOTE.field; if (!el?.isConnected) return;
+  const k = e.key, area = el.tagName === 'TEXTAREA', v = el.value;
+  if (SOFT) el.setSelectionRange(v.length, v.length);
+  const s = el.selectionStart ?? v.length, en = el.selectionEnd ?? s;
+  const put = (text, a = s, b = en) => {
+    if (v.length - (b - a) + text.length > el.maxLength) return;
+    el.setRangeText(text, a, b, 'end'); el.dispatchEvent(new Event('input', { bubbles: true }));
+    if (SOFT) el.scrollTop = el.scrollHeight;   // unfocused, the box does not follow its own end
+  };
+  const caret = i => { i = Math.max(0, Math.min(v.length, i)); el.setSelectionRange(i, i); };
+  const lineStart = i => v.lastIndexOf('\n', i - 1) + 1, lineEnd = i => { const n = v.indexOf('\n', i); return n < 0 ? v.length : n; };
+  if (k === 'Enter') { if (e.ctrl) noteSend(); else if (area) put('\n'); else noteStep(el, 1); }
+  else if (k === 'Tab') noteStep(el, e.shift ? -1 : 1);
+  else if (k === 'Escape') closeExplorer();
+  else if (k === 'Clear') put('', 0, v.length);   // f3 clears the field
+  else if (k === 'Backspace') { if (s !== en) put('', s, en); else if (s > 0) put('', s - (s > 1 && /[\uDC00-\uDFFF]/.test(v[s - 1]) && /[\uD800-\uDBFF]/.test(v[s - 2]) ? 2 : 1), s); }   // an emoji is two code units
+  else if (k === 'ArrowUp' || k === 'ArrowDown') {
+    const up = k === 'ArrowUp', ls = lineStart(s), next = up ? (ls > 0 ? lineStart(ls - 1) : -1) : (lineEnd(s) < v.length ? lineEnd(s) + 1 : -1);
+    if (!area || SOFT || next < 0) noteStep(el, up ? -1 : 1);   // off the first or last line (or a one-line field): the field above or below
+    else caret(Math.min(next + (s - ls), lineEnd(next)));
+  }
+  else if (SOFT) { if (k.length === 1 && !e.ctrl) put(k); }   // glass types at the end; the caret keys above are all it moves by
+  else if (k === 'ArrowLeft') caret(s !== en ? s : s - 1);
+  else if (k === 'ArrowRight') caret(s !== en ? en : s + 1);
+  else if (k === 'Home') caret(area ? lineStart(s) : 0);
+  else if (k === 'End') caret(area ? lineEnd(s) : v.length);
+  else if (k.length === 1 && !e.ctrl) put(k);
+}
+exEl.addEventListener('click', e => { if (SOFT && NOTE.field && !e.target.closest('.note label, .note .send')) noteRelease(); });   // glass: a tap off the fields puts the keys away (on the click, like the pick)
+// on glass nothing holds focus, so a tablet's hardware keys come here first while a field is active (and never reach the room's shortcuts)
+addEventListener('keydown', e => {
+  if (!SOFT || !NOTE.field || e.isComposing || e.metaKey || e.altKey || /^(Shift|Control|Alt|Meta|CapsLock)$/.test(e.key)) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  noteKey({ key: e.key, ctrl: e.ctrlKey, shift: e.shiftKey });
+}, true);
+async function noteSend() {
+  if (NOTE.sending) return;
+  const name = NOTE.name.trim(), email = NOTE.email.trim(), message = NOTE.message.trim();
+  const bad = !name ? 'name' : !EMAIL_RE.test(email) ? 'email' : !message ? 'message' : null;
+  if (bad) {
+    const el = noteFields().find(f => f.dataset.f === bad); el?.setAttribute('aria-invalid', 'true');
+    noteStatus(bad === 'email' && email ? 'that email does not look like one.' : `the ${bad} is empty.`, 'err'); noteFocus(el); return;
+  }
+  NOTE.sending = true; noteRelease(); noteStatus('sending...');
+  if (document.activeElement?.closest?.('.note')) document.activeElement.blur();   // the keys are down: the next click on a field is a fresh focusin
+  const btn = exPreview.querySelector('.note .send'); if (btn) btn.disabled = true;
+  try {
+    const r = await fetch(API.message, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, email, message, website: exPreview.querySelector('.note .hp')?.value || '' }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.ok) throw new Error(d.error || `the desk answered ${r.status}. try again in a minute.`);
+    NOTE.message = ''; const m = exPreview.querySelector('.note [data-f="message"]'); if (m) { m.value = ''; m.dispatchEvent(new Event('input', { bubbles: true })); }
+    noteStatus(`left on the desk. Luiz will answer at ${email}.`, 'ok');
+  } catch (err) {
+    noteStatus(err instanceof TypeError ? 'the desk did not answer. try again in a minute.' : err.message, 'err');   // TypeError: the network itself
+  } finally {
+    NOTE.sending = false; const b = exPreview.querySelector('.note .send'); if (b) b.disabled = false;
+    setTimeout(() => exPreview.querySelector('.note .ctl')?.scrollIntoView({ block: 'nearest' }), 300);   // the window is back to its height once the keys are down: keep the answer in view
+  }
+}
 function selectFile(i, focus = true) {
   const n = explorer.insp.explorer.files.length; explorer.index = (i + n) % n; renderExplorer();
   const row = exList.querySelector('.row[aria-selected="true"]');
@@ -2300,7 +2459,7 @@ function openExplorer(insp, at = null) {
   if (!insp?.explorer) return;
   clearTimeout(explorer.timer);
   explorer.open = true; explorer.insp = insp; explorer.index = Math.max(0, insp.explorer.files.findIndex(f => f.name === at));
-  setHover(null); hover.pointer.set(2, 2);
+  setHover(null); hover.pointer.set(2, 2); hideHint();   // the hint on how to move the room would sit over the window
   renderExplorer();
   exEl.hidden = false; exEl.getBoundingClientRect();
   dimEl.classList.add('on'); exEl.classList.add('on');
@@ -2310,6 +2469,7 @@ function openExplorer(insp, at = null) {
 function closeExplorer(fromHistory = false) {
   if (!explorer.open) return;
   explorer.open = false;
+  noteRelease();
   dimEl.classList.remove('on'); exEl.classList.remove('on');
   const done = () => { if (!explorer.open) exEl.hidden = true; };
   if (MOTION) explorer.timer = setTimeout(done, CONFIG.explorer.fade); else done();
@@ -2716,6 +2876,7 @@ exEl.addEventListener('click', e => {
 });
 exEl.addEventListener('input', e => { if (e.target.matches('[data-rain-vol]')) rain.setVolume(+e.target.value); });
 exEl.addEventListener('keydown', e => {
+  if (e.target.closest?.('.note')) return;   // in the note the arrows, Home and End move the caret, not the file
   if (e.key === 'ArrowDown') { e.preventDefault(); selectFile(explorer.index + 1); }
   else if (e.key === 'ArrowUp') { e.preventDefault(); selectFile(explorer.index - 1); }
   else if (e.key === 'Home') { e.preventDefault(); selectFile(0); }
