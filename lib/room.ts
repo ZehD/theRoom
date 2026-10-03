@@ -105,6 +105,17 @@ export function callerFrom(req: Request | undefined, client: ClientInfo | undefi
   return { ip, clientName, clientVersion, label, identity: hash(`${label}|${ip}`) };
 }
 
+// The page's own form: no client name to show, so the visitor is the address alone (its own count, apart from any agent's). An IPv6
+// address counts by its /64, the block one line or one host is handed, so cycling the host half does not reset the count.
+const v6block = (ip: string): string => {
+  const [head, tail = ''] = ip.split('::'), a = head ? head.split(':') : [], b = ip.includes('::') && tail ? tail.split(':') : [];
+  return [...a, ...Array(Math.max(0, 8 - a.length - b.length)).fill('0'), ...b].slice(0, 4).join(':') + '::/64';
+};
+export function webCaller(req: Request): Caller {
+  const raw = ipOf(req), ip = raw.includes(':') ? v6block(raw.toLowerCase()) : raw;
+  return { ip, clientName: 'web form', clientVersion: '', label: 'the page', identity: hash(`web|${ip}`) };
+}
+
 // ── rate limits: real when the store is there, absent otherwise (the README says so) ─────────────
 // Keys are hashed addresses, never raw IPs. Calls: generous per address, since claude.ai sessions share egress
 // addresses. Messages: three a day per visitor (label + address) and a dozen a day per address, so cycling client
@@ -174,14 +185,30 @@ export async function storeMessage(m: Message): Promise<boolean> {
   const p = r.pipeline(); p.lpush(KEYS.messages, JSON.stringify(m)); p.ltrim(KEYS.messages, 0, MESSAGES_KEPT - 1); await p.exec();
   return true;
 }
-// Forwarding is optional: a webhook (n8n, anything that takes JSON) and/or a Telegram bot. Both fail quietly; the tray keeps the note.
+// Forwarding is optional: an email (Resend), a webhook (n8n, anything that takes JSON) and/or a Telegram bot. All fail quietly; the
+// tray keeps the note. The email goes to MESSAGE_EMAIL_TO (kept out of the public source) with the visitor as the reply-to, so
+// answering it answers them. Without a verified domain Resend sends only from onboarding@resend.dev, and only to the account's own address.
+export const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]{1,64}@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]{2,}$/;   // one plain address: what a reply-to takes
 export async function forwardMessage(m: Message): Promise<boolean> {
   const jobs: Promise<Response>[] = [];
+  const resend = process.env.RESEND_API_KEY, to = process.env.MESSAGE_EMAIL_TO;
+  if (resend && to) jobs.push(fetch('https://api.resend.com/emails', {
+    method: 'POST', headers: { authorization: `Bearer ${resend}`, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      from: process.env.MESSAGE_EMAIL_FROM || 'theRoom <onboarding@resend.dev>', to: to.split(',').map(s => s.trim()).filter(Boolean),
+      subject: `theRoom · a note from ${m.name}`, text: `from: ${m.name} (${m.contact})\nvia: ${m.client}\nat: ${when(m.t)}\n\n${m.message}`,
+      ...(EMAIL_RE.test(m.contact) ? { reply_to: m.contact } : {})
+    })
+  }));
   const hook = process.env.MESSAGE_WEBHOOK_URL;
   if (hook) jobs.push(fetch(hook, { method: 'POST', headers: { 'content-type': 'application/json', ...(process.env.MESSAGE_WEBHOOK_SECRET ? { 'x-theroom-secret': process.env.MESSAGE_WEBHOOK_SECRET } : {}) }, body: JSON.stringify(m) }));
   const bot = process.env.TELEGRAM_BOT_TOKEN, chat = process.env.TELEGRAM_CHAT_ID;
   if (bot && chat) jobs.push(fetch(`https://api.telegram.org/bot${bot}/sendMessage`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat_id: chat, text: `theRoom · a note on the desk\nfrom: ${m.name} (${m.contact})\nvia: ${m.client}\n\n${m.message}` }) }));
   if (!jobs.length) return false;
   const results = await Promise.allSettled(jobs);
+  for (const x of results) {   // a forwarder that refuses (a bad key, a sender the provider will not take) says why in the function logs
+    if (x.status === 'rejected') console.error('forwardMessage:', String(x.reason));
+    else if (!x.value.ok) console.error('forwardMessage:', x.value.url.replace(/bot[^/]+/, 'bot***'), x.value.status, (await x.value.text().catch(() => '')).slice(0, 300));
+  }
   return results.some(x => x.status === 'fulfilled' && x.value.ok);
 }

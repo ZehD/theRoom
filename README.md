@@ -90,6 +90,17 @@ In claude.ai: Settings, Connectors, Add custom connector, paste the URL. Cursor 
 URL in their `mcp.json`. On the page, the mug ("let's talk") shows the visitor book and the install line;
 in the shell, `who` and `mcp` do the same.
 
+## Leave a message (the page's form)
+
+"let's talk" is the mug and the notebook beside it (one object: hovering either, or the menu word, lights a tray of
+light round both). Its window opens on `leave-a-message`: name, email, message (80 / 120 / 1000 characters). A click
+or tap on a field docks the room's keyboard under the window, which moves up to make room; on a desk the physical keys
+type too (Enter steps to the next field, Cmd/Ctrl+Enter sends, f3 clears the field), on glass the room's keyboard is the
+only one. What is typed survives switching files or closing the window.
+
+The form posts JSON to `/api/message` (`api/message.ts`): same origin only, a hidden honeypot field, the same limits as
+the MCP's `leave_message` (three a day per visitor, a dozen per address) and the same tray and forwarders, below.
+
 ### The store
 
 The visitor book and the message tray live in Upstash Redis. Without it the server still answers: `whoami`
@@ -99,8 +110,13 @@ injects `KV_REST_API_URL` and `KV_REST_API_TOKEN` (or set `UPSTASH_REDIS_REST_UR
 by hand), then redeploy. Keys: `theroom:visits` (last 50), `theroom:visits:total`, `theroom:messages`
 (last 200, private; read them in the Upstash console), `theroom:rl:*` (rate limits).
 
-Message forwarding is optional, set either or both and redeploy:
+Message forwarding is optional (the form and `leave_message` both use it), set any of them and redeploy:
 
+- `RESEND_API_KEY` + `MESSAGE_EMAIL_TO` (+ optional `MESSAGE_EMAIL_FROM`): the note as an email from Resend
+  (https://resend.com), with the visitor's address as the reply-to, so answering the email answers them. Without a
+  verified domain Resend sends only from `onboarding@resend.dev` and only to the account's own address, which is enough
+  here: sign up with the address that should receive the notes and put the same one in `MESSAGE_EMAIL_TO`. The address
+  stays out of the public source.
 - `MESSAGE_WEBHOOK_URL` (+ optional `MESSAGE_WEBHOOK_SECRET`, sent as `x-theroom-secret`): a POST with the
   note as JSON, for n8n or anything similar.
 - `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`: the note as a Telegram message.
@@ -119,7 +135,7 @@ resources go through the same limit as tools.
 
 ```sh
 npm run dev      # static preview at http://127.0.0.1:3000 (honors the vercel.json rewrite, so / serves theroom.html)
-npm run dev:mcp  # the functions at http://127.0.0.1:3100/mcp and /api/visitors (Node 22+; reads the .ts sources directly)
+npm run dev:mcp  # the functions at http://127.0.0.1:3100/mcp, /api/visitors and /api/message (Node 22+; reads the .ts sources directly)
 npm test         # room.md is fresh, root rewrite, page title, every local asset the page references
 npm run typecheck
 npx @modelcontextprotocol/inspector --cli http://127.0.0.1:3100/mcp --transport http --method tools/list
