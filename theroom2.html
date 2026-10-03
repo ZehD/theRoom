@@ -791,6 +791,7 @@ window.__kb = (function () {
   var click = {
     ctx: null, noise: null, loud: 2.1,   // loudness of the synthesized stand-in: 2.1× the After Hours original (30% under the 3× it had)
     buffer: null, starts: null, last: -1, loading: false, gain: 0.63,   // the takes' level: 30% under the 0.9 they shipped at
+    vol: 1,   // the visitor's own level on top, 0..1 (the sound window's slider; kept as theroom.kb.volume)
     // fetched when the keyboard first comes up and decoded in an offline context, which needs no gesture: the first key already clicks for real
     prefetch: function () {
       var O = window.OfflineAudioContext || window.webkitOfflineAudioContext, self = this;
@@ -811,6 +812,7 @@ window.__kb = (function () {
           var d = this.noise.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
         }
         if (this.buffer && release) return;   // the take already has its up-stroke
+        if (this.vol <= 0) return;
         var self = this, go = function () { if (self.buffer) self.take(code); else self.hit(code, release); };
         if (this.ctx.state === 'suspended') { var p = this.ctx.resume(); if (p && p.then) p.then(go, function () {}); }
         else go();
@@ -823,7 +825,7 @@ window.__kb = (function () {
       var i = pool[Math.floor(Math.random() * pool.length)]; if (i === this.last && pool.length > 1) i = pool[(pool.indexOf(i) + 1) % pool.length]; this.last = i;
       var src = c.createBufferSource(), g = c.createGain();
       src.buffer = this.buffer; src.playbackRate.value = heavy ? 0.86 : mod ? 0.93 : 0.97 + Math.random() * 0.06;
-      g.gain.value = this.gain * (heavy ? 1.1 : 1);
+      g.gain.value = this.gain * this.vol * (heavy ? 1.1 : 1);
       src.connect(g); g.connect(c.destination); src.start(c.currentTime, this.starts[i], SPRITE.dur[i] + 0.002);
       src.onended = function () { src.disconnect(); g.disconnect(); };
     },
@@ -833,18 +835,19 @@ window.__kb = (function () {
       var t = c.currentTime, len = release ? 0.026 : wide ? 0.067 : 0.044;
       var src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
       src.buffer = this.noise; f.type = 'bandpass'; f.frequency.value = (wide ? 1050 : 1500) + vary * 95; f.Q.value = 0.7;
-      g.gain.setValueAtTime((release ? 0.028 : 0.1) * this.loud, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      g.gain.setValueAtTime((release ? 0.028 : 0.1) * this.loud * this.vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
       src.connect(f); f.connect(g); g.connect(c.destination); src.start(t); src.stop(t + len);
       src.onended = function () { src.disconnect(); f.disconnect(); g.disconnect(); };
       if (release) return;
       var body = c.createOscillator(), bg = c.createGain();
       body.type = 'triangle'; body.frequency.setValueAtTime(wide ? 155 : 210 + vary * 10, t); body.frequency.exponentialRampToValueAtTime(85, t + len);
-      bg.gain.setValueAtTime(0.07 * this.loud, t); bg.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      bg.gain.setValueAtTime(0.07 * this.loud * this.vol, t); bg.gain.exponentialRampToValueAtTime(0.0001, t + len);
       body.connect(bg); bg.connect(c.destination); body.start(t); body.stop(t + len);
       body.onended = function () { body.disconnect(); bg.disconnect(); };
     }
   };
 
+  try { var savedVol = parseFloat(localStorage.getItem('theroom.kb.volume')); if (savedVol >= 0 && savedVol <= 1) click.vol = savedVol; } catch (e) {}   // the level set last time
   var send = function (e) { if (host && host.onKey) host.onKey(e); };
   function stopRepeat() { clearTimeout(repeatT); clearInterval(repeatI); repeatT = repeatI = null; }
   function feedback(code, isDown, quiet) {
@@ -935,7 +938,7 @@ window.__kb = (function () {
     });
     main.appendChild(row(BOTTOM, 'retro-bottom-row'));
     snd = el.querySelector('.retro-sound'); paintSound();
-    snd.addEventListener('click', function () { muted = !muted; try { localStorage.setItem('theroom.kb.sound', muted ? 'off' : 'on'); } catch (e) {} paintSound(); });
+    snd.addEventListener('click', function () { setSound(muted); });
     el.addEventListener('mousedown', function (e) { e.preventDefault(); });   // a click on the case never takes focus from the field it types into
     el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     if (window.ResizeObserver) new ResizeObserver(function () { measure(); }).observe(el);
@@ -964,6 +967,7 @@ window.__kb = (function () {
   addEventListener('keyup', function (e) { if (!host) return; physical = e.shiftKey; if (e.key === 'Meta') pressed = {}; feedback(e.code, false, true); }, true);
   addEventListener('blur', function () { stopRepeat(); pressed = {}; physical = false; if (built) paint(); });
   addEventListener('resize', function () { if (host) { fit(); measure(); } });
+  function setSound(on) { muted = !on; try { localStorage.setItem('theroom.kb.sound', muted ? 'off' : 'on'); } catch (e) {} if (built) paintSound(); }   // the case's speaker and the sound window share it
   function show(h) {
     build(); clearTimeout(outT); click.prefetch();
     var fresh = el.hidden || el.classList.contains('out');
@@ -979,6 +983,9 @@ window.__kb = (function () {
   }
   var api = {
     show: show, hide: hide, onresize: null,
+    sound: function (on) { if (on === undefined) return !muted; setSound(!!on); },   // the clicks on or off
+    volume: function (v) { if (v === undefined) return click.vol; click.vol = Math.max(0, Math.min(1, +v || 0)); try { localStorage.setItem('theroom.kb.volume', String(click.vol)); } catch (e) {} },
+    preview: function () { click.prefetch(); if (!muted) { click.play('KeyA'); click.play('KeyA', true); } },   // one key, at the level just set
     soft: function () { return root.hasAttribute('data-touch'); },   // glass: the keyboard replaces the OS one, and the hosts' fields go read-only
     height: function () { return host && !el.hidden ? el.offsetHeight : 0; },
     turn: function (deg) { el.style.filter = deg ? 'hue-rotate(' + Math.round(deg) + 'deg)' : ''; }   // the room's accent turn (roomShift), on the case's blue
@@ -1214,8 +1221,8 @@ const CONFIG = {
       ] } },
     { id: 'shelf',         label: 'about', cmd: 'about', title: 'The shelf', line: 'what I read, play and tinker with', phase: 1, view: { dir: [0.3, 0, 1] },   // a little from the right, so the left wall fills the side; the near plane cuts the audio cabinet out
       explorer: { path: '~/shelf', files: [
-        { name: 'whoami', title: 'Luiz Aurio Cordeiro Junior', meta: 'AI engineer · Curitiba, Paraná, Brazil', text: '11 years in IT, the last 4 building software and AI systems. Days go to agents, RAG pipelines and automations that have to survive production; nights go to this shelf.', text2: 'Outside work I read science fiction and fantasy, play board games with friends, paint Warhammer miniatures and watch a lot of films and series, mostly sci-fi and noir. I also study mixology, and I am always up for trying a fancy drink.', text3: 'theRoom is a real place in Curitiba, where it rains most afternoons. The dog is real too.' },
-        { name: 'books.txt', title: 'Books', meta: 'reading now, and the ones I love', control: 'spin', spin: 'book', items: [['Perdido Street Station', 'China Miéville'], ['The Dark Forest', 'Cixin Liu'], ['AI Engineering', 'Chip Huyen']], text: 'Reading now: Perdido Street Station by China Miéville, The Dark Forest by Cixin Liu (rereading the trilogy, slower) and AI Engineering by Chip Huyen (a third pass, this time with a notebook).', text2: 'The ones I love, read more than once:', bullets: ['The Lord of the Rings, every few years since school.', 'The Three-Body Problem and the two that follow.', 'Perdido Street Station, The Scar, The City & the City.', 'Dune, Neuromancer, Hyperion.', 'The Horus Heresy series.'] },
+        { name: 'whoami', title: 'Luiz Aurio Cordeiro Junior', meta: 'AI engineer · Curitiba, Paraná, Brazil', text: '11 years in IT, the last 4 building software and AI systems. Days go to agents, RAG pipelines and automations that have to survive production; nights go to this shelf.', text2: 'Outside work I read science fiction and fantasy, play board games with friends, paint Warhammer miniatures and watch a lot of films and series, mostly sci-fi and noir. I also study mixology, and I am always up for a classic drink.', text3: 'theRoom is a real place in Curitiba, where it rains most afternoons. The dog is real too.' },
+        { name: 'books.txt', title: 'Books', meta: 'reading now, and the ones I love', control: 'spin', spin: 'book', items: [['Perdido Street Station', 'China Miéville'], ['The Lord of the Rings', 'J. R. R. Tolkien'], ['The Three-Body Problem', 'Cixin Liu'], ['Dune', 'Frank Herbert'], ['Neuromancer', 'William Gibson'], ['Hyperion', 'Dan Simmons']], text: 'Reading now: Perdido Street Station by China Miéville, weird fiction at its best. It is a reread, and this masterpiece only gets better the second time through: New Crobuzon is a city worth getting lost in twice.', text2: 'The ones I love, read more than once:', bullets: ['The Lord of the Rings, every few years since school.', 'The Three-Body Problem and the two that follow.', 'Perdido Street Station, The Scar, The City & the City.', 'Dune, Neuromancer, Hyperion.', 'The Horus Heresy series.'] },
         { name: 'tabletop.txt', title: 'Tabletop', meta: 'top shelf, heaviest boxes first', control: 'spin', spin: 'box', items: [['Dune: Imperium', '1–4 players · 2 h'], ['Puerto Rico', '3–5 players · 90 min'], ['Codenames', '2–8 players · 15 min'], ['Eclipse', '2–6 players · 8 h']], bullets: ['Dune: Imperium with the hardcore friends: deck-building, worker placement and nobody going easy on anybody.', 'Puerto Rico for a friendlier start: easy to teach, and after more than twenty years still one of the tightest games on the shelf.', 'Codenames when the point is just to have fun.', 'Eclipse once a year: the whole galaxy and an eight-hour session.'] },
         { name: 'painting.txt', title: 'Painting', meta: 'Warhammer, one squad at a time', control: 'spin', spin: 'mini', items: [['grey plastic', 'assembled, mould lines scraped'], ['primed', 'black undercoat'], ['base coat', 'two thin coats'], ['wash', 'into the recesses'], ['edge highlights', 'done. next one.']], bullets: ['Miniatures are the slow hobby: assemble, prime, base coat, wash, edge highlight, repeat until the squad looks like a squad.', 'Mostly Warhammer. The backlog of grey plastic is a running joke at home.', 'A game now and then, whenever the table clears of board games.'] },
         { name: 'cinema.txt', title: 'Cinema', meta: 'films and series, mostly sci-fi and noir', text: 'If you like science fiction, we will probably get along. Blade Runner and The Matrix are two gems of sci-fi noir for me, and Blade Runner is probably my favourite film. My favourite series is a hard call between The Expanse (the books are even better) and the first season of True Detective.', text2: 'Almost anything by Nolan or Villeneuve will get me to the cinema. There is still plenty of love for older films too, Kurosawa and Bergman, and I would happily rewatch Akira or any Studio Ghibli film. Tell me your favourites through let\'s talk.' }
@@ -1229,7 +1236,8 @@ const CONFIG = {
     { id: 'speakers',      label: 'sound', title: 'Speakers', line: 'rain on the window, music on the speakers', phase: 1, view: { dir: [0, 0.3, 1], near: 3 },   // the pair on the desk, framed from the front
       explorer: { path: '~/sound', files: [
         { name: 'rain', title: 'Rain', meta: 'ambient · loops with a soft crossfade', text: 'Curitiba rain against the window.', control: 'rain' },
-        { name: 'playing.txt', title: 'On the speakers', meta: 'jazz and Brazilian records', bullets: ['Getz/Gilberto — Stan Getz, João Gilberto (1964)', 'Clube da Esquina — Milton Nascimento, Lô Borges (1972)', 'Kind of Blue — Miles Davis (1959)', 'Elis & Tom — Elis Regina, Tom Jobim (1974)', 'A Love Supreme — John Coltrane (1965)'] }
+        { name: 'keyboard', title: 'Keyboard', meta: 'the click of the room\'s keys', text: 'The keyboard that comes up whenever the room takes typing clicks like a mechanical one. Turn it off or down here; the speaker on its case mutes it too.', control: 'keys' },   // a setting, not content: out of the index, the setup's file list and room.md
+        { name: 'playing.txt', title: 'On the speakers', meta: 'post-punk, mostly', text: 'Probably post-punk: Joy Division, New Order, The Cure. Or a modern indie band, like Interpol or Arctic Monkeys.' }
       ] } },
     { id: 'frenchie',      label: "this is Tito, he's the key", hoverLabel: 'a dog', hint: true, phase: 1, secret: 'dog', view: { dir: [0.45, 0.5, 0.75], near: 2 } },   // no menu word, no shell place; the chip is the clue to the sudo password. Hovered (or tapped once) he is only "a dog"; a click, or the second tap, earns his name, which holds while the camera is up close
     { id: 'robot',         label: 'in construction', hint: true, phase: 1, view: { dir: [0, 0, 1] } },   // the unfinished robot on the floating shelf: hovered it lights and the sparks fly; a click glides close. No menu word, no shell place
@@ -2264,7 +2272,7 @@ function renderExplorer() {
   const ex = explorer.insp.explorer, files = ex.files, f = files[explorer.index];
   exPath.innerHTML = `<b>luiz@theroom:</b>${esc(ex.path)}`;
   exList.innerHTML = files.map((file, i) => { const m = file.name.match(/^(.*?)(\.[^.]+)?$/); return `<button type="button" class="row" role="option" data-i="${i}" aria-selected="${i === explorer.index}" tabindex="${i === explorer.index ? 0 : -1}"><span class="perm">-rw-r--r--</span><span class="name">${esc(m[1])}<span class="ext">${esc(m[2] || '')}</span></span></button>`; }).join('');
-  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.control === 'spin' ? spinHtml(f) : ''}${f.control === 'rack' ? rackHtml(f) : ''}${f.control === 'graph' ? graphHtml() : ''}${f.control === 'note' ? noteHtml() : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets && f.control !== 'rack' ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}`;
+  exPreview.innerHTML = `<h2>${esc(f.title)}</h2>${f.meta ? `<div class="meta">${esc(f.meta)}</div>` : ''}${f.image ? `<div class="ph" role="img" aria-label="${esc(f.image)}"><span>${esc(f.image)}</span></div>` : ''}${f.control === 'spin' ? spinHtml(f) : ''}${f.control === 'rack' ? rackHtml(f) : ''}${f.control === 'graph' ? graphHtml() : ''}${f.control === 'note' ? noteHtml() : ''}${f.text ? `<p>${esc(f.text)}</p>` : ''}${f.text2 ? `<p>${esc(f.text2)}</p>` : ''}${f.text3 ? `<p>${esc(f.text3)}</p>` : ''}${f.bullets && f.control !== 'rack' ? `<ul>${f.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${f.control === 'rain' ? rainControlHtml() : ''}${f.control === 'keys' ? keysControlHtml() : ''}`;
   if (f.control === 'visitors') loadVisitors(exPreview.querySelector('ul'));
   if (f.control === 'note') wireNote(exPreview.querySelector('.note')); else noteRelease();   // another file: the keyboard goes down with the form
   if (f.control === 'spin') {   // each turn starts with the back to the viewer: swap to the next item then, unseen
@@ -2890,9 +2898,11 @@ function showHint() {
 exEl.addEventListener('click', e => {
   if (e.target.closest('[data-close]')) return closeExplorer();
   const rainBtn = e.target.closest('[data-rain]'); if (rainBtn) { rain.toggle().then(renderExplorer); return; }
+  if (e.target.closest('[data-keys]')) { KB?.sound(!KB.sound()); renderExplorer(); exPreview.querySelector('[data-keys]')?.focus(); KB?.preview(); return; }
   const row = e.target.closest('.row'); if (row) selectFile(+row.dataset.i);
 });
-exEl.addEventListener('input', e => { if (e.target.matches('[data-rain-vol]')) rain.setVolume(+e.target.value); });
+exEl.addEventListener('input', e => { if (e.target.matches('[data-rain-vol]')) rain.setVolume(+e.target.value); else if (e.target.matches('[data-keys-vol]')) KB?.volume(+e.target.value); });
+exEl.addEventListener('change', e => { if (e.target.matches('[data-keys-vol]')) KB?.preview(); });   // let go of the slider: one key at the new level
 exEl.addEventListener('keydown', e => {
   if (e.target.closest?.('.note')) return;   // in the note the arrows, Home and End move the caret, not the file
   if (e.key === 'ArrowDown') { e.preventDefault(); selectFile(explorer.index + 1); }
@@ -3045,6 +3055,10 @@ ${box('bx', 90, 144, 160, 38, ...VAL)}${lit('kgVal', box('hi', 90, 144, 160, 38,
 ${box('bx', 8, 204, 156, 38, ...ACC)}${lit('kgAcc', box('inv', 8, 204, 156, 38, ...ACC, ' ink'))}
 ${box('bx', 176, 204, 156, 38, ...REJ)}${lit('kgRej', box('hi', 176, 204, 156, 38, ...REJ))}
 ${dot('kgP1')}${dot('kgP2')}${dot('kgP3')}${dot('kgP4a')}${dot('kgP4b')}</svg></div>`;
+}
+function keysControlHtml() {   // the room's keyboard: its clicks on or off, and their level (window.__kb keeps both)
+  const on = KB?.sound() ?? true, v = KB?.volume() ?? 1;
+  return `<div class="ctl"><button type="button" class="tog" data-keys aria-pressed="${on}">${on ? 'keys: on' : 'keys: off'}</button><label>volume <input type="range" data-keys-vol min="0" max="1" step="0.05" value="${v}"></label></div>`;
 }
 function rainControlHtml() {
   return `<div class="ctl"><button type="button" class="tog" data-rain aria-pressed="${rain.on}">${rain.on ? 'rain: on' : 'rain: off'}</button><label>volume <input type="range" data-rain-vol min="0" max="1" step="0.05" value="${rain.vol}"></label></div>`;
@@ -3337,7 +3351,7 @@ const MACHINE = [
   ['source', 'https://github.com/ZehD/theRoom', 'this page, the functions, the generator']
 ];
 const SECTION_KEY = { 'monitor-left': 'experience', rack: 'stack', 'cert-frame': 'certifications', whiteboard: 'studies', shelf: 'shelf', speakers: 'sound' };
-const roomSections = () => CONFIG.inspectables.filter(i => i.explorer && !i.hint && !i.terminal && SECTION_KEY[i.id]).map(i => ({ key: SECTION_KEY[i.id], title: i.title, line: i.line, path: i.explorer.path, files: i.explorer.files }));
+const roomSections = () => CONFIG.inspectables.filter(i => i.explorer && !i.hint && !i.terminal && SECTION_KEY[i.id]).map(i => ({ key: SECTION_KEY[i.id], title: i.title, line: i.line, path: i.explorer.path, files: i.explorer.files.filter(f => f.control !== 'keys') }));   // the keyboard's setting is no content
 const secretsCount = () => { const f = secretsFound(); return SECRETS.filter(k => f.has(k)).length; };
 const agentOfUrl = () => /^#\/agent(?:\/index)?\/?$/.test(location.hash) ? 'index' : null;   // the index; setup has no URL to come back to
 const fmtDate = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', month: '2-digit', day: '2-digit', year: 'numeric' });
@@ -3502,6 +3516,8 @@ function biosTabs() {
   const fileItems = files => files.map(f => ({ label: f.title, value: f.meta || '', sub: () => fileSub(f), help: (f.meta ? f.meta + '. ' : '') + 'Enter opens it.' }));
   const ex = by('experience'), summary = ex.files.find(f => f.name === 'summary.txt'), accents = Object.keys(CONFIG.accent.presets);
   const rainItem = { label: 'Rain', value: () => rain.on ? 'On' : 'Off', adjust: () => { rain.toggle(); }, help: 'Curitiba rain against the window. + or - turns it; it loops with a soft crossfade.' };
+  const keysItem = { label: 'Key clicks', value: () => KB?.sound() ? 'On' : 'Off', adjust: () => { KB?.sound(!KB.sound()); KB?.preview(); }, help: 'The click of the room\'s keyboard. + or - turns it on or off.' };
+  const keysVolItem = { label: 'Key volume', value: () => Math.round((KB?.volume() ?? 1) * 100) + '%', adjust: d => { KB?.volume((KB.volume() ?? 1) + d * 0.1); KB?.preview(); }, help: 'How loud the keys click. + louder, - softer, in tens.' };
   return [
     { name: 'Main', help: 'The owner of this machine. ← → walk the menus, ↑ ↓ pick an item, Enter opens one marked ▶.', items: [
       { label: 'MCP Server', value: MCP_URL, action: () => copyLine(MCP_URL), help: 'This room, for agents: Streamable HTTP, no auth. Tools: whoami (the whole room in one call), visitors, leave_message. Enter copies the URL; the install line is under Desk.' },
@@ -3524,7 +3540,7 @@ function biosTabs() {
     { name: 'Certs', help: by('certifications').line + '.', items: fileItems(by('certifications').files) },
     { name: 'Studies', help: by('studies').line + '.', items: [{ label: 'Paper', value: 'in progress', help: by('studies').title + '.' }, ...fileItems(by('studies').files)] },
     { name: 'Shelf', help: by('shelf').line + '.', items: fileItems(by('shelf').files) },
-    { name: 'Sound', help: by('sound').line + '.', items: [rainItem, ...fileItems(by('sound').files.filter(f => f.control !== 'rain'))] },
+    { name: 'Sound', help: by('sound').line + '.', items: [rainItem, keysItem, keysVolItem, ...fileItems(by('sound').files.filter(f => f.control !== 'rain'))] },
     { name: 'Desk', help: 'A note on the desk, and who came by.', items: [
       { label: 'Visitors', sub: () => ({ title: 'Who came by', lines: B.visitors || ['asking the desk...'], onOpen: loadBiosVisitors }), help: 'Agents that connected over MCP, newest first. Client and time only.' },
       { label: 'Leave a Message', sub: () => ({ title: 'The tray on the desk', lines: ['Ask your agent to leave a message in theRoom: who is asking, how Luiz can answer, what it is about.', '', 'It lands on the desk and nowhere public. Three a day per visitor; the dog needs his sleep.', '', 'Tool: leave_message  (name, contact, message)', 'Server: ' + MCP_URL] }), help: 'Over MCP, the leave_message tool. Private; three a day.' },
