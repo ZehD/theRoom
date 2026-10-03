@@ -201,14 +201,14 @@ AI engineer · Curitiba, Paraná, Brazil
 
 11 years in IT, the last 4 building software and AI systems. Days go to agents, RAG pipelines and automations that have to survive production; nights go to this shelf.
 
-Outside work I read science fiction and fantasy, play board games with friends, paint Warhammer miniatures and watch a lot of films and series, mostly sci-fi and noir. I also study mixology, and I am always up for trying a fancy drink.
+Outside work I read science fiction and fantasy, play board games with friends, paint Warhammer miniatures and watch a lot of films and series, mostly sci-fi and noir. I also study mixology, and I am always up for a classic drink.
 
 theRoom is a real place in Curitiba, where it rains most afternoons. The dog is real too.
 
 ### books.txt — Books
 reading now, and the ones I love
 
-Reading now: Perdido Street Station by China Miéville, The Dark Forest by Cixin Liu (rereading the trilogy, slower) and AI Engineering by Chip Huyen (a third pass, this time with a notebook).
+Reading now: Perdido Street Station by China Miéville, weird fiction at its best. It is a reread, and this masterpiece only gets better the second time through: New Crobuzon is a city worth getting lost in twice.
 
 The ones I love, read more than once:
 
@@ -249,13 +249,9 @@ ambient · loops with a soft crossfade
 Curitiba rain against the window.
 
 ### playing.txt — On the speakers
-jazz and Brazilian records
+post-punk, mostly
 
-- Getz/Gilberto — Stan Getz, João Gilberto (1964)
-- Clube da Esquina — Milton Nascimento, Lô Borges (1972)
-- Kind of Blue — Miles Davis (1959)
-- Elis & Tom — Elis Regina, Tom Jobim (1974)
-- A Love Supreme — John Coltrane (1965)
+Probably post-punk: Joy Division, New Order, The Cure. Or a modern indie band, like Interpol or Arctic Monkeys.
 
 ## contact
 

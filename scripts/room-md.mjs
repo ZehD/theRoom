@@ -48,7 +48,7 @@ export function renderRoom(list) {
     if (insp.line && insp.line !== '—') out.push(`_${insp.line}_`);
     out.push('');
     for (const f of insp.explorer.files) {
-      if (f.control === 'visitors' || f.control === 'mcp') continue;   // the mug's live files are not content
+      if (f.control === 'visitors' || f.control === 'mcp' || f.control === 'note' || f.control === 'keys') continue;   // live files and settings are not content
       out.push(`### ${f.name} — ${f.title}`);
       if (f.meta) out.push(`${f.meta}`);
       out.push('');
